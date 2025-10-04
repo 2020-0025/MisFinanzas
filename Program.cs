@@ -4,8 +4,19 @@ using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Components;
 using MisFinanzas.Components.Account;
 using MisFinanzas.Infrastructure.Data;
+using System.Globalization;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// CONFIGURACIÓN DE MONEDA DOMINICANA (PESO DOMINICANO - DOP)
+var dominicanCulture = new CultureInfo("es-DO");
+dominicanCulture.NumberFormat.CurrencySymbol = "RD$";
+dominicanCulture.NumberFormat.CurrencyDecimalDigits = 2;
+dominicanCulture.NumberFormat.CurrencyDecimalSeparator = ".";
+dominicanCulture.NumberFormat.CurrencyGroupSeparator = ",";
+
+CultureInfo.DefaultThreadCurrentCulture = dominicanCulture;
+CultureInfo.DefaultThreadCurrentUICulture = dominicanCulture;
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
