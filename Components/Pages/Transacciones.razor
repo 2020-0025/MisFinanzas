@@ -1,4 +1,12 @@
-﻿@page "/transacciones"
+﻿@page "/transactions"
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Domain.Enums
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@inject ITransactionService TransactionService
+@inject ICategoryService CategoryService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 @attribute [Authorize]
 @rendermode InteractiveServer
 
@@ -15,28 +23,400 @@
         </button>
     </div>
 
-    <!-- Empty State -->
-    <div class="card border-0 shadow-sm rounded-4">
-        <div class="card-body text-center py-5">
-            <i class="bi bi-receipt fs-1 text-muted"></i>
-            <h5 class="mt-3">No hay transacciones</h5>
-            <p class="text-muted">Registra tu primera transacción para comenzar</p>
-            <button class="btn btn-primary mt-3" @onclick="OpenCreateModal">
-                <i class="bi bi-plus-circle me-2"></i>Crear Transacción
-            </button>
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
         </div>
-    </div>
+    }
+    else if (!transactions.Any())
+    {
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-receipt fs-1 text-muted"></i>
+                <h5 class="mt-3">No hay transacciones</h5>
+                <p class="text-muted">Registra tu primera transacción para comenzar a controlar tus finanzas</p>
+
+                @if (!categories.Any())
+                {
+                    <div class="alert alert-warning mt-3" role="alert">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Primero necesitas crear al menos una categoría.
+                        <a href="/categories" class="alert-link">Crear categoría</a>
+                    </div>
+                }
+                else
+                {
+                    <button class="btn btn-primary mt-3" @onclick="OpenCreateModal">
+                        <i class="bi bi-plus-circle me-2"></i>Crear Transacción
+                    </button>
+                }
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Filtros -->
+        <div class="card border-0 shadow-sm rounded-4 mb-4">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Filtrar por Categoría</label>
+                        <select class="form-select" @bind="filterCategoryId">
+                            <option value="0">Todas las categorías</option>
+                            @foreach (var category in categories)
+                            {
+                                <option value="@category.CategoryId">@category.TitleWithIcon</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Filtrar por Tipo</label>
+                        <select class="form-select" @bind="filterType">
+                            <option value="">Todos</option>
+                            <option value="Income">Ingresos</option>
+                            <option value="Expense">Gastos</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Ordenar por</label>
+                        <select class="form-select" @bind="sortOrder">
+                            <option value="newest">Más recientes</option>
+                            <option value="oldest">Más antiguas</option>
+                            <option value="highest">Mayor monto</option>
+                            <option value="lowest">Menor monto</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabla de transacciones -->
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="px-4 py-3">Categoría</th>
+                                <th class="px-4 py-3">Monto</th>
+                                <th class="px-4 py-3">Nota</th>
+                                <th class="px-4 py-3">Fecha</th>
+                                <th class="px-4 py-3 text-end">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var transaction in FilteredAndSortedTransactions)
+                            {
+                                <tr>
+                                    <td class="px-4 py-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <span style="font-size: 1.5rem;">@transaction.CategoryIcon</span>
+                                            <span class="fw-semibold">@transaction.CategoryName</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="fw-bold fs-5 @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "text-success" : "text-danger")">
+                                            @transaction.FormattedAmount
+                                        </span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <span class="text-muted">@transaction.Note</span>
+                                    </td>
+                                    <td class="px-4 py-3">
+                                        <small class="text-muted">@transaction.Date.ToString("dd/MM/yyyy")</small>
+                                    </td>
+                                    <td class="px-4 py-3 text-end">
+                                        <button class="btn btn-sm btn-outline-primary me-2" @onclick="() => OpenEditModal(transaction)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" @onclick="() => DeleteTransaction(transaction.TransactionId)">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resumen -->
+        <div class="mt-3 d-flex justify-content-between align-items-center">
+            <small class="text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                Total: @FilteredAndSortedTransactions.Count() transacción(es)
+            </small>
+            <div class="d-flex gap-3">
+                <small class="text-success fw-bold">
+                    <i class="bi bi-arrow-up-circle me-1"></i>
+                    Ingresos: @CalculateTotalIncome().ToString("C2")
+                </small>
+                <small class="text-danger fw-bold">
+                    <i class="bi bi-arrow-down-circle me-1"></i>
+                    Gastos: @CalculateTotalExpense().ToString("C2")
+                </small>
+            </div>
+        </div>
+    }
 </div>
 
-@code {
-    private bool showModal = false;
+<!-- Modal -->
+@if (showModal)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold">
+                        @(isEditMode ? "Editar Transacción" : "Nueva Transacción")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                </div>
+                <div class="modal-body pt-2">
+                    @if (!categories.Any())
+                    {
+                        <div class="alert alert-warning" role="alert">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            No tienes categorías creadas.
+                            <a href="/categories" class="alert-link">Crear una categoría primero</a>
+                        </div>
+                    }
+                    else
+                    {
+                        <EditForm Model="currentTransaction" OnValidSubmit="SaveTransaction">
+                            <DataAnnotationsValidator />
 
-    private void OpenCreateModal()
-    {
-        showModal = true;
-    }
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Categoría</label>
+                                <InputSelect class="form-select" @bind-Value="currentTransaction.CategoryId">
+                                    <option value="0">-- Selecciona una categoría --</option>
+                                    @foreach (var category in categories)
+                                    {
+                                        <option value="@category.CategoryId">@category.TitleWithIcon</option>
+                                    }
+                                </InputSelect>
+                                <ValidationMessage For="@(() => currentTransaction.CategoryId)" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Monto (RD$)</label>
+                                <InputNumber class="form-control" @bind-Value="currentTransaction.Amount"
+                                             placeholder="0.00" step="0.01" />
+                                <ValidationMessage For="@(() => currentTransaction.Amount)" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold">Nota</label>
+                                <InputText class="form-control" @bind-Value="currentTransaction.Note"
+                                           placeholder="Descripción de la transacción" />
+                                <ValidationMessage For="@(() => currentTransaction.Note)" class="text-danger small" />
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold">Fecha</label>
+                                <InputDate class="form-control" @bind-Value="currentTransaction.Date" />
+                                <ValidationMessage For="@(() => currentTransaction.Date)" class="text-danger small" />
+                            </div>
+
+                            <div class="d-flex gap-2 justify-content-end">
+                                <button type="button" class="btn btn-secondary" @onclick="CloseModal">
+                                    Cancelar
+                                </button>
+                                <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                    }
+                                    @(isEditMode ? "Actualizar" : "Crear")
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
+    private bool isLoading = true;
+    private bool showModal = false;
+    private bool isEditMode = false;
+    private bool isSaving = false;
+    private string userId = string.Empty;
 
+    private List<TransactionDto> transactions = new();
+    private List<CategoryDto> categories = new();
+    private TransactionDto currentTransaction = new();
+
+    // Filtros
+    private int filterCategoryId = 0;
+    private string filterType = "";
+    private string sortOrder = "newest";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            await LoadData();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            transactions = await TransactionService.GetAllAsync(userId);
+            categories = await CategoryService.GetAllAsync(userId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+    }
+
+    private IEnumerable<TransactionDto> FilteredAndSortedTransactions
+    {
+        get
+        {
+            var filtered = transactions.AsEnumerable();
+
+            // Filtrar por categoría
+            if (filterCategoryId > 0)
+            {
+                filtered = filtered.Where(t => t.CategoryId == filterCategoryId);
+            }
+
+            // Filtrar por tipo
+            if (!string.IsNullOrEmpty(filterType))
+            {
+                var type = filterType == "Income" ? TransactionType.Income : TransactionType.Expense;
+                filtered = filtered.Where(t => GetCategoryType(t.CategoryId) == type);
+            }
+
+            // Ordenar
+            filtered = sortOrder switch
+            {
+                "oldest" => filtered.OrderBy(t => t.Date),
+                "highest" => filtered.OrderByDescending(t => t.Amount),
+                "lowest" => filtered.OrderBy(t => t.Amount),
+                _ => filtered.OrderByDescending(t => t.Date) // newest
+            };
+
+            return filtered;
+        }
+    }
+
+    private TransactionType GetCategoryType(int categoryId)
+    {
+        return categories.FirstOrDefault(c => c.CategoryId == categoryId)?.Type ?? TransactionType.Expense;
+    }
+
+    private decimal CalculateTotalIncome()
+    {
+        return FilteredAndSortedTransactions
+            .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+            .Sum(t => t.Amount);
+    }
+
+    private decimal CalculateTotalExpense()
+    {
+        return FilteredAndSortedTransactions
+            .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+            .Sum(t => t.Amount);
+    }
+
+    private void OpenCreateModal()
+    {
+        currentTransaction = new TransactionDto
+        {
+            Date = DateTime.Now,
+            CategoryId = 0
+        };
+        isEditMode = false;
+        showModal = true;
+    }
+
+    private void OpenEditModal(TransactionDto transaction)
+    {
+        currentTransaction = new TransactionDto
+        {
+            TransactionId = transaction.TransactionId,
+            CategoryId = transaction.CategoryId,
+            Amount = transaction.Amount,
+            Note = transaction.Note,
+            Date = transaction.Date
+        };
+        isEditMode = true;
+        showModal = true;
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentTransaction = new();
+        isSaving = false;
+    }
+
+    private async Task SaveTransaction()
+    {
+        try
+        {
+            if (currentTransaction.CategoryId == 0)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Por favor selecciona una categoría");
+                return;
+            }
+
+            isSaving = true;
+
+            if (isEditMode)
+            {
+                await TransactionService.UpdateAsync(currentTransaction, userId);
+            }
+            else
+            {
+                await TransactionService.CreateAsync(currentTransaction, userId);
+            }
+
+            await LoadData();
+            CloseModal();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error saving transaction: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Error al guardar la transacción");
+            isSaving = false;
+        }
+    }
+
+    private async Task DeleteTransaction(int transactionId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "¿Estás seguro de eliminar esta transacción? Esta acción no se puede deshacer.");
+
+        if (confirmed)
+        {
+            try
+            {
+                await TransactionService.DeleteAsync(transactionId, userId);
+                await LoadData();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error deleting transaction: {ex.Message}");
+                await JSRuntime.InvokeVoidAsync("alert", "Error al eliminar la transacción");
+            }
+        }
+    }
 }
