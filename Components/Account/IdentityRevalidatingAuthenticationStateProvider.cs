@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Components.Server;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Options;
-using MisFinanzas.Infrastructure.Data;
+using MisFinanzas.Domain.Entities;
 
 namespace MisFinanzas.Components.Account
 {

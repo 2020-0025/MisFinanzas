@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
-using MisFinanzas.Infrastructure.Data;
+using MisFinanzas.Domain.Entities;
 
 namespace MisFinanzas.Components.Account
 {

@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Primitives;
 using MisFinanzas.Components.Account.Pages;
 using MisFinanzas.Components.Account.Pages.Manage;
-using MisFinanzas.Infrastructure.Data;
+using MisFinanzas.Domain.Entities;
 
 namespace Microsoft.AspNetCore.Routing
 {

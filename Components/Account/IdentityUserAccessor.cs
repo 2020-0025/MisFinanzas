@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.Identity;
-using MisFinanzas.Infrastructure.Data;
+using MisFinanzas.Domain.Entities;
 
 namespace MisFinanzas.Components.Account
 {
