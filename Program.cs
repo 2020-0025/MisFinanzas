@@ -46,7 +46,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 //  CONFIGURAR IDENTITY CON ApplicationUser
-builder.Services.AddIdentityCore<MisFinanzas.Infrastructure.Data.ApplicationUser>(options =>
+builder.Services.AddIdentityCore<MisFinanzas.Domain.Entities.ApplicationUser>(options =>
 {
     options.SignIn.RequireConfirmedAccount = false;  //Debo ponerlo en true cuando implemente el envio de email
     options.Password.RequireDigit = true;
@@ -65,7 +65,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService> ();
 builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IFinancialGoalService, FinancialGoalService>();
 
-builder.Services.AddSingleton<IEmailSender<MisFinanzas.Infrastructure.Data.ApplicationUser>, MisFinanzas.Components.Account.IdentityNoOpEmailSender>();
+builder.Services.AddSingleton<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Components.Account.IdentityNoOpEmailSender>();
 
 var app = builder.Build();
 
