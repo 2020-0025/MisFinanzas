@@ -1,0 +1,313 @@
+﻿@* Componente para seleccionar iconos visualmente *@
+
+<div class="icon-selector">
+    <label class="form-label fw-semibold">@Label</label>
+
+    <!-- Mostrar icono seleccionado -->
+    <div class="selected-icon-display mb-3" @onclick="ToggleIconPicker">
+        <div class="icon-preview">
+            @if (!string.IsNullOrEmpty(SelectedIcon))
+            {
+                <span class="display-4">@SelectedIcon</span>
+            }
+            else
+            {
+                <i class="bi bi-emoji-smile fs-1 text-muted"></i>
+            }
+        </div>
+        <small class="text-muted d-block mt-2">Click para cambiar el icono</small>
+    </div>
+
+    <!-- Picker de iconos -->
+    @if (showPicker)
+    {
+        <div class="icon-picker-container">
+            <div class="icon-picker-header mb-3">
+                <input type="text"
+                       class="form-control form-control-sm"
+                       placeholder="Buscar icono..."
+                       @bind="searchTerm"
+                       @bind:event="oninput" />
+            </div>
+
+            <div class="icon-grid">
+                @foreach (var icon in FilteredIcons)
+                {
+                    <button type="button"
+                            class="icon-option @(icon.Emoji == SelectedIcon ? "selected" : "")"
+                            @onclick="() => SelectIcon(icon.Emoji)"
+                            title="@icon.Name">
+                        <span class="icon-emoji">@icon.Emoji</span>
+                    </button>
+                }
+            </div>
+
+            @if (!FilteredIcons.Any())
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-search"></i>
+                    <p class="mb-0 small">No se encontraron iconos</p>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .icon-selector {
+        margin-bottom: 1rem;
+    }
+
+    .selected-icon-display {
+        border: 2px dashed #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1.5rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        background-color: #f8f9fa;
+    }
+
+    .selected-icon-display:hover {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+    }
+
+    .icon-preview {
+        min-height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .icon-picker-container {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        max-height: 400px;
+        overflow-y: auto;
+        background-color: white;
+        margin-top: 1rem;
+    }
+
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .icon-option {
+        border: 2px solid #e9ecef;
+        border-radius: 0.5rem;
+        padding: 0.75rem;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        aspect-ratio: 1;
+    }
+
+    .icon-option:hover {
+        border-color: #0d6efd;
+        background-color: #e7f1ff;
+        transform: scale(1.05);
+    }
+
+    .icon-option.selected {
+        border-color: #0d6efd;
+        background-color: #0d6efd;
+        color: white;
+    }
+
+    .icon-emoji {
+        font-size: 1.8rem;
+        line-height: 1;
+    }
+
+    .icon-picker-header {
+        position: sticky;
+        top: 0;
+        background-color: white;
+        z-index: 10;
+        padding-bottom: 0.5rem;
+    }
+</style>
+
+@code {
+    [Parameter]
+    public string Label { get; set; } = "Icono";
+
+    [Parameter]
+    public string SelectedIcon { get; set; } = "";
+
+    [Parameter]
+    public EventCallback<string> SelectedIconChanged { get; set; }
+
+    private bool showPicker = false;
+    private string searchTerm = "";
+
+    private List<IconItem> FilteredIcons =>
+        string.IsNullOrWhiteSpace(searchTerm)
+            ? AvailableIcons
+            : AvailableIcons.Where(i => i.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase)).ToList();
+
+    private void ToggleIconPicker()
+    {
+        showPicker = !showPicker;
+    }
+
+    private async Task SelectIcon(string icon)
+    {
+        SelectedIcon = icon;
+        await SelectedIconChanged.InvokeAsync(icon);
+        showPicker = false;
+    }
+
+    // Lista de iconos disponibles organizados por categoría
+    private List<IconItem> AvailableIcons = new()
+    {
+        // Finanzas y Dinero
+        new("💰", "Dinero"),
+        new("💵", "Dólar"),
+        new("💳", "Tarjeta"),
+        new("🏦", "Banco"),
+        new("💎", "Diamante"),
+        new("🪙", "Moneda"),
+
+        // Comida y Bebida
+        new("🍔", "Hamburguesa"),
+        new("🍕", "Pizza"),
+        new("🍝", "Pasta"),
+        new("🍱", "Comida"),
+        new("🍜", "Sopa"),
+        new("☕", "Café"),
+        new("🍺", "Cerveza"),
+        new("🍷", "Vino"),
+        new("🥤", "Bebida"),
+        new("🍰", "Postre"),
+        new("🍎", "Fruta"),
+        new("🥗", "Ensalada"),
+
+        // Transporte
+        new("🚗", "Carro"),
+        new("🚕", "Taxi"),
+        new("🚌", "Bus"),
+        new("🚇", "Metro"),
+        new("✈️", "Avión"),
+        new("🚲", "Bicicleta"),
+        new("🛵", "Moto"),
+        new("⛽", "Gasolina"),
+        new("🚦", "Tráfico"),
+
+        // Hogar
+        new("🏠", "Casa"),
+        new("🏡", "Hogar"),
+        new("🛋️", "Muebles"),
+        new("🔑", "Llaves"),
+        new("💡", "Electricidad"),
+        new("🚿", "Agua"),
+        new("🧹", "Limpieza"),
+        new("🛏️", "Cama"),
+
+        // Entretenimiento
+        new("🎮", "Videojuegos"),
+        new("🎬", "Cine"),
+        new("🎵", "Música"),
+        new("📺", "TV"),
+        new("🎭", "Teatro"),
+        new("🎨", "Arte"),
+        new("🎪", "Eventos"),
+        new("🎯", "Hobby"),
+        new("⚽", "Deportes"),
+        new("🎾", "Tenis"),
+        new("🏋️", "Gimnasio"),
+
+        // Salud
+        new("🏥", "Hospital"),
+        new("💊", "Medicina"),
+        new("🩺", "Doctor"),
+        new("😷", "Salud"),
+        new("💪", "Fitness"),
+        new("🧘", "Yoga"),
+
+        // Educación
+        new("📚", "Libros"),
+        new("✏️", "Escuela"),
+        new("🎓", "Universidad"),
+        new("📖", "Estudio"),
+        new("🖊️", "Escritura"),
+
+        // Compras
+        new("🛒", "Supermercado"),
+        new("🛍️", "Compras"),
+        new("👕", "Ropa"),
+        new("👟", "Zapatos"),
+        new("💄", "Cosméticos"),
+        new("🎁", "Regalo"),
+
+        // Tecnología
+        new("💻", "Computadora"),
+        new("📱", "Teléfono"),
+        new("⌚", "Reloj"),
+        new("🖥️", "Monitor"),
+        new("⌨️", "Teclado"),
+        new("🖱️", "Mouse"),
+
+        // Servicios
+        new("📞", "Teléfono"),
+        new("📡", "Internet"),
+        new("📺", "Cable"),
+        new("🔧", "Reparaciones"),
+        new("✂️", "Peluquería"),
+        new("🧼", "Lavandería"),
+
+        // Mascotas
+        new("🐕", "Perro"),
+        new("🐈", "Gato"),
+        new("🐦", "Pájaro"),
+        new("🐠", "Pez"),
+
+        // Viajes
+        new("✈️", "Viaje"),
+        new("🗺️", "Mapa"),
+        new("🏖️", "Playa"),
+        new("⛰️", "Montaña"),
+        new("🏨", "Hotel"),
+        new("🎒", "Mochila"),
+
+        // Trabajo
+        new("💼", "Trabajo"),
+        new("👔", "Oficina"),
+        new("📊", "Negocios"),
+        new("📈", "Inversión"),
+        new("🏢", "Empresa"),
+
+        // Otros
+        new("🎉", "Fiesta"),
+        new("🎂", "Cumpleaños"),
+        new("💐", "Flores"),
+        new("🌟", "Especial"),
+        new("❤️", "Amor"),
+        new("📦", "Paquete"),
+        new("🔔", "Notificación"),
+        new("📁", "Documentos"),
+        new("⭐", "Favorito"),
+        new("🎯", "Meta"),
+        new("🏆", "Logro"),
+        new("💪", "Esfuerzo"),
+    };
+
+    private class IconItem
+    {
+        public string Emoji { get; set; }
+        public string Name { get; set; }
+
+        public IconItem(string emoji, string name)
+        {
+            Emoji = emoji;
+            Name = name;
+        }
+    }
+}
