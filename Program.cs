@@ -1,14 +1,18 @@
-using Microsoft.AspNetCore.Components.Authorization;
+﻿using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Components;
 using MisFinanzas.Components.Account;
+using MisFinanzas.Domain.Entities;
 using MisFinanzas.Infrastructure.Data;
+using MisFinanzas.Infrastructure.Interfaces;
+using MisFinanzas.Infrastructure.Services;
 using System.Globalization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// CONFIGURACI�N DE MONEDA DOMINICANA (PESO DOMINICANO - DOP)
+// CONFIGURACIÓN DE MONEDA DOMINICANA (PESO DOMINICANO - DOP)
 var dominicanCulture = new CultureInfo("es-DO");
 dominicanCulture.NumberFormat.CurrencySymbol = "RD$";
 dominicanCulture.NumberFormat.CurrencyDecimalDigits = 2;
@@ -34,19 +38,34 @@ builder.Services.AddAuthentication(options =>
     })
     .AddIdentityCookies();
 
+// CONFIGURAR SQLite CON NUESTRO DbContext
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+//  CONFIGURAR IDENTITY CON ApplicationUser
+builder.Services.AddIdentityCore<MisFinanzas.Infrastructure.Data.ApplicationUser>(options =>
+{
+    options.SignIn.RequireConfirmedAccount = false;  //Debo ponerlo en true cuando implemente el envio de email
+    options.Password.RequireDigit = true;
+    options.Password.RequireLowercase = true;
+    options.Password.RequireUppercase = true;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequiredLength = 6;
 
-builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)  //Debo ponerlo en true cuando implemente el envio de email
+})
     .AddEntityFrameworkStores<ApplicationDbContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
+// ⭐ REGISTRAR NUESTROS SERVICIOS (Dependency Injection)
+builder.Services.AddScoped<ICategoryService, CategoryService> ();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IFinancialGoalService, FinancialGoalService>();
+
+builder.Services.AddSingleton<IEmailSender<MisFinanzas.Infrastructure.Data.ApplicationUser>, MisFinanzas.Components.Account.IdentityNoOpEmailSender>();
 
 var app = builder.Build();
 
