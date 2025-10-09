@@ -19,9 +19,4 @@
     </PackageReference>
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Infrastructure\Interfaces\" />
-    <Folder Include="Infrastructure\Services\" />
-  </ItemGroup>
-
 </Project>
