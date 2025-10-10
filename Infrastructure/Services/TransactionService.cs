@@ -132,7 +132,7 @@ namespace MisFinanzas.Infrastructure.Services
                 if (endDate.HasValue)
                     query = query.Where(t => t.Date <= endDate.Value);
 
-                return await query.SumAsync(t => t.Amount);
+                return (decimal)await query.SumAsync(t => (double)t.Amount);
             }
 
             public async Task<decimal> GetTotalExpenseAsync(string userId, DateTime? startDate = null, DateTime? endDate = null)
@@ -147,7 +147,7 @@ namespace MisFinanzas.Infrastructure.Services
                 if (endDate.HasValue)
                     query = query.Where(t => t.Date <= endDate.Value);
 
-                return await query.SumAsync(t => t.Amount);
+                return (decimal)await query.SumAsync(t => (double)t.Amount);
             }
 
             public async Task<decimal> GetBalanceAsync(string userId)

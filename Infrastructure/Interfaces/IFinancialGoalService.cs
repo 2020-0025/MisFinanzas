@@ -3,8 +3,6 @@
 
 namespace MisFinanzas.Infrastructure.Interfaces
 {
-    public interface IFinancialGoalService
-    {
         public interface IFinancialGoalService
         {
             Task<List<FinancialGoalDto>> GetAllAsync(string userId);
@@ -16,5 +14,5 @@ namespace MisFinanzas.Infrastructure.Interfaces
             Task<List<FinancialGoalDto>> GetActiveGoalsAsync(string userId);
             Task<int> GetCompletedGoalsCountAsync(string userId);
         }
-    }
+    
 }
