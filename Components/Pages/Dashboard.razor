@@ -1,149 +1,640 @@
 ﻿@page "/dashboard"
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Domain.Enums
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@inject ITransactionService TransactionService
+@inject ICategoryService CategoryService
+@inject IFinancialGoalService GoalService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
 @attribute [Authorize]
 @rendermode InteractiveServer
+@implements IAsyncDisposable
 
 <PageTitle>Dashboard - Mis Finanzas</PageTitle>
 
 <div class="container-fluid px-4 py-4">
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">📊 Resumen</h1>
+        <h1 class="h3 mb-0">
+            <i class="bi bi-speedometer2 text-primary me-2"></i>
+            Dashboard
+        </h1>
         <div class="text-muted">
-            <small>Últimos 7 días</small>
+            <small>Últimos @selectedDays días</small>
         </div>
     </div>
 
-    <!-- Summary Cards -->
-    <div class="row g-4 mb-4">
-        <!-- Balance Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted mb-2 small fw-medium">BALANCE</p>
-                            <h2 class="mb-0 fw-bold">$0.00</h2>
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+            <p class="text-muted mt-3">Cargando tus datos financieros...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Summary Cards con animación y altura uniforme -->
+        <div class="row g-4 mb-4">
+            <!-- Balance Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-auto">
+                            <div class="flex-grow-1">
+                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Balance</strong> </p>
+                                <h2 class="mb-2 fw-bold counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
+                                    @dashboardData.Balance.ToString("C0")
+                                </h2>
+                                <small class="text-muted d-block">
+                                    <i class="bi bi-calendar3 me-1"></i>@selectedDays días
+                                </small>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-3 icon-float">
+                                <i class="bi bi-wallet2 fs-3 text-primary"></i>
+                            </div>
                         </div>
-                        <div class="bg-primary bg-opacity-10 p-3 rounded-3">
-                            <i class="bi bi-wallet2 fs-3 text-primary"></i>
+                    </div>
+                    <div class="card-footer bg-primary bg-opacity-5 border-0 py-2">
+                        <small class="text-muted">
+                            <i class="bi bi-graph-up me-1"></i>
+                            <strong style="color:black">Balance actual</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Income Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.1s;">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-auto">
+                            <div class="flex-grow-1">
+                                <p class="text-muted mb-2 small fw-medium text-uppercase"><strong style="color:black">Ingresos</strong></p>
+                                <h2 class="mb-2 fw-bold text-success counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
+                                    @dashboardData.TotalIncome.ToString("C0")
+                                </h2>
+                                <small class="text-success d-block">
+                                    <i class="bi bi-arrow-up-circle me-1"></i>Entradas
+                                </small>
+                            </div>
+                            <div class="bg-success bg-opacity-10 p-3 rounded-3 icon-float">
+                                <i class="bi bi-arrow-up-circle fs-3 text-success"></i>
+                            </div>
                         </div>
+                    </div>
+                    <div class="card-footer bg-success bg-opacity-5 border-0 py-2">
+                        <small class="text-muted">
+                            <i class="bi bi-cash-stack me-1"></i>
+                            <strong style="color:black">Total Recibido</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.2s;">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-auto">
+                            <div class="flex-grow-1">
+                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Gastos</strong></p>
+                                <h2 class="mb-2 fw-bold text-danger counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
+                                    @dashboardData.TotalExpense.ToString("C0")
+                                </h2>
+                                <small class="text-danger d-block">
+                                    <i class="bi bi-arrow-down-circle me-1"></i>Salidas
+                                </small>
+                            </div>
+                            <div class="bg-danger bg-opacity-10 p-3 rounded-3 icon-float">
+                                <i class="bi bi-arrow-down-circle fs-3 text-danger"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-danger bg-opacity-5 border-0 py-2">
+                        <small class="text-muted">
+                            <i class="bi bi-cart3 me-1"></i>
+                            <strong style="color:black">Total Gastado</strong>
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Goals Card -->
+            <div class="col-xl-3 col-md-6">
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.3s;">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-start mb-auto">
+                            <div class="flex-grow-1">
+                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Metas</strong></p>
+                                <h2 class="mb-2 fw-bold text-info counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
+                                    @dashboardData.CompletedGoals/@dashboardData.TotalGoals
+                                </h2>
+                                <small class="text-info d-block">
+                                    <i class="bi bi-flag me-1"></i>Completadas
+                                </small>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-3 icon-float">
+                                <i class="bi bi-bullseye fs-3 text-info"></i>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-info bg-opacity-5 border-0 py-2">
+                        <small class="text-muted">
+                            @if (dashboardData.TotalGoals > 0)
+                            {
+                                var percentage = (dashboardData.CompletedGoals * 100.0 / dashboardData.TotalGoals).ToString("F0");
+                                <span>
+                                    <i class="bi bi-trophy me-1"></i>
+                                    @percentage% progreso
+                                </span>
+                            }
+                            else
+                            {
+                                <span>
+                                    <i class="bi bi-plus-circle me-1"></i>
+                                    <strong style="color:black">Crea Una Meta</strong>
+                                </span>
+                            }
+                        </small>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Income Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted mb-2 small fw-medium">INGRESOS</p>
-                            <h2 class="mb-0 fw-bold text-success">$0.00</h2>
+        <!-- Charts Row -->
+        <div class="row g-4 mb-4">
+            <!-- Doughnut Chart -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm rounded-4 h-100 card-animate card-hover" style="animation-delay: 0.4s;">
+                    <div class="card-body">
+                        <h5 class="card-title mb-4 fw-semibold">
+                            <i class="bi bi-pie-chart-fill text-primary me-2"></i>
+                            <strong style="color:black">Gastos Por Categoría</strong>
+                        </h5>
+                        @if (dashboardData.CategoryExpenses.Any())
+                        {
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="doughnutChart"></canvas>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted"></i>
+                                <p class="text-muted mt-3 mb-0">No hay gastos registrados</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bar Chart with Period Selector -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm rounded-4 h-100 card-animate card-hover" style="animation-delay: 0.5s;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0 fw-semibold">
+                                <i class="bi bi-bar-chart-fill text-success me-2"></i>
+                                <strong style="color:black">Ingresos vs Gastos</strong>
+                            </h5>
+                            <!-- Selector de período -->
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button"
+                                        class="btn @(selectedDays == 7 ? "btn-primary" : "btn-outline-primary")"
+                                        @onclick="() => ChangePeriod(7)">
+                                    7 días
+                                </button>
+                                <button type="button"
+                                        class="btn @(selectedDays == 30 ? "btn-primary" : "btn-outline-primary")"
+                                        @onclick="() => ChangePeriod(30)">
+                                    30 días
+                                </button>
+                            </div>
                         </div>
-                        <div class="bg-success bg-opacity-10 p-3 rounded-3">
-                            <i class="bi bi-arrow-up-circle fs-3 text-success"></i>
-                        </div>
+
+                        @if (chartData.Any())
+                        {
+                            <div style="height: 300px; position: relative;">
+                                <canvas id="barChart"></canvas>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-graph-up fs-1 text-muted"></i>
+                                <p class="text-muted mt-3 mb-0">No hay transacciones en los últimos @selectedDays días</p>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Expense Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted mb-2 small fw-medium">GASTOS</p>
-                            <h2 class="mb-0 fw-bold text-danger">$0.00</h2>
+        <!-- Recent Transactions -->
+        <div class="row g-4">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 card-animate card-hover" style="animation-delay: 0.6s;">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h5 class="card-title mb-0 fw-semibold">
+                                <i class="bi bi-clock-history text-primary me-2"></i>
+                                <strong style="color:black">Transacciones Recientes</strong> 
+                            </h5>
+                            <a href="/transactions" class="btn btn-sm btn-outline-primary">
+                                Ver todas <i class="bi bi-arrow-right ms-1"></i>
+                            </a>
                         </div>
-                        <div class="bg-danger bg-opacity-10 p-3 rounded-3">
-                            <i class="bi bi-arrow-down-circle fs-3 text-danger"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Goals Progress Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-start">
-                        <div>
-                            <p class="text-muted mb-2 small fw-medium">METAS</p>
-                            <h2 class="mb-0 fw-bold text-info">0/0</h2>
-                        </div>
-                        <div class="bg-info bg-opacity-10 p-3 rounded-3">
-                            <i class="bi bi-bullseye fs-3 text-info"></i>
-                        </div>
+                        @if (dashboardData.RecentTransactions.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="border-0">Categoría</th>
+                                            <th class="border-0">Monto</th>
+                                            <th class="border-0">Nota</th>
+                                            <th class="border-0">Fecha</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var transaction in dashboardData.RecentTransactions.Take(5))
+                                        {
+                                            <tr class="transaction-row">
+                                                <td>
+                                                    <div class="d-flex align-items-center gap-2">
+                                                        <span style="font-size: 1.5rem;">@transaction.CategoryIcon</span>
+                                                        <span class="fw-semibold">@transaction.CategoryName</span>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="fw-bold @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "text-success" : "text-danger")">
+                                                        @transaction.FormattedAmount
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="text-muted">@transaction.Note</span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">@transaction.Date.ToString("dd/MM/yyyy")</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-5">
+                                <i class="bi bi-receipt fs-1 text-muted"></i>
+                                <p class="text-muted mt-3 mb-3">No hay transacciones recientes</p>
+                                <a href="/transactions" class="btn btn-primary">
+                                    <i class="bi bi-plus-circle me-2"></i>Crear Transacción
+                                </a>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-
-    <!-- Charts Row -->
-    <div class="row g-4 mb-4">
-        <!-- Doughnut Chart -->
-        <div class="col-lg-4">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <h5 class="card-title mb-4 fw-semibold">
-                        <i class="bi bi-pie-chart-fill text-primary me-2"></i>
-                        Gastos por Categoría
-                    </h5>
-                    <div class="text-center py-5">
-                        <i class="bi bi-inbox fs-1 text-muted"></i>
-                        <p class="text-muted mt-3">No hay datos para mostrar</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Bar Chart -->
-        <div class="col-lg-8">
-            <div class="card border-0 shadow-sm rounded-4 h-100">
-                <div class="card-body">
-                    <h5 class="card-title mb-4 fw-semibold">
-                        <i class="bi bi-bar-chart-fill text-success me-2"></i>
-                        Ingresos vs Gastos
-                    </h5>
-                    <div class="text-center py-5">
-                        <i class="bi bi-graph-up fs-1 text-muted"></i>
-                        <p class="text-muted mt-3">No hay datos para mostrar</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Recent Transactions -->
-    <div class="row g-4">
-        <div class="col-12">
-            <div class="card border-0 shadow-sm rounded-4">
-                <div class="card-body">
-                    <h5 class="card-title mb-4 fw-semibold">
-                        <i class="bi bi-clock-history text-primary me-2"></i>
-                        Transacciones Recientes
-                    </h5>
-                    <div class="text-center py-5">
-                        <i class="bi bi-receipt fs-1 text-muted"></i>
-                        <p class="text-muted mt-3">No hay transacciones recientes</p>
-                        <a href="/transactions" class="btn btn-primary mt-3">
-                            <i class="bi bi-plus-circle me-2"></i>Crear Transacción
-                        </a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+    }
 </div>
 
-@code {
-    // Lógica se agregará después
-}
+<style>
+    /* Animación de entrada */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .card-animate {
+        animation: fadeInUp 0.6s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Hover effect para tarjetas */
+    .card-hover {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
+        }
+
+            .card-hover:hover .icon-float {
+                transform: scale(1.1) rotate(5deg);
+            }
+
+    /* Animación del icono */
+    .icon-float {
+        transition: all 0.3s ease;
+    }
+
+    /* Animación de las transacciones */
+    .transaction-row {
+        transition: all 0.3s ease;
+    }
+
+        .transaction-row:hover {
+            background-color: rgba(13, 110, 253, 0.05);
+            transform: translateX(8px);
+        }
+
+    /* Animación de contador */
+    .counter {
+        display: inline-block;
+        animation: countUp 1s ease-out;
+    }
+
+    @@keyframes countUp {
+        from {
+            opacity: 0;
+            transform: scale(0.5);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    /* Asegurar altura uniforme en las tarjetas */
+    .card.h-100 {
+        min-height: 180px;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Responsive para los números grandes */
+    @@media (max-width: 768px) {
+        .card.h-100 {
+            min-height: 160px;
+        }
+
+        .card-body h2 {
+            font-size: 1.5rem !important;
+        }
+    }
+
+    /* Botones del selector de período */
+    .btn-group-sm .btn {
+        font-size: 0.875rem;
+        padding: 0.375rem 0.75rem;
+        transition: all 0.2s ease;
+    }
+
+        .btn-group-sm .btn:hover {
+            transform: scale(1.05);
+        }
+
+        
+</style>
 
 @code {
+    private bool isLoading = true;
+    private string userId = string.Empty;
+    private int selectedDays = 7;
+    private DashboardDto dashboardData = new();
+    private List<CategoryDto> categories = new();
+    private Dictionary<string, DayData> chartData = new();
 
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            await LoadDashboardData();
+        }
+
+        isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isLoading)
+        {
+            await RenderCharts();
+        }
+    }
+
+    private async Task ChangePeriod(int days)
+    {
+        selectedDays = days;
+        await LoadDashboardData();
+        await RenderCharts();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            var endDate = DateTime.Now;
+            var startDate = endDate.AddDays(-selectedDays);
+
+            // Cargar datos del período seleccionado
+            dashboardData.TotalIncome = await TransactionService.GetTotalIncomeAsync(userId, startDate, endDate);
+            dashboardData.TotalExpense = await TransactionService.GetTotalExpenseAsync(userId, startDate, endDate);
+            dashboardData.Balance = dashboardData.TotalIncome - dashboardData.TotalExpense;
+            dashboardData.RecentTransactions = await TransactionService.GetRecentAsync(userId, 10);
+
+            categories = await CategoryService.GetAllAsync(userId);
+
+            // Calcular gastos por categoría (últimos 30 días para el dona)
+            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
+            var allTransactions = await TransactionService.GetByDateRangeAsync(userId, thirtyDaysAgo, DateTime.Now);
+
+            var expenseCategories = categories.Where(c => c.Type == TransactionType.Expense).ToList();
+            dashboardData.CategoryExpenses.Clear();
+
+            foreach (var category in expenseCategories)
+            {
+                // Convierte a double para la suma y luego a decimal
+                var amount = (decimal)allTransactions
+                    .Where(t => t.CategoryId == category.CategoryId)
+                    .Sum(t => (double)t.Amount);
+
+                if (amount > 0)
+                {
+                    dashboardData.CategoryExpenses.Add(new CategoryExpenseDto
+                    {
+                        CategoryName = category.Title,
+                        CategoryIcon = category.Icon,
+                        Amount = amount
+                    });
+                }
+            }
+
+            // Calcular porcentajes
+            var totalExpenses = dashboardData.CategoryExpenses.Sum(c => c.Amount);
+            if (totalExpenses > 0)
+            {
+                foreach (var cat in dashboardData.CategoryExpenses)
+                {
+                    cat.Percentage = (cat.Amount / totalExpenses) * 100;
+                }
+            }
+
+            // Cargar datos de metas
+            var allGoals = await GoalService.GetAllAsync(userId);
+            dashboardData.TotalGoals = allGoals.Count;
+            dashboardData.CompletedGoals = await GoalService.GetCompletedGoalsCountAsync(userId);
+
+            // Calcular datos del gráfico según el período seleccionado
+            await CalculateChartData();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard: {ex.Message}");
+        }
+    }
+
+    private async Task CalculateChartData()
+    {
+        var endDate = DateTime.Now.Date;
+        var startDate = endDate.AddDays(-(selectedDays - 1));
+
+        var transactions = await TransactionService.GetByDateRangeAsync(userId, startDate, endDate);
+        chartData.Clear();
+
+        // Agrupar por días o semanas según el período
+        if (selectedDays == 7)
+        {
+            // Mostrar día por día
+            for (int i = 0; i < selectedDays; i++)
+            {
+                var date = startDate.AddDays(i);
+                var dayLabel = date.ToString("ddd dd");
+
+                var dayTransactions = transactions.Where(t => t.Date.Date == date).ToList();
+
+                var income = dayTransactions
+                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+                    .Sum(t => t.Amount);
+
+                var expense = dayTransactions
+                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+                    .Sum(t => t.Amount);
+
+                chartData[dayLabel] = new DayData { Income = income, Expense = expense };
+            }
+        }
+        else // 30 días - agrupar por semanas
+        {
+            int weekNumber = 1;
+            for (int i = 0; i < selectedDays; i += 7)
+            {
+                var weekStart = startDate.AddDays(i);
+                var weekEnd = weekStart.AddDays(6);
+                if (weekEnd > endDate) weekEnd = endDate;
+
+                var weekLabel = $"Sem {weekNumber}";
+
+                var weekTransactions = transactions
+                    .Where(t => t.Date.Date >= weekStart && t.Date.Date <= weekEnd)
+                    .ToList();
+
+                var income = weekTransactions
+                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+                    .Sum(t => t.Amount);
+
+                var expense = weekTransactions
+                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+                    .Sum(t => t.Amount);
+
+                chartData[weekLabel] = new DayData { Income = income, Expense = expense };
+                weekNumber++;
+            }
+        }
+    }
+
+    private async Task RenderCharts()
+    {
+        try
+        {
+            // Gráfico de dona (gastos por categoría)
+            if (dashboardData.CategoryExpenses.Any())
+            {
+                var labels = dashboardData.CategoryExpenses.Select(c => $"{c.CategoryIcon} {c.CategoryName}").ToArray();
+                var data = dashboardData.CategoryExpenses.Select(c => (double)c.Amount).ToArray();
+                var colors = GenerateColors(data.Length);
+
+                await JSRuntime.InvokeVoidAsync("chartHelpers.createDoughnutChart",
+                    "doughnutChart", labels, data, colors);
+            }
+
+            // Gráfico de barras (ingresos vs gastos)
+            if (chartData.Any())
+            {
+                var labels = chartData.Keys.ToArray();
+                var incomeData = chartData.Values.Select(d => (double)d.Income).ToArray();
+                var expenseData = chartData.Values.Select(d => (double)d.Expense).ToArray();
+
+                await JSRuntime.InvokeVoidAsync("chartHelpers.createBarChart",
+                    "barChart", labels, incomeData, expenseData);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error rendering charts: {ex.Message}");
+        }
+    }
+
+    private TransactionType GetCategoryType(int categoryId)
+    {
+        return categories.FirstOrDefault(c => c.CategoryId == categoryId)?.Type ?? TransactionType.Expense;
+    }
+
+    private string[] GenerateColors(int count)
+    {
+        var colors = new[]
+        {
+            "rgba(59, 130, 246, 0.8)",   // Azul
+            "rgba(139, 92, 246, 0.8)",   // Púrpura
+            "rgba(236, 72, 153, 0.8)",   // Rosa
+            "rgba(251, 146, 60, 0.8)",   // Naranja
+            "rgba(34, 197, 94, 0.8)",    // Verde
+            "rgba(6, 182, 212, 0.8)",    // Cyan
+            "rgba(245, 158, 11, 0.8)",   // Amarillo
+            "rgba(239, 68, 68, 0.8)",    // Rojo
+            "rgba(168, 85, 247, 0.8)",   // Violeta
+            "rgba(20, 184, 166, 0.8)",   // Teal
+        };
+
+        return colors.Take(count).ToArray();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "doughnutChart");
+            await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "barChart");
+        }
+        catch { }
+    }
+
+    private class DayData
+    {
+        public decimal Income { get; set; }
+        public decimal Expense { get; set; }
+    }
 }
+
