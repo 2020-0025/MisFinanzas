@@ -1,75 +1,367 @@
 ﻿@page "/"
+@using MisFinanzas.Components.Layout
+@layout MinimalLayout
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Web
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
-<PageTitle>Home - Mis Finanzas</PageTitle>
+<PageTitle>Mis Finanzas - Gestión Financiera Inteligente</PageTitle>
 
-<div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-lg-8 text-center">
-            <h1 class="display-4 mb-4">💸 Mis Finanzas</h1>
-            <p class="lead text-muted mb-5">
-                Controla tus finanzas, establece metas y alcanza tus objetivos financieros.
-            </p>
+<AuthorizeView>
+    <Authorized>
+        @* Vista para usuarios autenticados *@
+        <div style="min-height: 100vh; padding: 20px;">
 
-            <AuthorizeView>
-                <Authorized>
-                    <div class="d-flex gap-3 justify-content-center">
-                        <a href="/dashboard" class="btn btn-primary btn-lg">
-                            <i class="bi bi-speedometer2 me-2"></i>Ir al Dashboard
-                        </a>
-                    </div>
-                </Authorized>
-                <NotAuthorized>
-                    <div class="d-flex gap-3 justify-content-center">
-                        <a href="Account/Register" class="btn btn-primary btn-lg">
-                            <i class="bi bi-person-plus me-2"></i>Registrarse
-                        </a>
-                        <a href="Account/Login" class="btn btn-outline-primary btn-lg">
-                            <i class="bi bi-box-arrow-in-right me-2"></i>Iniciar Sesión
-                        </a>
-                    </div>
-                </NotAuthorized>
-            </AuthorizeView>
-
-            <div class="row mt-5 g-4">
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="bi bi-bar-chart-fill text-primary" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">Dashboard</h5>
-                            <p class="text-muted small">Visualiza tus finanzas</p>
-                        </div>
-                    </div>
+            <!-- Navigation Bar Autenticado -->
+            <nav class="glass-nav animate-slide-up" style="padding: 15px 30px; margin-bottom: 40px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">💰</span>
+                    <h3 style="margin: 0; color: white; font-weight: 600;">Mis Finanzas</h3>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="bi bi-folder-fill text-success" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">Categorías</h5>
-                            <p class="text-muted small">Organiza tus gastos</p>
-                        </div>
-                    </div>
-                </div> 
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="bi bi-credit-card text-info" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">Transacciones</h5>
-                            <p class="text-muted small">Registra movimientos</p>
-                        </div>
-                    </div>
+                <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                    <span style="color: rgba(255, 255, 255, 0.9); font-size: 1rem;">
+                        ¡Hola, <strong>@context.User.Identity?.Name</strong>! 👋
+                    </span>
+                    <form action="/Account/Logout" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="glass-button" style="cursor: pointer; border: none;">Cerrar Sesión</button>
+                    </form>
                 </div>
-                <div class="col-md-3">
-                    <div class="card border-0 shadow-sm h-100">
-                        <div class="card-body text-center p-4">
-                            <i class="bi bi-bullseye text-warning" style="font-size: 3rem;"></i>
-                            <h5 class="mt-3">Metas</h5>
-                            <p class="text-muted small">Alcanza objetivos</p>
+            </nav>
+
+            <!-- Hero Section Personalizado -->
+            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 60px 40px; text-align: center; margin-bottom: 40px;">
+                <h1 style="color: white; font-size: 3rem; margin-bottom: 20px; font-weight: 700;">
+                    ¡Bienvenido de vuelta! 🎉
+                </h1>
+                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
+                    Continúa gestionando tus finanzas de manera inteligente
+                </p>
+                <a href="/dashboard" class="glass-button" style="font-size: 1.2rem; padding: 16px 40px; display: inline-block;">
+                    <i class="bi bi-speedometer2 me-2"></i>Ir al Dashboard
+                </a>
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+
+                <!-- Features Grid con botones de acceso -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; width: 100%; max-width: 900px; padding: 0 20px;">
+
+                    <!-- Categories Card -->
+                    <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📁</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Gestiona tus categorías personalizadas
+                        </p>
+
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">📋</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Tus Categorías</div>
+                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Organiza tus gastos</div>
+                            </div>
+                        </div>
+
+                        <a href="/categories" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
+                            Gestionar Categorías
+                        </a>
+                    </div>
+
+                    <!-- Transactions Card -->
+                    <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">💳</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Registra y visualiza tus movimientos
+                        </p>
+
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Tus Transacciones</div>
+                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">Historial completo</div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">💰</div>
+                        </div>
+
+                        <a href="/transactions" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
+                            Ver Transacciones
+                        </a>
+                    </div>
+
+                    <!-- Financial Goals Card -->
+                    <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🎯</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Alcanza tus objetivos financieros
+                        </p>
+
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🎯 Tus Metas</span>
+                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">💪</span>
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Define y alcanza tus objetivos</div>
+                        </div>
+
+                        <a href="/goals" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
+                            Ver Mis Metas
+                        </a>
+                    </div>
+
+                    <!-- Dashboard Card -->
+                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📊</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Visualiza tu situación financiera completa
+                        </p>
+
+                        <div class="demo-stat">
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Tu balance actual</div>
+                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">Cargando...</div>
+                        </div>
+
+                        <a href="/dashboard" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
+                            Ver Dashboard Completo
+                        </a>
+                    </div>
+
+                </div>
+
+            </div>
+
+           
+
+        </div>
+    </Authorized>
+
+    <NotAuthorized>
+        @* Vista para usuarios NO autenticados (tu diseño original) *@
+        <div style="min-height: 100vh; padding: 20px;">
+
+            <!-- Navigation Bar -->
+            <nav class="glass-nav animate-slide-up" style="padding: 15px 30px; margin-bottom: 40px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 24px;">💰</span>
+                    <h3 style="margin: 0; color: white; font-weight: 600;">Mis Finanzas</h3>
+                </div>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+                    <a href="/Account/Register" class="glass-button">Registrar</a>
+                    <a href="/Account/Login" class="glass-button">Iniciar Sesión</a>
+                    <button class="glass-button" style="cursor: pointer; border: none;">Probar Demo</button>
+                </div>
+            </nav>
+
+            <!-- Hero Section -->
+            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 60px 40px; text-align: center; margin-bottom: 40px;">
+                <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px; font-weight: 700;">
+                    Mis Finanzas
+                </h1>
+                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
+                    Toma el control de tu dinero con inteligencia y simplicidad
+                </p>
+            </div>
+
+            <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
+
+                <!-- Features Grid -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; width: 100%; max-width: 900px; padding: 0 20px;">
+
+                    <!-- Categories Card -->
+                    <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📁</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Organiza tus finanzas por categorías personalizadas
+                        </p>
+
+                        <!-- Demo Categories -->
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">🍔</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Alimentación</div>
+                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$450 gastados</div>
+                            </div>
+                        </div>
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">🚗</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Transporte</div>
+                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$320 gastados</div>
+                            </div>
+                        </div>
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">🎮</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Entretenimiento</div>
+                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$180 gastados</div>
+                            </div>
                         </div>
                     </div>
+
+                    <!-- Transactions Card -->
+                    <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">💳</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Registra y visualiza cada movimiento de dinero
+                        </p>
+
+                        <!-- Demo Transactions -->
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Supermercado</div>
+                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">Hoy • Alimentación</div>
+                            </div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$85.50</div>
+                        </div>
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Salario</div>
+                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">15 Oct • Ingreso</div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">+$2,500.00</div>
+                        </div>
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Netflix</div>
+                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">10 Oct • Suscripciones</div>
+                            </div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$15.99</div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Goals Card -->
+                    <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🎯</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Define objetivos y alcanza tus sueños financieros
+                        </p>
+
+                        <!-- Demo Goals -->
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🏖️ Vacaciones</span>
+                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">75%</span>
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$3,750 de $5,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%;"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">💻 Nueva Laptop</span>
+                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">40%</span>
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$800 de $2,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🏠 Fondo Emergencia</span>
+                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">20%</span>
+                            </div>
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$1,000 de $5,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 20%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Dashboard Card -->
+                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📊</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
+                        </div>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                            Visualiza tu situación financiera de un vistazo
+                        </p>
+
+                        <!-- Demo Dashboard Content -->
+                        <div class="demo-stat">
+                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Balance Total</div>
+                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">$12,450.00</div>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <div class="demo-stat" style="flex: 1;">
+                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">Ingresos</div>
+                                <div style="color: #4CAF50; font-size: 1.2rem; font-weight: 600;">$8,200</div>
+                            </div>
+                            <div class="demo-stat" style="flex: 1; background: rgba(244, 67, 54, 0.2); border-color: rgba(244, 67, 54, 0.3);">
+                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">Gastos</div>
+                                <div style="color: #F44336; font-size: 1.2rem; font-weight: 600;">$3,750</div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
+           </div>
+
+            <!-- Call to Action -->
+            <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center; margin-top: 60px; margin-bottom: 40px;">
+                <h2 style="color: white; font-size: 2rem; margin-bottom: 15px;">¿Listo para transformar tus finanzas?</h2>
+                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; margin-bottom: 30px;">
+                    Únete a miles de usuarios que ya están tomando el control de su dinero
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <a href="/Account/Register" class="glass-button" style="font-size: 1.1rem; padding: 14px 32px;">Comenzar Gratis</a>
+                    <button class="glass-button" style="cursor: pointer; border: none; font-size: 1.1rem; padding: 14px 32px;">Ver Demo</button>
                 </div>
             </div>
+
         </div>
-    </div>
-</div>
+    </NotAuthorized>
+</AuthorizeView>
+
+
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        // Inicializar currentUrl
+        currentUrl = Navigation.ToBaseRelativePath(Navigation.Uri);
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = Navigation.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}
+    
+
+
+
 
 

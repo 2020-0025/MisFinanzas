@@ -4,68 +4,181 @@
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Account.Pages.Manage
+@using Microsoft.AspNetCore.Components.Authorization
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@using MisFinanzas.Components.Layout
+
+@layout MinimalLayout
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject ILogger<Login> Logger
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Iniciar Sesión - Mis Finanzas</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+
+    <div style="width: 100%; max-width: 1200px;">
+
+        <!-- Hero Title -->
+        <div class="glass-card animate-slide-up" style="padding: 40px; text-align: center; margin-bottom: 40px;">
+            <h1 style="color: white; font-size: 2.5rem; margin-bottom: 15px; font-weight: 700;">
+                ¡Bienvenido de nuevo! 👋
+            </h1>
+            <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.1rem;">
+                Inicia sesión para continuar gestionando tus finanzas
+            </p>
+        </div>
+
+        <!-- Login Cards Container -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;">
+
+            <!-- Local Login Card -->
+            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 40px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                    <span style="font-size: 28px;">🔐</span>
+                    <h2 style="color: white; margin: 0; font-size: 1.5rem;">Iniciar Sesión</h2>
                 </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
+
+                <section>
+                    <StatusMessage Message="@errorMessage" />
+                    <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="text-danger" role="alert" />
+
+                        <div style="margin-bottom: 20px;">
+                            <label for="email" style="color: rgba(255, 255, 255, 0.9); display: block; margin-bottom: 8px; font-weight: 500;">
+                                Email
+                            </label>
+                            <InputText @bind-Value="Input.Email"
+                                       class="form-control"
+                                       autocomplete="username"
+                                       aria-required="true"
+                                       placeholder="tu@email.com"
+                                       style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
+                            <ValidationMessage For="() => Input.Email" class="text-danger" />
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <label for="password" style="color: rgba(255, 255, 255, 0.9); display: block; margin-bottom: 8px; font-weight: 500;">
+                                Contraseña
+                            </label>
+                            <InputText type="password"
+                                       @bind-Value="Input.Password"
+                                       class="form-control"
+                                       autocomplete="current-password"
+                                       aria-required="true"
+                                       placeholder="••••••••"
+                                       style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
+                            <ValidationMessage For="() => Input.Password" class="text-danger" />
+                        </div>
+
+                        <div style="margin-bottom: 20px;">
+                            <label style="color: rgba(255, 255, 255, 0.9); display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                                <InputCheckbox @bind-Value="Input.RememberMe"
+                                               style="width: 18px; height: 18px; cursor: pointer;" />
+                                <span>Recordarme</span>
+                            </label>
+                        </div>
+
+                        <div>
+                            <button type="submit" class="glass-button" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 600; border: none; cursor: pointer;">
+                                Iniciar Sesión
+                            </button>
+                        </div>
+                    </EditForm>
+                </section>
+
+                <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                    <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 10px;">
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/ForgotPassword", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"
+                           style="color: #4CAF50; text-decoration: none;">
+                            ¿Olvidaste tu contraseña?
+                        </a>
                     </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
+                    <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 10px;">
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/Register", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"
+                           style="color: #4CAF50; text-decoration: none;">
+                            Registrarse como nuevo usuario
+                        </a>
                     </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
+                    <p style="color: rgba(255, 255, 255, 0.8); margin: 0;">
+                        <a href="@(NavigationManager.GetUriWithQueryParameters("Account/ResendEmailConfirmation", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))"
+                           style="color: #4CAF50; text-decoration: none;">
+                            Reenviar correo de confirmación
+                        </a>
                     </p>
                 </div>
-            </EditForm>
-        </section>
+            </div>
+
+            <!-- External Login Card -->
+            <div class="glass-card animate-slide-up animate-delay-2" style="padding: 40px;">
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                    <span style="font-size: 28px;">🌐</span>
+                    <h2 style="color: white; margin: 0; font-size: 1.5rem;">Servicios Externos</h2>
+                </div>
+
+                <section>
+                    <h3 style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin-bottom: 20px;">
+                        Usa otro servicio para iniciar sesión
+                    </h3>
+                    @if ((externalLogins?.Count ?? 0) == 0)
+                    {
+                        <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 20px; text-align: center;">
+                            <span style="font-size: 48px; display: block; margin-bottom: 15px;">🔌</span>
+                            <p style="color: rgba(255, 255, 255, 0.8); margin: 0;">
+                                No hay servicios de autenticación externa configurados. Consulta
+                                <a href="https://go.microsoft.com/fwlink/?LinkID=532715"
+                                   style="color: #4CAF50; text-decoration: none;">
+                                    este artículo
+                                </a>
+                                para más información sobre cómo configurar esta aplicación para admitir inicio de sesión a través de servicios externos.
+                            </p>
+                        </div>
+                    }
+                    else
+                    {
+                        <form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
+                            <AntiforgeryToken />
+                            <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+                            <div style="display: flex; flex-direction: column; gap: 12px;">
+                                @foreach (var provider in externalLogins!)
+                                {
+                                    <button type="submit"
+                                            class="glass-button"
+                                            name="provider"
+                                            value="@provider.Name"
+                                            title="Iniciar sesión usando tu cuenta de @provider.DisplayName"
+                                            style="width: 100%; padding: 14px; font-size: 1rem; border: none; cursor: pointer; text-align: left; display: flex; align-items: center; gap: 10px;">
+                                        <span style="font-size: 20px;">🔗</span>
+                                        <span>@provider.DisplayName</span>
+                                    </button>
+                                }
+                            </div>
+                        </form>
+                    }
+                </section>
+            </div>
+
+        </div>
+
+        <!-- Back to Home Link -->
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="glass-button" style="display: inline-block; padding: 12px 30px;">
+                ← Volver al Inicio
+            </a>
+        </div>
+
     </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
-    </div>
+
 </div>
 
 @code {
     private string? errorMessage;
+    private IList<AuthenticationScheme>? externalLogins; //ESTA ES LA NUEVA VARIABLE
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -83,6 +196,9 @@
             // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
+
+           // Obtener los proveedores externos configurados (Google, Microsoft, etc.)
+        externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
     }
 
     public async Task LoginUser()
