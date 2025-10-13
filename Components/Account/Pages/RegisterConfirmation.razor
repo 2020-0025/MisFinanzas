@@ -4,29 +4,147 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Layout
+@layout MinimalLayout
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Register confirmation</PageTitle>
+<PageTitle>Confirmación de Registro - Mis Finanzas</PageTitle>
 
-<h1>Register confirmation</h1>
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
 
-<StatusMessage Message="@statusMessage" />
+    <div style="width: 100%; max-width: 550px;">
 
-@if (emailConfirmationLink is not null)
-{
-    <p>
-        This app does not currently have a real email sender registered, see <a href="https://aka.ms/aspaccountconf">these docs</a> for how to configure a real email sender.
-        Normally this would be emailed: <a href="@emailConfirmationLink">Click here to confirm your account</a>
-    </p>
-}
-else
-{
-    <p>Please check your email to confirm your account.</p>
-}
+        <!-- Register Confirmation Card -->
+        <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center;">
+
+            <span style="font-size: 80px; display: block; margin-bottom: 25px;">🎉</span>
+
+            <h1 style="color: white; font-size: 2rem; margin-bottom: 20px; font-weight: 700;">
+                ¡Registro Exitoso!
+            </h1>
+
+            <StatusMessage Message="@statusMessage" />
+
+            @if (emailConfirmationLink is not null)
+            {
+                <!-- Development Mode - Email sender not configured -->
+                <div style="background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.4); border-radius: 12px; padding: 25px; margin-bottom: 25px; text-align: left;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <span style="font-size: 32px;">⚠️</span>
+                        <div>
+                            <h3 style="color: white; margin: 0 0 12px 0; font-size: 1.1rem;">Modo de Desarrollo</h3>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin: 0 0 15px 0; line-height: 1.6; font-size: 0.95rem;">
+                                Esta aplicación no tiene configurado un servicio de envío de correos real.
+                                Normalmente, recibirías un email de confirmación.
+                            </p>
+                            <p style="color: rgba(255, 255, 255, 0.8); margin: 0 0 15px 0; font-size: 0.9rem;">
+                                Consulta <a href="https://aka.ms/aspaccountconf" target="_blank" style="color: #4CAF50; text-decoration: none; font-weight: 600;">esta documentación</a>
+                                para configurar un servicio de email real.
+                            </p>
+                            <div style="background: rgba(0, 0, 0, 0.2); border-radius: 8px; padding: 15px; margin-top: 15px;">
+                                <p style="color: rgba(255, 255, 255, 0.9); margin: 0 0 10px 0; font-size: 0.9rem; font-weight: 600;">
+                                    Mientras tanto, confirma tu cuenta aquí:
+                                </p>
+                                <a href="@emailConfirmationLink"
+                                   class="glass-button"
+                                   style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none; font-weight: 600; background: rgba(76, 175, 80, 0.2); border-color: rgba(76, 175, 80, 0.4);">
+                                    ✅ Confirmar Cuenta Ahora
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <!-- Production Mode - Email sent -->
+                <div style="background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33, 150, 243, 0.4); border-radius: 12px; padding: 25px; margin-bottom: 25px;">
+                    <div style="display: flex; gap: 15px; align-items: flex-start;">
+                        <span style="font-size: 32px;">📧</span>
+                        <div style="text-align: left;">
+                            <h3 style="color: white; margin: 0 0 12px 0; font-size: 1.1rem;">Revisa tu Correo</h3>
+                            <p style="color: rgba(255, 255, 255, 0.9); margin: 0 0 10px 0; line-height: 1.6;">
+                                Te hemos enviado un correo electrónico con un enlace de confirmación.
+                                Por favor, revisa tu bandeja de entrada y haz clic en el enlace para activar tu cuenta.
+                            </p>
+                            <p style="color: rgba(255, 255, 255, 0.8); margin: 0; font-size: 0.9rem;">
+                                💡 <strong>Consejo:</strong> Si no ves el correo, revisa tu carpeta de spam o correo no deseado.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 30px; line-height: 1.6; font-size: 0.95rem;">
+                Una vez que confirmes tu correo, podrás acceder a todas las funcionalidades de Mis Finanzas.
+            </p>
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                @if (emailConfirmationLink is null)
+                {
+                    <a href="/Account/Login" class="glass-button" style="width: 100%; text-align: center; padding: 14px; display: block; text-decoration: none; font-size: 1.1rem; font-weight: 600;">
+                        Ir a Iniciar Sesión
+                    </a>
+                }
+                <a href="/Account/ResendEmailConfirmation" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                    ¿No recibiste el correo? Reenviar
+                </a>
+                <a href="/" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                    Volver al Inicio
+                </a>
+            </div>
+        </div>
+
+        <!-- Info Steps Card -->
+        <div class="glass-card animate-slide-up animate-delay-1" style="padding: 30px; margin-top: 25px;">
+            <h2 style="color: white; font-size: 1.3rem; margin-bottom: 20px; text-align: center;">
+                📋 Próximos Pasos
+            </h2>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; color: #4CAF50;">
+                        1
+                    </div>
+                    <div>
+                        <h3 style="color: white; margin: 0 0 5px 0; font-size: 1rem;">Confirma tu email</h3>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                            Revisa tu correo y haz clic en el enlace de confirmación
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="background: rgba(33, 150, 243, 0.2); border: 1px solid rgba(33, 150, 243, 0.4); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; color: #2196F3;">
+                        2
+                    </div>
+                    <div>
+                        <h3 style="color: white; margin: 0 0 5px 0; font-size: 1rem;">Inicia sesión</h3>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                            Una vez confirmado, accede con tu email y contraseña
+                        </p>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 15px; align-items: flex-start;">
+                    <div style="background: rgba(156, 39, 176, 0.2); border: 1px solid rgba(156, 39, 176, 0.4); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-weight: 700; color: #9C27B0;">
+                        3
+                    </div>
+                    <div>
+                        <h3 style="color: white; margin: 0 0 5px 0; font-size: 1rem;">Comienza a gestionar tus finanzas</h3>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin: 0; font-size: 0.9rem; line-height: 1.5;">
+                            Explora el dashboard y empieza a registrar tus transacciones
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+</div>
 
 @code {
     private string? emailConfirmationLink;

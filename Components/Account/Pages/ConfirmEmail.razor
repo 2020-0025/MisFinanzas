@@ -4,14 +4,100 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Layout
+@layout MinimalLayout
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Confirm email</PageTitle>
+<PageTitle>Confirmar Email - Mis Finanzas</PageTitle>
 
-<h1>Confirm email</h1>
-<StatusMessage Message="@statusMessage" />
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+
+    <div style="width: 100%; max-width: 500px;">
+
+        <!-- Confirm Email Card -->
+        <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center;">
+
+            @if (statusMessage?.Contains("Error") == true || statusMessage?.Contains("error") == true)
+            {
+                <!-- Error State -->
+                <span style="font-size: 80px; display: block; margin-bottom: 25px;">❌</span>
+                <h1 style="color: white; font-size: 2rem; margin-bottom: 20px; font-weight: 700;">
+                    Error de Confirmación
+                </h1>
+                <div style="background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                    <StatusMessage Message="@statusMessage" />
+                </div>
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 35px; line-height: 1.6;">
+                    Hubo un problema al confirmar tu correo electrónico. Por favor, intenta nuevamente o contacta a soporte.
+                </p>
+            }
+            else if (!string.IsNullOrEmpty(statusMessage))
+            {
+                <!-- Success State -->
+                <span style="font-size: 80px; display: block; margin-bottom: 25px;">✅</span>
+                <h1 style="color: white; font-size: 2rem; margin-bottom: 20px; font-weight: 700;">
+                    ¡Email Confirmado!
+                </h1>
+                <div style="background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                    <StatusMessage Message="@statusMessage" />
+                </div>
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 35px; line-height: 1.6;">
+                    Tu cuenta ha sido verificada exitosamente. Ya puedes iniciar sesión y comenzar a gestionar tus finanzas.
+                </p>
+            }
+            else
+            {
+                <!-- Loading/Processing State -->
+                <span style="font-size: 80px; display: block; margin-bottom: 25px;">⏳</span>
+                <h1 style="color: white; font-size: 2rem; margin-bottom: 20px; font-weight: 700;">
+                    Confirmando Email
+                </h1>
+                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 35px; line-height: 1.6;">
+                    Por favor espera mientras confirmamos tu correo electrónico...
+                </p>
+                <div style="display: flex; justify-content: center; margin-bottom: 30px;">
+                    <div style="width: 40px; height: 40px; border: 4px solid rgba(255, 255, 255, 0.1); border-top-color: #4CAF50; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                </div>
+            }
+
+            <!-- Action Buttons -->
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <a href="/Account/Login" class="glass-button" style="width: 100%; text-align: center; padding: 14px; display: block; text-decoration: none; font-size: 1.1rem; font-weight: 600;">
+                    Iniciar Sesión
+                </a>
+                <a href="/Account/Register" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                    Crear Nueva Cuenta
+                </a>
+                <a href="/Account/ResendEmailConfirmation" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                    Reenviar Correo de Confirmación
+                </a>
+            </div>
+        </div>
+
+        <!-- Back to Home Link -->
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="glass-button" style="display: inline-block; padding: 12px 30px;">
+                ← Volver al Inicio
+            </a>
+        </div>
+
+    </div>
+
+</div>
+
+<style>
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+</style>
 
 @code {
     private string? statusMessage;

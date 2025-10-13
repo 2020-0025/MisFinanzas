@@ -6,31 +6,101 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Layout
+@layout MinimalLayout
 
 @inject UserManager<ApplicationUser> UserManager
 @inject IEmailSender<ApplicationUser> EmailSender
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Resend email confirmation</PageTitle>
+<PageTitle>Reenviar Confirmación - Mis Finanzas</PageTitle>
 
-<h1>Resend email confirmation</h1>
-<h2>Enter your email.</h2>
-<hr />
-<StatusMessage Message="@message" />
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" aria-required="true" placeholder="name@example.com" />
-                <label for="email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+
+    <div style="width: 100%; max-width: 500px;">
+
+        <!-- Hero Title -->
+        <div class="glass-card animate-slide-up" style="padding: 40px; text-align: center; margin-bottom: 30px;">
+            <span style="font-size: 64px; display: block; margin-bottom: 20px;">📬</span>
+            <h1 style="color: white; font-size: 2rem; margin-bottom: 15px; font-weight: 700;">
+                Reenviar Confirmación de Email
+            </h1>
+            <p style="color: rgba(255, 255, 255, 0.9); font-size: 1rem;">
+                ¿No recibiste el correo de confirmación?
+            </p>
+        </div>
+
+        <!-- Resend Email Card -->
+        <div class="glass-card animate-slide-up animate-delay-1" style="padding: 40px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                <span style="font-size: 28px;">✉️</span>
+                <h2 style="color: white; margin: 0; font-size: 1.5rem;">Reenviar Correo</h2>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Resend</button>
-        </EditForm>
+
+            <StatusMessage Message="@message" />
+
+            <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 25px; line-height: 1.6;">
+                Ingresa tu correo electrónico y te reenviaremos el enlace de confirmación.
+            </p>
+
+            <EditForm Model="Input" FormName="resend-email-confirmation" OnValidSubmit="OnValidSubmitAsync" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" role="alert" />
+
+                <div style="margin-bottom: 25px;">
+                    <label for="email" style="color: rgba(255, 255, 255, 0.9); display: block; margin-bottom: 8px; font-weight: 500;">
+                        Correo Electrónico
+                    </label>
+                    <InputText @bind-Value="Input.Email"
+                               class="form-control"
+                               aria-required="true"
+                               placeholder="tu@email.com"
+                               style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
+                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+                </div>
+
+                <div>
+                    <button type="submit" class="glass-button" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 600; border: none; cursor: pointer;">
+                        Reenviar Correo de Confirmación
+                    </button>
+                </div>
+            </EditForm>
+
+            <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <div style="display: flex; flex-direction: column; gap: 12px;">
+                    <a href="/Account/Login" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                        ← Volver a Iniciar Sesión
+                    </a>
+                    <a href="/Account/Register" class="glass-button" style="width: 100%; text-align: center; padding: 12px; display: block; text-decoration: none;">
+                        ¿No tienes cuenta? Regístrate
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Box -->
+        <div class="glass-card animate-slide-up animate-delay-2" style="padding: 25px; margin-top: 20px; background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3);">
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <span style="font-size: 32px;">💡</span>
+                <div>
+                    <h3 style="color: white; margin: 0 0 10px 0; font-size: 1.1rem;">Consejo</h3>
+                    <p style="color: rgba(255, 255, 255, 0.8); margin: 0; line-height: 1.6; font-size: 0.95rem;">
+                        Revisa tu carpeta de spam o correo no deseado. A veces los correos de confirmación pueden llegar ahí.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Back to Home Link -->
+        <div style="text-align: center; margin-top: 30px;">
+            <a href="/" class="glass-button" style="display: inline-block; padding: 12px 30px;">
+                ← Volver al Inicio
+            </a>
+        </div>
+
     </div>
+
 </div>
 
 @code {

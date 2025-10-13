@@ -1,52 +1,63 @@
 ﻿@* Componente para seleccionar iconos visualmente *@
 
-<div class="icon-selector">
-    <label class="form-label fw-semibold">@Label</label>
-
-    <!-- Mostrar icono seleccionado -->
-    <div class="selected-icon-display mb-3" @onclick="ToggleIconPicker">
-        <div class="icon-preview">
-            @if (!string.IsNullOrEmpty(SelectedIcon))
-            {
-                <span class="display-4">@SelectedIcon</span>
-            }
-            else
-            {
-                <i class="bi bi-emoji-smile fs-1 text-muted"></i>
-            }
-        </div>
-        <small class="text-muted d-block mt-2">Click para cambiar el icono</small>
+<div class="icon-selector-container">
+    <label class="form-label-glass">@Label</label>
+    
+    <!-- Display del ícono seleccionado (Dropdown style) -->
+    <div class="icon-selector-display @(showPicker ? "open" : "")" @onclick="ToggleIconPicker">
+        @if (!string.IsNullOrEmpty(SelectedIcon))
+        {
+            <span class="selected-icon-display">@SelectedIcon</span>
+            <span class="icon-selector-text has-selection">Icono seleccionado</span>
+        }
+        else
+        {
+            <i class="bi bi-emoji-smile" style="font-size: 1.5rem; color: rgba(255, 255, 255, 0.5);"></i>
+            <span class="icon-selector-text">Seleccionar icono</span>
+        }
+        <i class="bi bi-chevron-down icon-selector-arrow"></i>
     </div>
 
-    <!-- Picker de iconos -->
+    <!-- Overlay para cerrar al hacer clic fuera -->
     @if (showPicker)
     {
-        <div class="icon-picker-container">
-            <div class="icon-picker-header mb-3">
+        <div class="icon-picker-overlay" @onclick="ToggleIconPicker"></div>
+    }
+
+    <!-- Panel de selección de íconos (Dropdown) -->
+    @if (showPicker)
+    {
+        <div class="icon-selector-panel" @onclick:stopPropagation="true">
+            <!-- Barra de búsqueda -->
+            <div class="icon-picker-header">
                 <input type="text"
-                       class="form-control form-control-sm"
-                       placeholder="Buscar icono..."
+                       class="form-control-glass-search"
+                       placeholder="🔍 Buscar icono..."
                        @bind="searchTerm"
-                       @bind:event="oninput" />
+                       @bind:event="oninput"
+                       @onclick:stopPropagation="true" />
             </div>
 
-            <div class="icon-grid">
+            <!-- Grid de íconos -->
+            <div class="icon-grid" @onclick:stopPropagation="true">
                 @foreach (var icon in FilteredIcons)
                 {
                     <button type="button"
                             class="icon-option @(icon.Emoji == SelectedIcon ? "selected" : "")"
                             @onclick="() => SelectIcon(icon.Emoji)"
+                            @onclick:stopPropagation="true"
                             title="@icon.Name">
-                        <span class="icon-emoji">@icon.Emoji</span>
+                        @icon.Emoji
                     </button>
                 }
             </div>
 
+            <!-- Mensaje cuando no hay resultados -->
             @if (!FilteredIcons.Any())
             {
-                <div class="text-center py-4 text-muted">
+                <div class="empty-state-icons">
                     <i class="bi bi-search"></i>
-                    <p class="mb-0 small">No se encontraron iconos</p>
+                    <p class="mb-0">No se encontraron iconos</p>
                 </div>
             }
         </div>
@@ -54,84 +65,260 @@
 </div>
 
 <style>
-    .icon-selector {
-        margin-bottom: 1rem;
+    /* Contenedor principal */
+    .icon-selector-container {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+    /* Display del selector (estilo dropdown) */
+    .icon-selector-display {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 10px;
+        color: white;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        min-height: 50px;
+    }
+
+    .icon-selector-display:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+    }
+
+    .icon-selector-display.open {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
     }
 
     .selected-icon-display {
-        border: 2px dashed #dee2e6;
-        border-radius: 0.5rem;
-        padding: 1.5rem;
-        text-align: center;
-        cursor: pointer;
-        transition: all 0.2s;
-        background-color: #f8f9fa;
-    }
-
-    .selected-icon-display:hover {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-    }
-
-    .icon-preview {
-        min-height: 80px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .icon-picker-container {
-        border: 1px solid #dee2e6;
-        border-radius: 0.5rem;
-        padding: 1rem;
-        max-height: 400px;
-        overflow-y: auto;
-        background-color: white;
-        margin-top: 1rem;
-    }
-
-    .icon-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
-        gap: 0.5rem;
-    }
-
-    .icon-option {
-        border: 2px solid #e9ecef;
-        border-radius: 0.5rem;
-        padding: 0.75rem;
-        background-color: white;
-        cursor: pointer;
-        transition: all 0.2s;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        aspect-ratio: 1;
-    }
-
-    .icon-option:hover {
-        border-color: #0d6efd;
-        background-color: #e7f1ff;
-        transform: scale(1.05);
-    }
-
-    .icon-option.selected {
-        border-color: #0d6efd;
-        background-color: #0d6efd;
-        color: white;
-    }
-
-    .icon-emoji {
         font-size: 1.8rem;
         line-height: 1;
     }
 
+    .icon-selector-text {
+        flex: 1;
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.95rem;
+    }
+
+    .icon-selector-text.has-selection {
+        color: white;
+        font-weight: 500;
+    }
+
+    .icon-selector-arrow {
+        color: rgba(255, 255, 255, 0.5);
+        transition: transform 0.3s ease;
+        font-size: 1rem;
+    }
+
+    .icon-selector-display.open .icon-selector-arrow {
+        transform: rotate(180deg);
+        color: #4CAF50;
+    }
+
+    /* Overlay con blur */
+    .icon-picker-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.6);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        animation: fadeIn 0.3s ease;
+    }
+
+    @@keyframes fadeIn {
+        from
+
+    {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+
+    }
+
+    /* Panel de selección (Modal superpuesto) */
+    .icon-selector-panel {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 90%;
+        max-width: 500px;
+        max-height: 70vh;
+        overflow-y: auto;
+        background: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 16px;
+        padding: 1.5rem;
+        z-index: 1001;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        animation: scaleIn 0.3s ease;
+    }
+
+    @@keyframes scaleIn {
+        from
+
+    {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+    }
+
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Header con búsqueda */
     .icon-picker-header {
+        margin-bottom: 1rem;
         position: sticky;
         top: 0;
-        background-color: white;
-        z-index: 10;
+        background: rgba(15, 23, 42, 0.95);
         padding-bottom: 0.5rem;
+        z-index: 10;
+    }
+
+    .form-control-glass-search {
+        width: 100%;
+        padding: 0.6rem 1rem;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 8px;
+        color: white;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control-glass-search:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    .form-control-glass-search::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+    /* Grid de íconos */
+    .icon-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+        gap: 0.5rem;
+    }
+
+    .icon-option {
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.8rem;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 0;
+    }
+
+    .icon-option:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        transform: scale(1.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-option.selected {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.6);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        transform: scale(1.1);
+    }
+
+    /* Empty state */
+    .empty-state-icons {
+        text-align: center;
+        padding: 2rem 1rem;
+        color: rgba(255, 255, 255, 0.6);
+    }
+
+    .empty-state-icons i {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state-icons p {
+        font-size: 0.9rem;
+    }
+
+    /* Scrollbar personalizado */
+    .icon-selector-panel::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .icon-selector-panel::-webkit-scrollbar-track {
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+    }
+
+    .icon-selector-panel::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 3px;
+    }
+
+    .icon-selector-panel::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+    /* Responsive */
+    @@media (max-width: 576px) {
+        .icon-grid {
+            grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+        }
+
+        .icon-option {
+            width: 45px;
+            height: 45px;
+            font-size: 1.5rem;
+        }
+
+        .icon-selector-panel {
+            max-height: 300px;
+        }
     }
 </style>
 
@@ -231,6 +418,7 @@
         new("😷", "Salud"),
         new("💪", "Fitness"),
         new("🧘", "Yoga"),
+        new("💉", "Inyección"),
 
         // Educación
         new("📚", "Libros"),
@@ -238,6 +426,7 @@
         new("🎓", "Universidad"),
         new("📖", "Estudio"),
         new("🖊️", "Escritura"),
+        new("📖", "Lectura"),
 
         // Compras
         new("🛒", "Supermercado"),
@@ -287,6 +476,7 @@
         // Otros
         new("🎉", "Fiesta"),
         new("🎂", "Cumpleaños"),
+        new("🎁", "Regalo"),
         new("💐", "Flores"),
         new("🌟", "Especial"),
         new("❤️", "Amor"),
@@ -297,6 +487,10 @@
         new("🎯", "Meta"),
         new("🏆", "Logro"),
         new("💪", "Esfuerzo"),
+        new("💧", "Agua"),
+        new("🔥", "Fuego"),
+        new("⚙️", "Configuración"),
+        new("🔨", "Martillo"),
     };
 
     private class IconItem

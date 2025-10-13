@@ -20,6 +20,7 @@ window.chartHelpers = {
                     backgroundColor: backgroundColors,
                     borderWidth: 0,
                     hoverOffset: 15
+                    
                 }]
             },
             options: {
@@ -35,9 +36,12 @@ window.chartHelpers = {
                             font: {
                                 size: 12,
                                 family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
+                                
+                                
                             },
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            pointStyle: 'circle',
+                            color: '#fff'
                         }
                     },
                     tooltip: {
@@ -132,7 +136,8 @@ window.chartHelpers = {
                                 family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
                             },
                             usePointStyle: true,
-                            pointStyle: 'circle'
+                            pointStyle: 'circle',
+                            color: '#fff'
                         }
                     },
                     tooltip: {
@@ -171,7 +176,8 @@ window.chartHelpers = {
                             },
                             font: {
                                 size: 11
-                            }
+                            },
+                            color: '#fff'
                         }
                     },
                     x: {
@@ -182,7 +188,8 @@ window.chartHelpers = {
                         ticks: {
                             font: {
                                 size: 11
-                            }
+                            },
+                            color: '#fff'
                         }
                     }
                 },
@@ -248,7 +255,8 @@ window.chartHelpers = {
                             font: {
                                 size: 12,
                                 family: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-                            }
+                            },
+                            color: '#fff'
                         }
                     },
                     tooltip: {

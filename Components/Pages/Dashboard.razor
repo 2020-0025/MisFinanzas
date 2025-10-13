@@ -3,6 +3,7 @@
 @using MisFinanzas.Domain.Enums
 @using MisFinanzas.Infrastructure.Interfaces
 @using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
 @inject ITransactionService TransactionService
 @inject ICategoryService CategoryService
 @inject IFinancialGoalService GoalService
@@ -14,151 +15,135 @@
 
 <PageTitle>Dashboard - Mis Finanzas</PageTitle>
 
-<div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
-            <i class="bi bi-speedometer2 text-primary me-2"></i>
-            Dashboard
-        </h1>
-        <div class="text-muted">
-            <small>Últimos @selectedDays días</small>
+<div class="dashboard-container">
+    
+    <!-- Header con efecto glass -->
+    <div class="glass-card dashboard-header animate-slide-up">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-1 text-white fw-bold">
+                    <span style="font-size: 32px;">📊</span>
+                    <strong>Dashboard</strong>
+                </h1>
+                <p class="text-white mb-0">Resumen de tus finanzas</p>
+            </div>
+            <div class="glass-badge">
+                <span style="font-size: 17px;">📅</span>
+                <span class="text-white">Últimos @selectedDays días</span>
+            </div>
         </div>
     </div>
 
     @if (isLoading)
     {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <div class="glass-card text-center py-5 animate-slide-up">
+            <div class="spinner-border text-success" role="status" style="width: 3rem; height: 3rem;">
                 <span class="visually-hidden">Cargando...</span>
             </div>
-            <p class="text-muted mt-3">Cargando tus datos financieros...</p>
+            <p class="text-white-50 mt-3 mb-0">Cargando tus datos financieros...</p>
         </div>
     }
     else
     {
-        <!-- Summary Cards con animación y altura uniforme -->
+        <!-- Summary Cards -->
         <div class="row g-4 mb-4">
             <!-- Balance Card -->
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-auto">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Balance</strong> </p>
-                                <h2 class="mb-2 fw-bold counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
-                                    @dashboardData.Balance.ToString("C0")
-                                </h2>
-                                <small class="text-muted d-block">
-                                    <i class="bi bi-calendar3 me-1"></i>@selectedDays días
-                                </small>
-                            </div>
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-3 icon-float">
-                                <i class="bi bi-wallet2 fs-3 text-primary"></i>
-                            </div>
+                <div class="glass-card stat-card animate-slide-up h-100">
+                    <div class="stat-card-body">
+                        <div class="stat-icon balance-icon">
+                            <span style="font-size: 32px;">💰</span>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label text-white">Balance</p>
+                            <h2 class="stat-value">@dashboardData.Balance.ToString("C0")</h2>
+                            <small class="stat-subtitle text-white">
+                                <span style="font-size: 15px;">📅</span>@selectedDays días
+                            </small>
                         </div>
                     </div>
-                    <div class="card-footer bg-primary bg-opacity-5 border-0 py-2">
-                        <small class="text-muted">
-                            <i class="bi bi-graph-up me-1"></i>
-                            <strong style="color:black">Balance actual</strong>
-                        </small>
+                    <div class="stat-footer text-white">
+                        <span style="font-size: 17px;">💲</span>
+                        Balance actual
                     </div>
                 </div>
             </div>
 
             <!-- Income Card -->
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.1s;">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-auto">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-2 small fw-medium text-uppercase"><strong style="color:black">Ingresos</strong></p>
-                                <h2 class="mb-2 fw-bold text-success counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
-                                    @dashboardData.TotalIncome.ToString("C0")
-                                </h2>
-                                <small class="text-success d-block">
-                                    <i class="bi bi-arrow-up-circle me-1"></i>Entradas
-                                </small>
-                            </div>
-                            <div class="bg-success bg-opacity-10 p-3 rounded-3 icon-float">
-                                <i class="bi bi-arrow-up-circle fs-3 text-success"></i>
-                            </div>
+                <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.1s;">
+                    <div class="stat-card-body">
+                        <div class="stat-icon income-icon">
+                            <span style="font-size: 32px;">📈</span>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label text-white">Ingresos</p>
+                            <h2 class="stat-value text-info">@dashboardData.TotalIncome.ToString("C0")</h2>
+                            <small class="stat-subtitle text-white">
+                                <span style="font-size: 15px;">🔼</span>Entradas
+                            </small>
                         </div>
                     </div>
-                    <div class="card-footer bg-success bg-opacity-5 border-0 py-2">
-                        <small class="text-muted">
-                            <i class="bi bi-cash-stack me-1"></i>
-                            <strong style="color:black">Total Recibido</strong>
-                        </small>
+                    <div class="stat-footer text-white">
+                        <span style="font-size: 17px;">💵</span>
+                        Total recibido
                     </div>
                 </div>
             </div>
 
             <!-- Expense Card -->
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.2s;">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-auto">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Gastos</strong></p>
-                                <h2 class="mb-2 fw-bold text-danger counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
-                                    @dashboardData.TotalExpense.ToString("C0")
-                                </h2>
-                                <small class="text-danger d-block">
-                                    <i class="bi bi-arrow-down-circle me-1"></i>Salidas
-                                </small>
-                            </div>
-                            <div class="bg-danger bg-opacity-10 p-3 rounded-3 icon-float">
-                                <i class="bi bi-arrow-down-circle fs-3 text-danger"></i>
-                            </div>
+                <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.2s;">
+                    <div class="stat-card-body">
+                        <div class="stat-icon expense-icon">
+                            <span style="font-size: 32px;">📉</span>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label text-white">Gastos</p>
+                            <h2 class="stat-value text-danger">@dashboardData.TotalExpense.ToString("C0")</h2>
+                            <small class="stat-subtitle text-danger">
+                                <span style="font-size: 15px;">🔽</span>Salidas
+                            </small>
                         </div>
                     </div>
-                    <div class="card-footer bg-danger bg-opacity-5 border-0 py-2">
-                        <small class="text-muted">
-                            <i class="bi bi-cart3 me-1"></i>
-                            <strong style="color:black">Total Gastado</strong>
-                        </small>
+                    <div class="stat-footer text-white">
+                        <span style="font-size: 17px;">🛒</span>
+                        Total gastado
                     </div>
                 </div>
             </div>
 
             <!-- Goals Card -->
             <div class="col-xl-3 col-md-6">
-                <div class="card border-0 shadow-sm rounded-4 overflow-hidden card-animate card-hover h-100" style="animation-delay: 0.3s;">
-                    <div class="card-body d-flex flex-column">
-                        <div class="d-flex justify-content-between align-items-start mb-auto">
-                            <div class="flex-grow-1">
-                                <p class="text-muted mb-2 small fw-medium text-uppercase"> <strong style="color:black">Metas</strong></p>
-                                <h2 class="mb-2 fw-bold text-info counter" style="font-size: clamp(1.5rem, 4vw, 2rem);">
-                                    @dashboardData.CompletedGoals/@dashboardData.TotalGoals
-                                </h2>
-                                <small class="text-info d-block">
-                                    <i class="bi bi-flag me-1"></i>Completadas
-                                </small>
-                            </div>
-                            <div class="bg-info bg-opacity-10 p-3 rounded-3 icon-float">
-                                <i class="bi bi-bullseye fs-3 text-info"></i>
-                            </div>
+                <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.3s;">
+                    <div class="stat-card-body">
+                        <div class="stat-icon goals-icon">
+                            <span style="font-size: 32px;">🎯</span>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label text-white">Metas</p>
+                            <h2 class="stat-value text-info">@dashboardData.CompletedGoals/@dashboardData.TotalGoals</h2>
+                            <small class="stat-subtitle text-info">
+                                <span style="font-size: 15px;">🚩</span>Completadas
+                            </small>
                         </div>
                     </div>
-                    <div class="card-footer bg-info bg-opacity-5 border-0 py-2">
-                        <small class="text-muted">
-                            @if (dashboardData.TotalGoals > 0)
-                            {
-                                var percentage = (dashboardData.CompletedGoals * 100.0 / dashboardData.TotalGoals).ToString("F0");
-                                <span>
-                                    <i class="bi bi-trophy me-1"></i>
-                                    @percentage% progreso
-                                </span>
-                            }
-                            else
-                            {
-                                <span>
-                                    <i class="bi bi-plus-circle me-1"></i>
-                                    <strong style="color:black">Crea Una Meta</strong>
-                                </span>
-                            }
-                        </small>
+                    <div class="stat-footer text-white">
+                        @if (dashboardData.TotalGoals > 0)
+                        {
+                            var percentage = (dashboardData.CompletedGoals * 100.0 / dashboardData.TotalGoals).ToString("F0");
+                            <span>
+                                <span style="font-size: 17px;">🏆</span>
+                                @percentage% progreso
+                            </span>
+                        }
+                        else
+                        {
+                            <span>
+                                <span style="font-size: 17px;">🚀</span>
+                                Crea una meta
+                            </span>
+                        }
                     </div>
                 </div>
             </div>
@@ -168,12 +153,14 @@
         <div class="row g-4 mb-4">
             <!-- Doughnut Chart -->
             <div class="col-lg-4">
-                <div class="card border-0 shadow-sm rounded-4 h-100 card-animate card-hover" style="animation-delay: 0.4s;">
-                    <div class="card-body">
-                        <h5 class="card-title mb-4 fw-semibold">
-                            <i class="bi bi-pie-chart-fill text-primary me-2"></i>
-                            <strong style="color:black">Gastos Por Categoría</strong>
+                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.4s;">
+                    <div class="card-header-glass">
+                        <h5 class="mb-0 text-white fw-semibold">
+                            <span style="font-size: 20px;">🧾</span>
+                            Gastos por Categoría
                         </h5>
+                    </div>
+                    <div class="card-body-glass">
                         @if (dashboardData.CategoryExpenses.Any())
                         {
                             <div style="height: 300px; position: relative;">
@@ -182,39 +169,39 @@
                         }
                         else
                         {
-                            <div class="text-center py-5">
-                                <i class="bi bi-inbox fs-1 text-muted"></i>
-                                <p class="text-muted mt-3 mb-0">No hay gastos registrados</p>
+                            <div class="empty-state">
+                                <i class="bi bi-inbox"></i>
+                                <p>No hay gastos registrados</p>
                             </div>
                         }
                     </div>
                 </div>
             </div>
 
-            <!-- Bar Chart with Period Selector -->
+            <!-- Bar Chart -->
             <div class="col-lg-8">
-                <div class="card border-0 shadow-sm rounded-4 h-100 card-animate card-hover" style="animation-delay: 0.5s;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title mb-0 fw-semibold">
-                                <i class="bi bi-bar-chart-fill text-success me-2"></i>
-                                <strong style="color:black">Ingresos vs Gastos</strong>
+                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.5s;">
+                    <div class="card-header-glass">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <h5 class="mb-0 text-white fw-semibold">
+                                <span style="font-size: 20px;">📊</span>
+                                Ingresos vs Gastos
                             </h5>
-                            <!-- Selector de período -->
                             <div class="btn-group btn-group-sm" role="group">
                                 <button type="button"
-                                        class="btn @(selectedDays == 7 ? "btn-primary" : "btn-outline-primary")"
+                                        class="glass-btn text-white @(selectedDays == 7 ? "active" : "")"
                                         @onclick="() => ChangePeriod(7)">
                                     7 días
                                 </button>
                                 <button type="button"
-                                        class="btn @(selectedDays == 30 ? "btn-primary" : "btn-outline-primary")"
+                                        class="glass-btn text-white @(selectedDays == 30 ? "active" : "")"
                                         @onclick="() => ChangePeriod(30)">
                                     30 días
                                 </button>
                             </div>
                         </div>
-
+                    </div>
+                    <div class="card-body-glass">
                         @if (chartData.Any())
                         {
                             <div style="height: 300px; position: relative;">
@@ -223,9 +210,9 @@
                         }
                         else
                         {
-                            <div class="text-center py-5">
-                                <i class="bi bi-graph-up fs-1 text-muted"></i>
-                                <p class="text-muted mt-3 mb-0">No hay transacciones en los últimos @selectedDays días</p>
+                            <div class="empty-state">
+                                <i class="bi bi-graph-up"></i>
+                                <p class="text-white">No hay transacciones en los últimos @selectedDays días</p>
                             </div>
                         }
                     </div>
@@ -236,28 +223,29 @@
         <!-- Recent Transactions -->
         <div class="row g-4">
             <div class="col-12">
-                <div class="card border-0 shadow-sm rounded-4 card-animate card-hover" style="animation-delay: 0.6s;">
-                    <div class="card-body">
-                        <div class="d-flex justify-content-between align-items-center mb-4">
-                            <h5 class="card-title mb-0 fw-semibold">
-                                <i class="bi bi-clock-history text-primary me-2"></i>
-                                <strong style="color:black">Transacciones Recientes</strong> 
+                <div class="glass-card animate-slide-up" style="animation-delay: 0.6s;">
+                    <div class="card-header-glass">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <h5 class="mb-0 text-white fw-semibold" style="text-align:center">
+                                <span style="font-size: 32px;">💳</span>
+                                Transacciones Recientes
                             </h5>
-                            <a href="/transactions" class="btn btn-sm btn-outline-primary">
+                            <a href="/transactions" class="glass-link">
                                 Ver todas <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                         </div>
-
+                    </div>
+                    <div class="card-body-glass">
                         @if (dashboardData.RecentTransactions.Any())
                         {
                             <div class="table-responsive">
-                                <table class="table table-hover align-middle mb-0">
-                                    <thead class="table-light">
+                                <table class="table-glass mb-0">
+                                    <thead>
                                         <tr>
-                                            <th class="border-0">Categoría</th>
-                                            <th class="border-0">Monto</th>
-                                            <th class="border-0">Nota</th>
-                                            <th class="border-0">Fecha</th>
+                                            <th class="text-white">Categoría</th>
+                                            <th class="text-white">Monto</th>
+                                            <th class="text-white">Nota</th>
+                                            <th class="text-white">Fecha</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -267,7 +255,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center gap-2">
                                                         <span style="font-size: 1.5rem;">@transaction.CategoryIcon</span>
-                                                        <span class="fw-semibold">@transaction.CategoryName</span>
+                                                        <span class="text-white fw-semibold">@transaction.CategoryName</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -276,10 +264,10 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="text-muted">@transaction.Note</span>
+                                                    <span class="text-white">@transaction.Note</span>
                                                 </td>
                                                 <td>
-                                                    <small class="text-muted">@transaction.Date.ToString("dd/MM/yyyy")</small>
+                                                    <small class="text-white">@transaction.Date.ToString("dd/MM/yyyy")</small>
                                                 </td>
                                             </tr>
                                         }
@@ -289,11 +277,11 @@
                         }
                         else
                         {
-                            <div class="text-center py-5">
-                                <i class="bi bi-receipt fs-1 text-muted"></i>
-                                <p class="text-muted mt-3 mb-3">No hay transacciones recientes</p>
-                                <a href="/transactions" class="btn btn-primary">
-                                    <i class="bi bi-plus-circle me-2"></i>Crear Transacción
+                            <div class="empty-state">
+                                <i class="bi bi-receipt"></i>
+                                <p class="mb-3 text-white">No hay transacciones recientes</p>
+                                <a href="/transactions" class="glass-button">
+                                    <span style="font-size: 17px;">💳</span>Crear Transacción
                                 </a>
                             </div>
                         }
@@ -305,104 +293,251 @@
 </div>
 
 <style>
-    /* Animación de entrada */
-    @@keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
 
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+    @@media (max-width: 991px) {
+        .dashboard-container
+
+    {
+        margin-top: 50px; /* espacio extra para el navbar título */
     }
 
-    .card-animate {
-        animation: fadeInUp 0.6s ease-out forwards;
-        opacity: 0;
     }
 
-    /* Hover effect para tarjetas */
-    .card-hover {
+    .dashboard-container {
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    .dashboard-header {
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .glass-badge {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 12px;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+    }
+
+    /* Stat Cards */
+    .stat-card {
+        overflow: hidden;
         transition: all 0.3s ease;
-        cursor: pointer;
+        min-height: 180px;
+        max-height: 200px;
     }
 
-        .card-hover:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15) !important;
-        }
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4);
+    }
 
-            .card-hover:hover .icon-float {
-                transform: scale(1.1) rotate(5deg);
-            }
+    .stat-card-body {
+        padding: 1.5rem;
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
 
-    /* Animación del icono */
-    .icon-float {
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        flex-shrink: 0;
         transition: all 0.3s ease;
     }
 
-    /* Animación de las transacciones */
+    .stat-card:hover .stat-icon {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .balance-icon {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(76, 175, 80, 0.1));
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #4CAF50;
+    }
+
+    .income-icon {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.2), rgba(139, 195, 74, 0.1));
+        border: 1px solid rgba(76, 175, 80, 0.3);
+        color: #4CAF50;
+    }
+
+    .expense-icon {
+        background: linear-gradient(135deg, rgba(244, 67, 54, 0.2), rgba(244, 67, 54, 0.1));
+        border: 1px solid rgba(244, 67, 54, 0.3);
+        color: #F44336;
+    }
+
+    .goals-icon {
+        background: linear-gradient(135deg, rgba(33, 150, 243, 0.2), rgba(33, 150, 243, 0.1));
+        border: 1px solid rgba(33, 150, 243, 0.3);
+        color: #2196F3;
+    }
+
+    .stat-content {
+        flex: 1;
+    }
+
+    .stat-label {
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 0.5rem;
+        font-weight: 600;
+    }
+
+    .stat-value {
+        color: white;
+        font-size: clamp(1.2rem, 3vw, 1.6rem);
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+        line-height: 1.2;
+        word-break: break-word;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .stat-subtitle {
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 0.85rem;
+    }
+
+    .stat-footer {
+        padding: 0.75rem 1.5rem;
+        background: rgba(255, 255, 255, 0.03);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.7);
+        font-size: 0.85rem;
+    }
+
+    /* Card Headers and Bodies */
+    .card-header-glass {
+        padding: 1.5rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .card-body-glass {
+        padding: 1.5rem;
+    }
+
+    /* Buttons */
+    .glass-btn {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.8);
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-size: 0.875rem;
+    }
+
+    .glass-btn:hover {
+        background: rgba(255, 255, 255, 0.15);
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .glass-btn.active {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.5);
+        color: #4CAF50;
+        font-weight: 600;
+    }
+
+    .glass-link {
+        color: #4CAF50;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .glass-link:hover {
+        color: #66BB6A;
+        transform: translateX(5px);
+    }
+
+    .glass-button {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.4);
+        color: #4CAF50;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .glass-button:hover {
+        background: rgba(76, 175, 80, 0.3);
+        transform: translateY(-2px);
+        color: #4CAF50;
+    }
+
+    /* Table */
+    .table-glass {
+        width: 100%;
+        color: white;
+    }
+
+    .table-glass thead th {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .table-glass tbody td {
+            padding: 1rem 0.75rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
     .transaction-row {
         transition: all 0.3s ease;
     }
 
         .transaction-row:hover {
-            background-color: rgba(13, 110, 253, 0.05);
-            transform: translateX(8px);
+            background: rgba(255, 255, 255, 0.05);
+            transform: translateX(5px);
         }
 
-    /* Animación de contador */
-    .counter {
-        display: inline-block;
-        animation: countUp 1s ease-out;
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 3rem 1rem;
     }
 
-    @@keyframes countUp {
-        from {
-            opacity: 0;
-            transform: scale(0.5);
+        .empty-state i {
+            font-size: 4rem;
+            color: rgba(255, 255, 255, 0.3);
+            margin-bottom: 1rem;
+            display: block;
         }
 
-        to {
-            opacity: 1;
-            transform: scale(1);
-        }
-    }
-
-    /* Asegurar altura uniforme en las tarjetas */
-    .card.h-100 {
-        min-height: 180px;
-    }
-
-    .card-body {
-        padding: 1.5rem;
-    }
-
-    /* Responsive para los números grandes */
-    @@media (max-width: 768px) {
-        .card.h-100 {
-            min-height: 160px;
+        .empty-state p {
+            color: rgba(255, 255, 255, 0.6);
+            margin-bottom: 0;
         }
 
-        .card-body h2 {
-            font-size: 1.5rem !important;
-        }
+    
+
+    .animate-slide-up {
+        animation: slideInUp 0.6s ease-out forwards;
+        opacity: 0;
     }
-
-    /* Botones del selector de período */
-    .btn-group-sm .btn {
-        font-size: 0.875rem;
-        padding: 0.375rem 0.75rem;
-        transition: all 0.2s ease;
-    }
-
-        .btn-group-sm .btn:hover {
-            transform: scale(1.05);
-        }
-
-        
+    
 </style>
 
 @code {

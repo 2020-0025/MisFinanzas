@@ -12,17 +12,23 @@
 
 <PageTitle>Metas Financieras - Mis Finanzas</PageTitle>
 
-<div class="container-fluid px-4 py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h3 mb-0">
-            <i class="bi bi-bullseye text-warning me-2"></i>
-            Metas Financieras
-        </h1>
-        <button class="btn btn-primary rounded-pill" @onclick="OpenCreateModal">
-            <i class="bi bi-plus-circle me-2"></i>Nueva Meta
-        </button>
+<div class="goals-container">
+    <!-- Header con efecto glass -->
+    <div class="glass-card goals-header animate-slide-up">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h1 class="h3 mb-1 text-white fw-bold">
+                    <span style="font-size: 32px;">🎯</span>
+                    <strong>Metas Financieras</strong>
+                </h1>
+                <p class="text-white mb-0">Define tus metas</p>
+            </div>
+            <button class="glass-button-action text-white" @onclick="OpenCreateModal">
+                <span style="font-size: 17px;">➕</span>Nueva Meta
+            </button>
+        </div>
     </div>
-
+    
     @if (isLoading)
     {
         <div class="text-center py-5">
@@ -48,60 +54,64 @@
     {
         <!-- Estadísticas rápidas -->
         <div class="row g-4 mb-4">
+            <!-- Metas totales -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 card-hover">
+                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-primary bg-opacity-10 p-3 rounded-3">
-                                <i class="bi bi-flag-fill fs-3 text-primary"></i>
+                                <span style="font-size: 25px;">🚩</span>
                             </div>
-                            <div class="w-100">
-                                <p class="text-muted small mb-1">Total Metas</p>
+                            <div class="w-100 text-white">
+                                <p class="mb-1">Total Metas</p>
                                 <h3 class="mb-0 fw-bold fs-5">@goals.Count</h3>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- Metas Completadas -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 card-hover">
+                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-success bg-opacity-10 p-3 rounded-3">
-                                <i class="bi bi-check-circle-fill fs-3 text-success"></i>
+                                <span style="font-size: 25px;">✅</span>
                             </div>
-                            <div class="w-100">
-                                <p class="text-muted small mb-1">Completadas</p>
+                            <div class="w-100 text-white">
+                                <p class="mb-1">Completadas</p>
                                 <h3 class="mb-0 fw-bold text-success fs-5">@goals.Count(g => g.IsCompleted)</h3>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- Metas en progreso -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 card-hover">
+                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-warning bg-opacity-10 p-3 rounded-3">
-                                <i class="bi bi-hourglass-split fs-3 text-warning"></i>
+                                <span style="font-size: 25px;">⏳</span>
                             </div>
-                            <div class="w-100">
-                                <p class="text-muted small mb-1">En Progreso</p>
+                            <div class="w-100 text-white">
+                                <p class="mb-1">En Progreso</p>
                                 <h3 class="mb-0 fw-bold text-warning fs-5">@goals.Count(g => g.Status == GoalStatus.InProgress)</h3>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+            <!-- Metas objetivo -->
             <div class="col-md-3">
-                <div class="card border-0 shadow-sm rounded-4 card-hover">
+                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
                     <div class="card-body">
                         <div class="d-flex align-items-center gap-3">
                             <div class="bg-info bg-opacity-10 p-3 rounded-3">
-                                <i class="bi bi-piggy-bank-fill fs-3 text-info"></i>
+                                <span style="font-size: 25px;">🎯</span>
                             </div>
-                            <div class="w-100">
-                                <p class="text-muted small mb-1">Total Objetivo</p>
+                            <div class="w-100 text-white">
+                                <p class="mb-1">Total Objetivo</p>
                                 <h3 class="mb-0 fw-bold text-info fs-5">@goals.Sum(g => g.TargetAmount).ToString("C0")</h3>
                             </div>
                         </div>
@@ -115,33 +125,33 @@
             @foreach (var goal in goals.OrderBy(g => g.IsCompleted).ThenBy(g => g.TargetDate))
             {
                 <div class="col-md-6 col-lg-4">
-                    <div class="card border-0 shadow-sm rounded-4 h-100 goal-card @(goal.IsCompleted ? "goal-completed" : goal.IsOverdue ? "goal-overdue" : "")">
+                    <div class="glass-card border-0 shadow-sm rounded-4 h-100 goal-card @(goal.IsCompleted ? "goal-completed" : goal.IsOverdue ? "goal-overdue" : "")">
                         <div class="card-body">
                             <!-- Header con icono y estado -->
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div class="d-flex align-items-center gap-2">
                                     <span class="goal-icon">@goal.Icon</span>
-                                    <div>
+                                    <div class="text-white">
                                         <h5 class="mb-0 fw-bold">@goal.Title</h5>
                                         @if (!string.IsNullOrEmpty(goal.Description))
                                         {
-                                            <small class="text-muted">@goal.Description</small>
+                                            <small>@goal.Description</small>
                                         }
                                     </div>
                                 </div>
                                 <div class="dropdown">
-                                    <button class="btn btn-sm btn-link text-dark dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <i class="bi bi-three-dots-vertical"></i>
+                                    <button class="btn btn-sm btn-link text-white dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <span style="font-size: 13px;">🔸🔸🔸</span>
                                     </button>
-                                    <ul class="dropdown-menu dropdown-menu-end" data-bs-auto-close="outside">
+                                    <ul class="glass-card dropdown-menu dropdown-menu-end" data-bs-auto-close="outside">
                                         <li>
-                                            <button class="dropdown-item" @onclick="() => OpenEditModal(goal)">
-                                                <i class="bi bi-pencil me-2"></i>Editar
+                                            <button class="dropdown-item text-warning" @onclick="() => OpenEditModal(goal)">
+                                                <span style="font-size: 13px;">📝</span>Editar
                                             </button>
                                         </li>
                                         <li>
-                                            <button class="dropdown-item" @onclick="() => OpenProgressModal(goal)">
-                                                <i class="bi bi-plus-circle me-2"></i>Agregar Progreso
+                                            <button class="dropdown-item text-success" @onclick="() => OpenProgressModal(goal)">
+                                                <span style="font-size: 13px;">➕</span>Agregar Progreso
                                             </button>
                                         </li>
                                         <li><hr class="dropdown-divider"></li>
@@ -156,8 +166,8 @@
 
                             <!-- Montos -->
                             <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span class="text-muted small">Progreso</span>
+                                <div class="d-flex justify-content-between mb-2 text-white">
+                                    <span>Progreso</span>
                                     <span class="fw-bold">@goal.ProgressPercentage.ToString("F1")%</span>
                                 </div>
                                 <div class="progress" style="height: 12px;">
@@ -169,9 +179,9 @@
                                          aria-valuemax="100">
                                     </div>
                                 </div>
-                                <div class="d-flex justify-content-between mt-2">
-                                    <small class="text-muted">@goal.CurrentAmount.ToString("C2")</small>
-                                    <small class="text-muted">@goal.TargetAmount.ToString("C2")</small>
+                                <div class="d-flex justify-content-between mt-2 text-white">
+                                    <small>@goal.CurrentAmount.ToString("C2")</small>
+                                    <small>@goal.TargetAmount.ToString("C2")</small>
                                 </div>
                             </div>
 
@@ -181,37 +191,38 @@
                                     @if (goal.IsCompleted)
                                     {
                                         <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
-                                            <i class="bi bi-check-circle-fill me-1"></i>Completada
+                                            <span style="font-size: 13px;">🏆</span>Completada
                                         </span>
                                     }
                                     else if (goal.IsOverdue)
                                     {
                                         <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
-                                            <i class="bi bi-exclamation-triangle-fill me-1"></i>Vencida
+                                            <span style="font-size: 13px;">❌</span> Vencida
                                         </span>
                                     }
                                     else
                                     {
                                         <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
-                                            <i class="bi bi-clock-fill me-1"></i>En progreso
+                                            <span style="font-size: 13px;">🔁</span> En progreso
                                         </span>
                                     }
                                 </div>
-                                <small class="text-muted">
+                                <small>
                                     @if (goal.DaysRemaining > 0)
                                     {
-                                        <i class="bi bi-calendar3 me-1"></i>
-                                        <span>@goal.DaysRemaining días</span>
+                                        <span style="font-size: 13px;">📅</span>
+                                        <span class="text-white">@goal.DaysRemaining días</span>
                                     }
                                     else if (!goal.IsCompleted)
                                     {
-                                        <i class="bi bi-exclamation-circle me-1"></i>
-                                        <span>Vencida</span>
+                                       @*  <i class="bi bi-exclamation-triangle-fill me-1"></i>
+                                        <span class="text-danger">Vencida</span> *@
                                     }
                                     else
                                     {
-                                        <i class="bi bi-trophy-fill me-1"></i>
-                                        <span>¡Lograda!</span>
+                                        
+                                        @* <i class="bi bi-check-circle-fill me-1"></i>
+                                        <span class="text-success">¡Lograda!</span> *@
                                     }
                                 </small>
                             </div>
@@ -220,15 +231,15 @@
                             @if (!goal.IsCompleted && goal.RemainingAmount > 0)
                             {
                                 <div class="mt-3 pt-3 border-top">
-                                    <small class="text-muted d-block mb-1">Falta por alcanzar</small>
+                                    <small class="text-white d-block mb-1">Falta por alcanzar</small>
                                     <h6 class="mb-0 fw-bold text-primary">@goal.RemainingAmount.ToString("C2")</h6>
                                 </div>
                             }
                         </div>
 
                         <!-- Footer con fecha objetivo -->
-                        <div class="card-footer bg-light bg-opacity-50 border-0 py-2">
-                            <small class="text-muted">
+                        <div class="card-footer border-0 py-2">
+                            <small class="text-white">
                                 <i class="bi bi-calendar-event me-1"></i>
                                 Meta: @goal.TargetDate.ToString("dd/MM/yyyy")
                             </small>
@@ -245,26 +256,26 @@
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content rounded-4 shadow">
+            <div class=" glass-card  modal-content rounded-4 shadow">
                 <div class="modal-header border-0 pb-0">
                     <h5 class="modal-title fw-bold">
                         @(isEditMode ? "Editar Meta" : "Nueva Meta Financiera")
                     </h5>
                     <button type="button" class="btn-close" @onclick="CloseModal"></button>
                 </div>
-                <div class="modal-body pt-2">
+                <div class=" modal-body pt-2">
                     <EditForm Model="currentGoal" OnValidSubmit="SaveGoal">
                         <DataAnnotationsValidator />
 
                         <div class="row g-3">
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Título</label>
+                                <label class="form-label fw-semibold text-white">Título</label>
                                 <InputText class="form-control" @bind-Value="currentGoal.Title"
                                            placeholder="Ej: Vacaciones, Casa nueva" />
                                 <ValidationMessage For="@(() => currentGoal.Title)" class="text-danger small" />
                             </div>
 
-                            <div class="col-md-6">
+                            <div class="col-md-6 text-white">
                                 <!-- Selector de iconos -->
                                 <IconSelector Label="Icono"
                                               @bind-SelectedIcon="currentGoal.Icon" />
@@ -272,41 +283,41 @@
                             </div>
 
                             <div class="col-12">
-                                <label class="form-label fw-semibold">Descripción (Opcional)</label>
+                                <label class="form-label fw-semibold text-white">Descripción (Opcional)</label>
                                 <InputText class="form-control" @bind-Value="currentGoal.Description"
                                            placeholder="Describe tu meta..." />
                                 <ValidationMessage For="@(() => currentGoal.Description)" class="text-danger small" />
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Monto Objetivo (RD$)</label>
+                                <label class="form-label fw-semibold text-white">Monto Objetivo (RD$)</label>
                                 <InputNumber class="form-control" @bind-Value="currentGoal.TargetAmount"
                                              placeholder="0.00" step="100" />
                                 <ValidationMessage For="@(() => currentGoal.TargetAmount)" class="text-danger small" />
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Monto Actual (RD$)</label>
+                                <label class="form-label fw-semibold text-white">Monto Actual (RD$)</label>
                                 <InputNumber class="form-control" @bind-Value="currentGoal.CurrentAmount"
                                              placeholder="0.00" step="100" />
                                 <ValidationMessage For="@(() => currentGoal.CurrentAmount)" class="text-danger small" />
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha de Inicio</label>
+                                <label class="form-label fw-semibold text-white">Fecha de Inicio</label>
                                 <InputDate class="form-control" @bind-Value="currentGoal.StartDate" />
                                 <ValidationMessage For="@(() => currentGoal.StartDate)" class="text-danger small" />
                             </div>
 
                             <div class="col-md-6">
-                                <label class="form-label fw-semibold">Fecha Objetivo</label>
+                                <label class="form-label fw-semibold text-white">Fecha Objetivo</label>
                                 <InputDate class="form-control" @bind-Value="currentGoal.TargetDate" />
                                 <ValidationMessage For="@(() => currentGoal.TargetDate)" class="text-danger small" />
                             </div>
 
-                            <div class="col-12">
-                                <label class="form-label fw-semibold">Estado</label>
-                                <InputSelect class="form-select" @bind-Value="currentGoal.Status">
+                            <div class="col-12" style="gap:5rem">
+                                <label class="form-label fw-semibold text-white" >Estado:</label>
+                                <InputSelect class=" glass-card form-control-glass text-white" @bind-Value="currentGoal.Status">
                                     <option value="@GoalStatus.InProgress">En Progreso</option>
                                     <option value="@GoalStatus.Completed">Completada</option>
                                     <option value="@GoalStatus.Cancelled">Cancelada</option>
@@ -316,10 +327,10 @@
                         </div>
 
                         <div class="d-flex gap-2 justify-content-end mt-4">
-                            <button type="button" class="btn btn-secondary" @onclick="CloseModal">
+                            <button type="button" class="glass-button-secondary text-white" @onclick="CloseModal">
                                 Cancelar
                             </button>
-                            <button type="submit" class="btn btn-primary" disabled="@isSaving">
+                            <button type="submit" class="glass-button-action text-white" disabled="@isSaving">
                                 @if (isSaving)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
@@ -393,6 +404,90 @@
 }
 
 <style>
+
+    .goals-container {
+        padding: 2rem;
+        min-height: 100vh;
+    }
+
+    .goals-header {
+        padding: 1.5rem 2rem;
+        margin-bottom: 2rem;
+    }
+
+    /* Botón de acción principal */
+    .glass-button-action {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.4);
+        color: #4CAF50;
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+    }
+
+        .glass-button-action:hover:not(:disabled) {
+            background: rgba(76, 175, 80, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+        }
+
+        .glass-button-action:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .glass-button-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: rgba(255, 255, 255, 0.9);
+        padding: 0.75rem 1.5rem;
+        border-radius: 10px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+        .glass-button-secondary:hover {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+
+    /* Select personalizado */
+    .form-control-glass select,
+    select.form-control-glass {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234CAF50' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+        background-repeat: no-repeat;
+        background-position: right 1rem center;
+        background-size: 12px;
+        padding-right: 2.5rem;
+        cursor: pointer;
+    }
+
+
+    .form-control-glass option {
+        background: rgba(15, 23, 42, 0.95);
+        color: white;
+        padding: 0.5rem;
+    }
+
+
+
+    /* Para navegadores webkit (Chrome, Safari, Edge) */
+    .form-control-glass select option:checked,
+    .form-control-glass select option:hover {
+        background: rgba(76, 175, 80, 0.2);
+    }
+
+
+
+
 
     .goal-card {
         transition: all 0.3s ease;

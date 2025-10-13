@@ -1,108 +1,31 @@
+/* ===================================
+   ESTILOS BASE Y FUENTES
+   =================================== */
 html, body {
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
 }
 
-a, .btn-link {
-    color: #006bb7;
-}
-
-.btn-primary {
-    color: #fff;
-    background-color: #1b6ec2;
-    border-color: #1861ac;
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-.content {
-    padding-top: 1.1rem;
-}
-
-h1:focus {
-    outline: none;
-}
-
-.valid.modified:not([type=checkbox]) {
-    outline: 1px solid #26b050;
-}
-
-.invalid {
-    outline: 1px solid #e50000;
-}
-
-.validation-message {
-    color: #e50000;
-}
-
-.blazor-error-boundary {
-    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
-    padding: 1rem 1rem 1rem 3.7rem;
-    color: white;
-}
-
-    .blazor-error-boundary::after {
-        content: "An error has occurred."
-    }
-
-.darker-border-checkbox.form-check-input {
-    border-color: #929292;
-}
-
-
-.nav-scrollable {
-    position: relative;
-    height: 100vh; /* Asegura que ocupe toda la altura de la pantalla */
-    overflow-y: auto; /* Permite scroll si el contenido es largo */
-}
-
-.nav-footer
-
-{
-    position: absolute;
-    bottom: 0;
-    width: 100%;
-    padding-bottom: 1rem;
-    background-color: inherit;
-}
-
-
-
-
-/*.fondo-con-imagen {
-    background-image: url('/image/dark-colored-chromatic.jpg');
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    min-height: 100vh;*/ /* Asegura que cubra toda la altura */
-/*}
-
-.card-blur {
-    background-color: transparent;
-    backdrop-filter: blur(10px);*/ /* desenfoque */
-    /*-webkit-backdrop-filter: blur(10px);*/ /* compatibilidad con Safari */
-    /*border-radius: 0.5rem;
-    border: 5px solid gray;
-    transition: background-color 0.3s ease;
-    color:white;
-}*/
-
-/* Fondo global */
+/* ===================================
+   FONDO GLOBAL CON IMAGEN
+   =================================== */
 body {
-    background-image: url('/images/dark-colored-chromatic.jpg');
+    background-image: url('/images/dark-blue.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
     background-repeat: no-repeat;
 }
 
-/* Efecto Glass Blur */
+/* ===================================
+   EFECTO GLASS BLUR GLOBAL
+   =================================== */
 .glass-card {
     background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 16px;
     box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
@@ -116,7 +39,9 @@ body {
     box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
 }
 
-/* Animaciones de entrada */
+/* ===================================
+   ANIMACIONES GLOBALES
+   =================================== */
 @keyframes slideInUp {
     from {
         opacity: 0;
@@ -163,7 +88,9 @@ body {
     opacity: 0;
 }
 
-/* Botones glass */
+/* ===================================
+   BOTONES GLASS
+   =================================== */
 .glass-button {
     background: rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(10px);
@@ -174,6 +101,7 @@ body {
     transition: all 0.3s ease;
     text-decoration: none;
     display: inline-block;
+    cursor: pointer;
 }
 
     .glass-button:hover {
@@ -183,7 +111,72 @@ body {
         color: white;
     }
 
-/* Estilos para el contenido demo */
+/* ===================================
+   ENLACES Y BOTONES BOOTSTRAP
+   =================================== */
+a, .btn-link {
+    color: #4CAF50;
+}
+
+.btn-primary {
+    color: #fff;
+    background-color: #4CAF50;
+    border-color: #45a049;
+}
+
+.btn:focus, .btn:active:focus, .btn-link.nav-link:focus,
+.form-control:focus, .form-check-input:focus {
+    box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #4CAF50;
+}
+
+/* ===================================
+   INPUTS Y FORMULARIOS
+   =================================== */
+.form-control {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+    .form-control:focus {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(76, 175, 80, 0.5) !important;
+        color: white !important;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+    }
+
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+/* Checkbox personalizado */
+input[type="checkbox"] {
+    accent-color: #4CAF50;
+}
+
+/* ===================================
+   VALIDACIÓN DE FORMULARIOS
+   =================================== */
+.valid.modified:not([type=checkbox]) {
+    outline: 1px solid #26b050;
+}
+
+.invalid {
+    outline: 1px solid #e50000;
+}
+
+.validation-message,
+.text-danger {
+    color: #ff6b6b !important;
+    font-size: 0.9rem;
+    margin-top: 5px;
+    display: block;
+}
+
+/* ===================================
+   COMPONENTES DEMO (HOME PAGE)
+   =================================== */
 .demo-stat {
     background: rgba(76, 175, 80, 0.2);
     border: 1px solid rgba(76, 175, 80, 0.3);
@@ -235,60 +228,182 @@ body {
     transition: width 0.3s ease;
 }
 
-
-/* Estilos para inputs en modo glass */
-.form-control:focus {
-    background: rgba(255, 255, 255, 0.15) !important;
-    border-color: rgba(76, 175, 80, 0.5) !important;
-    color: white !important;
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+/* ===================================
+   MANEJO DE ERRORES BLAZOR
+   =================================== */
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
 }
 
-.form-control::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    .blazor-error-boundary::after {
+        content: "An error has occurred."
+    }
+
+/* ===================================
+   SCROLLBAR PERSONALIZADO
+   =================================== */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
 }
 
-/* Checkbox personalizado */
-input[type="checkbox"] {
-    accent-color: #4CAF50;
+::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
 }
 
-/* Mensajes de validación */
-.text-danger {
-    color: #ff6b6b !important;
-    font-size: 0.9rem;
-    margin-top: 5px;
-    display: block;
+::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
 }
 
-/* Responsive adjustments */
+    ::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+
+/* ===================================
+   MEDIA QUERIES - RESPONSIVE MOBILE
+   =================================== */
+@media (max-width: 991px) {
+    /* Mostrar elementos móviles */
+    .navbar-mobile {
+        display: flex !important;
+        align-items: center;
+        gap: 1rem;
+    }
+
+
+    /* Ocultar elementos desktop */
+    .navbar-links,
+    .navbar-user {
+        display: none !important;
+    }
+
+    
+
+   
+
+    /* Ajustes de padding para navbar móvil */
+    .navbar-content {
+        padding: 0 1rem;
+    }
+
+    /* Ajuste del brand en móvil */
+    .brand-text {
+        font-size: 1.1rem;
+    }
+
+    
+
+
+    /* Mostrar footer móvil */
+    .footer-mobile-nav {
+        display: flex !important;
+    }
+
+    /* Agregar padding inferior al contenido para el footer */
+    .main-content {
+        padding-bottom: 80px;
+    }
+
+    /* Ajuste de container del dashboard */
+    .dashboard-container {
+        padding-bottom: 90px;
+    }
+}
+
+/* ===================================
+   MEDIA QUERIES - DESKTOP
+   =================================== */
+@media (min-width: 992px) {
+    /* Ocultar elementos móviles */
+    .navbar-mobile,
+    .footer-mobile-nav {
+        display: none !important;
+    }
+
+    /* Mostrar elementos desktop */
+    .navbar-links,
+    .navbar-user {
+        display: flex !important;
+    }
+}
+
+/* ===================================
+   MEDIA QUERIES - TABLETS
+   =================================== */
 @media (max-width: 768px) {
+    /* Ajustes de cards para tablets */
+
+    /* Mostrar elementos móviles */
+    
     .glass-card {
         margin: 10px;
         padding: 15px;
     }
-
-    .glass-nav {
-        flex-direction: column;
-        justify-content: center !important;
-        align-items: center !important;
-        text-align: center;
-        gap: 10px;
+        
+    /* Mostrar footer móvil */
+    .footer-mobile-nav {
+        display: flex !important;
     }
 
-    .glass-nav > div {
-            justify-content: center;
-            text-align: center;
-     }
+    /* Agregar padding inferior al contenido para el footer */
+    .main-content {
+        padding-bottom: 80px;
+    }
 
-    .glass-nav form {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-     }
+    /* Ajuste de container del dashboard */
+    .dashboard-container {
+        padding-bottom: 90px;
+    }
+
+
 }
 
+/* ===================================
+   MEDIA QUERIES - MÓVILES PEQUEÑOS
+   =================================== */
+@media (max-width: 576px) {
+    /* Navbar más compacto */
+    .navbar-content {
+        padding: 0 0.75rem;
+    }
+
+    /* User info más compacto */
+    .user-info-mobile span {
+        max-width: 80px;
+    }
+
+    
+    /* Cards más compactos 
+    .glass-card {
+        margin: 5px;
+        padding: 10px;
+    }*/
+
+    /* Cards más anchos en móvil */
+    .glass-card {
+        margin: 0.5rem auto;
+        padding: 1rem;
+        max-width: 100%;
+        width: calc(100% - 1rem);
+    }
 
 
+    /* Mostrar footer móvil */
+    .footer-mobile-nav {
+        display: flex !important;
+    }
 
+    /* Agregar padding inferior al contenido para el footer */
+    .main-content {
+        padding-bottom: 80px;
+    }
+
+    /* Ajuste de container del dashboard */
+    .dashboard-container {
+        padding-bottom: 90px;
+    }
+}

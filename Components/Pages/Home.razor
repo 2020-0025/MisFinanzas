@@ -23,10 +23,10 @@
                     <span style="color: rgba(255, 255, 255, 0.9); font-size: 1rem;">
                         ¡Hola, <strong>@context.User.Identity?.Name</strong>! 👋
                     </span>
-                    <form action="/Account/Logout" method="post">
+                    <form action="/Account/Logout" method="post" class="logout-form">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="glass-button" style="cursor: pointer; border: none;">Cerrar Sesión</button>
+                        <button type="submit" class="btn-logout" style="cursor: pointer; border: none;">🔐</button>
                     </form>
                 </div>
             </nav>
@@ -36,11 +36,11 @@
                 <h1 style="color: white; font-size: 3rem; margin-bottom: 20px; font-weight: 700;">
                     ¡Bienvenido de vuelta! 🎉
                 </h1>
-                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
+                <p class="text-white" style="font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
                     Continúa gestionando tus finanzas de manera inteligente
                 </p>
                 <a href="/dashboard" class="glass-button" style="font-size: 1.2rem; padding: 16px 40px; display: inline-block;">
-                    <i class="bi bi-speedometer2 me-2"></i>Ir al Dashboard
+                    <span style="font-size: 20px;">📊</span>Ir al Dashboard
                 </a>
             </div>
 
@@ -55,7 +55,7 @@
                             <span style="font-size: 32px;">📁</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style=" margin-bottom: 20px;">
                             Gestiona tus categorías personalizadas
                         </p>
 
@@ -63,7 +63,7 @@
                             <span style="font-size: 24px;">📋</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Tus Categorías</div>
-                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">Organiza tus gastos</div>
+                                <div class="text-white" style="font-size: 0.9rem;">Organiza tus gastos</div>
                             </div>
                         </div>
 
@@ -78,14 +78,14 @@
                             <span style="font-size: 32px;">💳</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Registra y visualiza tus movimientos
                         </p>
 
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Tus Transacciones</div>
-                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">Historial completo</div>
+                                <div class="text-white" style="font-size: 0.85rem;">Historial completo</div>
                             </div>
                             <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">💰</div>
                         </div>
@@ -101,7 +101,7 @@
                             <span style="font-size: 32px;">🎯</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Alcanza tus objetivos financieros
                         </p>
 
@@ -110,7 +110,7 @@
                                 <span style="color: white; font-weight: 600;">🎯 Tus Metas</span>
                                 <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">💪</span>
                             </div>
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Define y alcanza tus objetivos</div>
+                            <div class="text-white" style="font-size: 0.9rem;">Define y alcanza tus objetivos</div>
                         </div>
 
                         <a href="/goals" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
@@ -124,12 +124,12 @@
                             <span style="font-size: 32px;">📊</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Visualiza tu situación financiera completa
                         </p>
 
                         <div class="demo-stat">
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Tu balance actual</div>
+                            <div class="text-white" style="font-size: 0.9rem;">Tu balance actual</div>
                             <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">Cargando...</div>
                         </div>
 
@@ -160,7 +160,9 @@
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="/Account/Register" class="glass-button">Registrar</a>
                     <a href="/Account/Login" class="glass-button">Iniciar Sesión</a>
-                    <button class="glass-button" style="cursor: pointer; border: none;">Probar Demo</button>
+
+                    <!-- Para cuando se agregue la version Demo -->
+                    @* <button class="glass-button" style="cursor: pointer; border: none;">Probar Demo</button> *@
                 </div>
             </nav>
 
@@ -169,7 +171,7 @@
                 <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px; font-weight: 700;">
                     Mis Finanzas
                 </h1>
-                <p style="color: rgba(255, 255, 255, 0.9); font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
+                <p class="text-white" style="font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
                     Toma el control de tu dinero con inteligencia y simplicidad
                 </p>
             </div>
@@ -185,7 +187,7 @@
                             <span style="font-size: 32px;">📁</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Organiza tus finanzas por categorías personalizadas
                         </p>
 
@@ -194,21 +196,21 @@
                             <span style="font-size: 24px;">🍔</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Alimentación</div>
-                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$450 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">$450 gastados</div>
                             </div>
                         </div>
                         <div class="demo-category">
                             <span style="font-size: 24px;">🚗</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Transporte</div>
-                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$320 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">$320 gastados</div>
                             </div>
                         </div>
                         <div class="demo-category">
                             <span style="font-size: 24px;">🎮</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Entretenimiento</div>
-                                <div style="font-size: 0.9rem; color: rgba(255, 255, 255, 0.7);">$180 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">$180 gastados</div>
                             </div>
                         </div>
                     </div>
@@ -219,7 +221,7 @@
                             <span style="font-size: 32px;">💳</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Registra y visualiza cada movimiento de dinero
                         </p>
 
@@ -227,21 +229,21 @@
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Supermercado</div>
-                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">Hoy • Alimentación</div>
+                                <div class="text-white" style="font-size: 0.85rem;">Hoy • Alimentación</div>
                             </div>
                             <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$85.50</div>
                         </div>
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Salario</div>
-                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">15 Oct • Ingreso</div>
+                                <div class="text-white" style="font-size: 0.85rem;">15 Oct • Ingreso</div>
                             </div>
                             <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">+$2,500.00</div>
                         </div>
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Netflix</div>
-                                <div style="font-size: 0.85rem; color: rgba(255, 255, 255, 0.6);">10 Oct • Suscripciones</div>
+                                <div class="text-white" style="font-size: 0.85rem;">10 Oct • Suscripciones</div>
                             </div>
                             <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$15.99</div>
                         </div>
@@ -253,7 +255,7 @@
                             <span style="font-size: 32px;">🎯</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Define objetivos y alcanza tus sueños financieros
                         </p>
 
@@ -261,9 +263,9 @@
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: white; font-weight: 600;">🏖️ Vacaciones</span>
-                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">75%</span>
+                                <span style="color: white; font-weight: 600;">75%</span>
                             </div>
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$3,750 de $5,000</div>
+                            <div style="color: white; font-size: 0.9rem;">$3,750 de $5,000</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: 75%;"></div>
                             </div>
@@ -271,9 +273,9 @@
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: white; font-weight: 600;">💻 Nueva Laptop</span>
-                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">40%</span>
+                                <span style="color: white; font-weight: 600;">40%</span>
                             </div>
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$800 de $2,000</div>
+                            <div style="color: white; font-size: 0.9rem;">$800 de $2,000</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: 40%;"></div>
                             </div>
@@ -281,9 +283,9 @@
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: white; font-weight: 600;">🏠 Fondo Emergencia</span>
-                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">20%</span>
+                                <span style="color: white; font-weight: 600;">20%</span>
                             </div>
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">$1,000 de $5,000</div>
+                            <div style="color: white; font-size: 0.9rem;">$1,000 de $5,000</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: 20%;"></div>
                             </div>
@@ -296,22 +298,22 @@
                             <span style="font-size: 32px;">📊</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 20px;">
+                        <p class="text-white" style="margin-bottom: 20px;">
                             Visualiza tu situación financiera de un vistazo
                         </p>
 
                         <!-- Demo Dashboard Content -->
                         <div class="demo-stat">
-                            <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.9rem;">Balance Total</div>
+                            <div style="color: white; font-size: 0.9rem;">Balance Total</div>
                             <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">$12,450.00</div>
                         </div>
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
                             <div class="demo-stat" style="flex: 1;">
-                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">Ingresos</div>
+                                <div style="color: white; font-size: 0.8rem;">Ingresos</div>
                                 <div style="color: #4CAF50; font-size: 1.2rem; font-weight: 600;">$8,200</div>
                             </div>
                             <div class="demo-stat" style="flex: 1; background: rgba(244, 67, 54, 0.2); border-color: rgba(244, 67, 54, 0.3);">
-                                <div style="color: rgba(255, 255, 255, 0.7); font-size: 0.8rem;">Gastos</div>
+                                <div style="color: white; font-size: 0.8rem;">Gastos</div>
                                 <div style="color: #F44336; font-size: 1.2rem; font-weight: 600;">$3,750</div>
                             </div>
                         </div>
@@ -324,12 +326,14 @@
             <!-- Call to Action -->
             <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center; margin-top: 60px; margin-bottom: 40px;">
                 <h2 style="color: white; font-size: 2rem; margin-bottom: 15px;">¿Listo para transformar tus finanzas?</h2>
-                <p style="color: rgba(255, 255, 255, 0.8); font-size: 1.1rem; margin-bottom: 30px;">
-                    Únete a miles de usuarios que ya están tomando el control de su dinero
+                <p style="color: white; font-size: 1.1rem; margin-bottom: 30px;">
+                    Comienza desde hoy a tomar el control de tu dinero
                 </p>
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <a href="/Account/Register" class="glass-button" style="font-size: 1.1rem; padding: 14px 32px;">Comenzar Gratis</a>
-                    <button class="glass-button" style="cursor: pointer; border: none; font-size: 1.1rem; padding: 14px 32px;">Ver Demo</button>
+                    <a href="/Account/Register" class="glass-button" style="font-size: 1.1rem; padding: 14px 32px;">Comenzar</a>
+
+                    <!-- Para cuando se agregue la version Demo -->
+                    @* <button class="glass-button" style="cursor: pointer; border: none; font-size: 1.1rem; padding: 14px 32px;">Ver Demo</button> *@
                 </div>
             </div>
 
@@ -359,6 +363,34 @@
         Navigation.LocationChanged -= OnLocationChanged;
     }
 }
+
+<style>
+
+    .logout-form {
+        margin: 0;
+    }
+
+    .btn-logout {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: rgba(244, 67, 54, 0.15);
+        border: 1px solid rgba(244, 67, 54, 0.3);
+        border-radius: 10px;
+        color: #F44336;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+        .btn-logout:hover {
+            background: rgba(244, 67, 54, 0.25);
+            transform: translateY(-2px);
+        }
+
+</style>
     
 
 
