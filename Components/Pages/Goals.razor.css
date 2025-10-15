@@ -1,0 +1,128 @@
+﻿body {
+}
+
+.goals-container {
+    padding: 2rem;
+    min-height: 100vh;
+}
+
+.goals-header {
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+}
+
+/* Botón de acción principal */
+.glass-button-action {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.4);
+    color: #4CAF50;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+    .glass-button-action:hover:not(:disabled) {
+        background: rgba(76, 175, 80, 0.3);
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
+    }
+
+    .glass-button-action:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+.glass-button-secondary {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+    .glass-button-secondary:hover {
+        background: rgba(255, 255, 255, 0.15);
+    }
+
+
+/* Select personalizado */
+.form-control-glass select,
+select.form-control-glass {
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234CAF50' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    background-size: 12px;
+    padding-right: 2.5rem;
+    cursor: pointer;
+}
+
+
+.form-control-glass option {
+    background: rgba(15, 23, 42, 0.95);
+    color: white;
+    padding: 0.5rem;
+}
+
+
+
+/* Para navegadores webkit (Chrome, Safari, Edge) */
+.form-control-glass select option:checked,
+.form-control-glass select option:hover {
+    background: rgba(76, 175, 80, 0.2);
+}
+
+
+
+
+
+.goal-card {
+    transition: all 0.3s ease;
+    border-left: 4px solid #0d6efd !important;
+}
+
+    .goal-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
+    }
+
+.goal-completed {
+    border-left-color: #198754 !important;
+    background-color: rgba(25, 135, 84, 0.03);
+}
+
+.goal-overdue {
+    border-left-color: #dc3545 !important;
+    background-color: rgba(220, 53, 69, 0.03);
+}
+
+.goal-icon {
+    font-size: 2.5rem;
+    line-height: 1;
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+    .card-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
+    }
+
+.progress {
+    background-color: rgba(0, 0, 0, 0.05);
+}
+
+.progress-bar {
+    transition: width 0.6s ease;
+}

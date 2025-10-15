@@ -39,13 +39,13 @@
     }
     else if (!goals.Any())
     {
-        <div class="card border-0 shadow-sm rounded-4">
+        <div class="glass-card border-0 shadow-sm rounded-4">
             <div class="card-body text-center py-5">
-                <i class="bi bi-flag fs-1 text-muted"></i>
-                <h5 class="mt-3">No hay metas definidas</h5>
-                <p class="text-muted">Establece tus objetivos financieros y haz seguimiento de tu progreso</p>
-                <button class="btn btn-primary mt-3" @onclick="OpenCreateModal">
-                    <i class="bi bi-plus-circle me-2"></i>Crear Mi Primera Meta
+                <span style="font-size: 25px;">🚩</span>
+                <h5 class="mt-3 text-white">No hay metas definidas</h5>
+                <p class="text-white">Establece tus objetivos financieros y haz seguimiento de tu progreso</p>
+                <button class="glass-button-action text-white mt-3" @onclick="OpenCreateModal">
+                    <span style="font-size: 17px;">➕</span>Crear Mi Primera Meta
                 </button>
             </div>
         </div>
@@ -350,20 +350,20 @@
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content rounded-4 shadow">
+            <div class="glass-card modal-content rounded-4 shadow">
                 <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">
+                    <h5 class="modal-title fw-bold text-white">
                         <span class="fs-2 me-2">@currentGoal.Icon</span>
                         Agregar Progreso
                     </h5>
-                    <button type="button" class="btn-close" @onclick="CloseProgressModal"></button>
+                    <button type="button" class="btn-close text-white" @onclick="CloseProgressModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-4">
-                        <h6 class="fw-bold">@currentGoal.Title</h6>
+                        <h6 class="fw-bold text-white">@currentGoal.Title</h6>
                         <div class="d-flex justify-content-between text-muted small">
-                            <span>Actual: @currentGoal.CurrentAmount.ToString("C2")</span>
-                            <span>Meta: @currentGoal.TargetAmount.ToString("C2")</span>
+                            <span class="text-white">Actual: @currentGoal.CurrentAmount.ToString("C2")</span>
+                            <span class="text-white">Meta: @currentGoal.TargetAmount.ToString("C2")</span>
                         </div>
                         <div class="progress mt-2" style="height: 10px;">
                             <div class="progress-bar bg-success"
@@ -373,22 +373,22 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-semibold">Monto a Agregar (RD$)</label>
+                        <label class="form-label fw-semibold text-white">Monto a Agregar (RD$)</label>
                         <input type="number" class="form-control form-control-lg"
                                @bind="progressAmount"
                                placeholder="0.00"
                                step="100"
                                min="0" />
-                        <small class="text-muted">
+                        <small class="text-white">
                             Falta: @currentGoal.RemainingAmount.ToString("C2")
                         </small>
                     </div>
 
                     <div class="d-flex gap-2 justify-content-end">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseProgressModal">
+                        <button type="button" class="glass-button-secondary" @onclick="CloseProgressModal">
                             Cancelar
                         </button>
-                        <button type="button" class="btn btn-success" @onclick="AddProgress" disabled="@isSaving">
+                        <button type="button" class="glass-button-action" @onclick="AddProgress" disabled="@isSaving">
                             @if (isSaving)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -402,136 +402,6 @@
         </div>
     </div>
 }
-
-<style>
-
-    .goals-container {
-        padding: 2rem;
-        min-height: 100vh;
-    }
-
-    .goals-header {
-        padding: 1.5rem 2rem;
-        margin-bottom: 2rem;
-    }
-
-    /* Botón de acción principal */
-    .glass-button-action {
-        background: rgba(76, 175, 80, 0.2);
-        border: 1px solid rgba(76, 175, 80, 0.4);
-        color: #4CAF50;
-        padding: 0.75rem 1.5rem;
-        border-radius: 10px;
-        font-weight: 600;
-        transition: all 0.3s ease;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-    }
-
-        .glass-button-action:hover:not(:disabled) {
-            background: rgba(76, 175, 80, 0.3);
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.3);
-        }
-
-        .glass-button-action:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-    .glass-button-secondary {
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        color: rgba(255, 255, 255, 0.9);
-        padding: 0.75rem 1.5rem;
-        border-radius: 10px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        cursor: pointer;
-    }
-
-        .glass-button-secondary:hover {
-            background: rgba(255, 255, 255, 0.15);
-        }
-
-
-    /* Select personalizado */
-    .form-control-glass select,
-    select.form-control-glass {
-        appearance: none;
-        -webkit-appearance: none;
-        -moz-appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%234CAF50' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-        background-repeat: no-repeat;
-        background-position: right 1rem center;
-        background-size: 12px;
-        padding-right: 2.5rem;
-        cursor: pointer;
-    }
-
-
-    .form-control-glass option {
-        background: rgba(15, 23, 42, 0.95);
-        color: white;
-        padding: 0.5rem;
-    }
-
-
-
-    /* Para navegadores webkit (Chrome, Safari, Edge) */
-    .form-control-glass select option:checked,
-    .form-control-glass select option:hover {
-        background: rgba(76, 175, 80, 0.2);
-    }
-
-
-
-
-
-    .goal-card {
-        transition: all 0.3s ease;
-        border-left: 4px solid #0d6efd !important;
-    }
-
-        .goal-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15) !important;
-        }
-
-    .goal-completed {
-        border-left-color: #198754 !important;
-        background-color: rgba(25, 135, 84, 0.03);
-    }
-
-    .goal-overdue {
-        border-left-color: #dc3545 !important;
-        background-color: rgba(220, 53, 69, 0.03);
-    }
-
-    .goal-icon {
-        font-size: 2.5rem;
-        line-height: 1;
-    }
-
-    .card-hover {
-        transition: all 0.3s ease;
-    }
-
-        .card-hover:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1) !important;
-        }
-
-    .progress {
-        background-color: rgba(0, 0, 0, 0.05);
-    }
-
-    .progress-bar {
-        transition: width 0.6s ease;
-    }
-</style>
-
 @code {
     private bool isLoading = true;
     private bool showModal = false;

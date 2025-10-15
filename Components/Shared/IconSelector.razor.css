@@ -1,0 +1,253 @@
+﻿body {
+}
+
+/* Contenedor principal */
+.icon-selector-container {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+/* Display del selector (estilo dropdown) */
+.icon-selector-display {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-height: 50px;
+}
+
+    .icon-selector-display:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+    }
+
+    .icon-selector-display.open {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+.selected-icon-display {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+
+.icon-selector-text {
+    flex: 1;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.95rem;
+}
+
+    .icon-selector-text.has-selection {
+        color: white;
+        font-weight: 500;
+    }
+
+.icon-selector-arrow {
+    color: rgba(255, 255, 255, 0.5);
+    transition: transform 0.3s ease;
+    font-size: 1rem;
+}
+
+.icon-selector-display.open .icon-selector-arrow {
+    transform: rotate(180deg);
+    color: #4CAF50;
+}
+
+/* Overlay con blur */
+.icon-picker-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* Panel de selección (Modal superpuesto) */
+.icon-selector-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 500px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    z-index: 1001;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+    }
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header con búsqueda */
+.icon-picker-header {
+    margin-bottom: 1rem;
+    position: sticky;
+    top: 0;
+    background: rgba(15, 23, 42, 0.95);
+    padding-bottom: 0.5rem;
+    z-index: 10;
+}
+
+.form-control-glass-search {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    color: white;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+    .form-control-glass-search:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.1);
+    }
+
+    .form-control-glass-search::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+/* Grid de íconos */
+.icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(50px, 1fr));
+    gap: 0.5rem;
+}
+
+.icon-option {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+    .icon-option:hover {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(76, 175, 80, 0.5);
+        transform: scale(1.15);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    }
+
+    .icon-option.selected {
+        background: rgba(76, 175, 80, 0.3);
+        border-color: rgba(76, 175, 80, 0.6);
+        box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
+        transform: scale(1.1);
+    }
+
+/* Empty state */
+.empty-state-icons {
+    text-align: center;
+    padding: 2rem 1rem;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+    .empty-state-icons i {
+        font-size: 3rem;
+        display: block;
+        margin-bottom: 0.5rem;
+        color: rgba(255, 255, 255, 0.3);
+    }
+
+    .empty-state-icons p {
+        font-size: 0.9rem;
+    }
+
+/* Scrollbar personalizado */
+.icon-selector-panel::-webkit-scrollbar {
+    width: 6px;
+}
+
+.icon-selector-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+}
+
+.icon-selector-panel::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+}
+
+    .icon-selector-panel::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.3);
+    }
+
+/* Responsive */
+@media (max-width: 576px) {
+    .icon-grid {
+        grid-template-columns: repeat(auto-fill, minmax(45px, 1fr));
+    }
+
+    .icon-option {
+        width: 45px;
+        height: 45px;
+        font-size: 1.5rem;
+    }
+
+    .icon-selector-panel {
+        max-height: 300px;
+    }
+}

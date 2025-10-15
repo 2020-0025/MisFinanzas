@@ -1,0 +1,29 @@
+﻿body {
+}
+
+/*Formulario de cerrar sesion (OJO; UBICAR DONDE ESTA ESA CLASE) */
+.logout-form {
+    margin: 0;
+}
+
+
+/*Boton de cerrar sesion*/
+.btn-logout {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: rgba(244, 67, 54, 0.15);
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    border-radius: 10px;
+    color: #F44336;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+}
+
+    .btn-logout:hover {
+        background: rgba(244, 67, 54, 0.25);
+        transform: translateY(-2px);
+    }
