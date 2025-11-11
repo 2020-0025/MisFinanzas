@@ -5,8 +5,9 @@ namespace MisFinanzas.Domain.DTOs
 {
     public class FinancialGoalDto
     {
-
         public int GoalId { get; set; }
+
+        public string UserId { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "El título es requerido")]
         [StringLength(100, ErrorMessage = "El título no puede exceder 100 caracteres")]
@@ -29,15 +30,26 @@ namespace MisFinanzas.Domain.DTOs
 
         public GoalStatus Status { get; set; } = GoalStatus.InProgress;
 
+        public DateTime? CompletedAt { get; set; }
+
         [Required(ErrorMessage = "El icono es requerido")]
         [StringLength(10)]
         public string Icon { get; set; } = "🎯";
 
         // Computed properties
-        public decimal ProgressPercentage { get; set; }
-        public decimal RemainingAmount { get; set; }
-        public int DaysRemaining { get; set; }
-        public bool IsCompleted { get; set; }
-        public bool IsOverdue { get; set; }
+        public decimal RemainingAmount => TargetAmount - CurrentAmount;
+        public decimal ProgressPercentage => TargetAmount > 0
+            ? (CurrentAmount / TargetAmount) * 100
+            : 0;
+        public int DaysRemaining => (TargetDate - DateTime.Now).Days;
+        public bool IsOverdue => DateTime.Now > TargetDate && Status == GoalStatus.InProgress;
+
+        public string StatusDisplay => Status switch
+        {
+            GoalStatus.InProgress => "🟢 En Progreso",
+            GoalStatus.Completed => "✅ Completada",
+            GoalStatus.Cancelled => "❌ Cancelada",
+            _ => "?"
+        };
     }
 }

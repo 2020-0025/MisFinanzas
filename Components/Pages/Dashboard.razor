@@ -4,7 +4,7 @@
 @using MisFinanzas.Infrastructure.Interfaces
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
-@inject ITransactionService TransactionService
+@inject IExpenseIncomeService ExpenseIncomeService
 @inject ICategoryService CategoryService
 @inject IFinancialGoalService GoalService
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -255,7 +255,7 @@
                                                 <td>
                                                     <div class="d-flex align-items-center gap-2">
                                                         <span style="font-size: 1.5rem;">@transaction.CategoryIcon</span>
-                                                        <span class="text-white fw-semibold">@transaction.CategoryName</span>
+                                                        <span class="text-white fw-semibold">@transaction.CategoryTitle</span>
                                                     </div>
                                                 </td>
                                                 <td>
@@ -264,7 +264,7 @@
                                                     </span>
                                                 </td>
                                                 <td>
-                                                    <span class="text-white">@transaction.Note</span>
+                                                    <span class="text-white">@transaction.Description</span>
                                                 </td>
                                                 <td>
                                                     <small class="text-white">@transaction.Date.ToString("dd/MM/yyyy")</small>
@@ -336,16 +336,16 @@
             var startDate = endDate.AddDays(-selectedDays);
 
             // Cargar datos del período seleccionado
-            dashboardData.TotalIncome = await TransactionService.GetTotalIncomeAsync(userId, startDate, endDate);
-            dashboardData.TotalExpense = await TransactionService.GetTotalExpenseAsync(userId, startDate, endDate);
+            dashboardData.TotalIncome = await ExpenseIncomeService.GetTotalIncomeAsync(userId, startDate, endDate);
+            dashboardData.TotalExpense = await ExpenseIncomeService.GetTotalExpenseAsync(userId, startDate, endDate);
             dashboardData.Balance = dashboardData.TotalIncome - dashboardData.TotalExpense;
-            dashboardData.RecentTransactions = await TransactionService.GetRecentAsync(userId, 10);
+            dashboardData.RecentTransactions = await ExpenseIncomeService.GetRecentAsync(userId, 10);
 
             categories = await CategoryService.GetAllAsync(userId);
 
             // Calcular gastos por categoría (últimos 30 días para el dona)
             var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            var allTransactions = await TransactionService.GetByDateRangeAsync(userId, thirtyDaysAgo, DateTime.Now);
+            var allTransactions = await ExpenseIncomeService.GetByDateRangeAsync(userId, thirtyDaysAgo, DateTime.Now);
 
             var expenseCategories = categories.Where(c => c.Type == TransactionType.Expense).ToList();
             dashboardData.CategoryExpenses.Clear();
@@ -397,7 +397,7 @@
         var endDate = DateTime.Now.Date;
         var startDate = endDate.AddDays(-(selectedDays - 1));
 
-        var transactions = await TransactionService.GetByDateRangeAsync(userId, startDate, endDate);
+        var transactions = await ExpenseIncomeService.GetByDateRangeAsync(userId, startDate, endDate);
         chartData.Clear();
 
         // Agrupar por días o semanas según el período

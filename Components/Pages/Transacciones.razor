@@ -3,7 +3,7 @@
 @using MisFinanzas.Domain.Enums
 @using MisFinanzas.Infrastructure.Interfaces
 @using System.Security.Claims
-@inject ITransactionService TransactionService
+@inject IExpenseIncomeService ExpenseIncomeService
 @inject ICategoryService CategoryService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
@@ -119,7 +119,7 @@
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="transaction-icon">@transaction.CategoryIcon</span>
-                                        <span class="text-white fw-semibold">@transaction.CategoryName</span>
+                                        <span class="text-white fw-semibold">@transaction.CategoryTitle</span>
                                     </div>
                                 </td>
                                 <td>
@@ -128,7 +128,7 @@
                                     </span>
                                 </td>
                                 <td>
-                                    <span class="text-white">@transaction.Note</span>
+                                    <span class="text-white">@transaction.Description</span>
                                 </td>
                                 <td>
                                     <small class="text-white">@transaction.Date.ToString("dd/MM/yyyy")</small>
@@ -137,7 +137,7 @@
                                     <button class="btn-action btn-edit" @onclick="() => OpenEditModal(transaction)" title="Editar">
                                         <span style="font-size: 13px;">📝</span>
                                     </button>
-                                    <button class="btn-action btn-delete" @onclick="() => DeleteTransaction(transaction.TransactionId)" title="Eliminar">
+                                    <button class="btn-action btn-delete" @onclick="() => DeleteTransaction(transaction.Id)" title="Eliminar">
                                         <span style="font-size: 13px;">🗑️</span>
                                     </button>
                                 </td>
@@ -217,9 +217,9 @@
 
                         <div class="form-group-glass">
                             <label class="form-label-glass text-white">Nota</label>
-                            <InputText class="form-control-glass" @bind-Value="currentTransaction.Note"
+                            <InputText class="form-control-glass" @bind-Value="currentTransaction.Description"
                                        placeholder="Descripción de la transacción" />
-                            <ValidationMessage For="@(() => currentTransaction.Note)" class="text-danger small" />
+                            <ValidationMessage For="@(() => currentTransaction.Description)" class="text-danger small" />
                         </div>
 
                         <div class="form-group-glass">
@@ -253,9 +253,9 @@
     private bool isSaving = false;
     private string userId = string.Empty;
 
-    private List<TransactionDto> transactions = new();
+    private List<ExpenseIncomeDto> transactions = new();
     private List<CategoryDto> categories = new();
-    private TransactionDto currentTransaction = new();
+    private ExpenseIncomeDto currentTransaction = new();
 
     // Filtros
     private int filterCategoryId = 0;
@@ -280,7 +280,7 @@
     {
         try
         {
-            transactions = await TransactionService.GetAllAsync(userId);
+            transactions = await ExpenseIncomeService.GetAllAsync(userId);
             categories = await CategoryService.GetAllAsync(userId);
         }
         catch (Exception ex)
@@ -289,7 +289,7 @@
         }
     }
 
-    private IEnumerable<TransactionDto> FilteredAndSortedTransactions
+    private IEnumerable<ExpenseIncomeDto> FilteredAndSortedTransactions
     {
         get
         {
@@ -342,7 +342,7 @@
 
     private void OpenCreateModal()
     {
-        currentTransaction = new TransactionDto
+        currentTransaction = new ExpenseIncomeDto
         {
             Date = DateTime.Now,
             CategoryId = 0
@@ -351,14 +351,14 @@
         showModal = true;
     }
 
-    private void OpenEditModal(TransactionDto transaction)
+    private void OpenEditModal(ExpenseIncomeDto transaction)
     {
-        currentTransaction = new TransactionDto
+        currentTransaction = new ExpenseIncomeDto
         {
-            TransactionId = transaction.TransactionId,
+            Id = transaction.Id,
             CategoryId = transaction.CategoryId,
             Amount = transaction.Amount,
-            Note = transaction.Note,
+            Description = transaction.Description,
             Date = transaction.Date
         };
         isEditMode = true;
@@ -386,11 +386,11 @@
 
             if (isEditMode)
             {
-                await TransactionService.UpdateAsync(currentTransaction, userId);
+                await ExpenseIncomeService.UpdateAsync(currentTransaction, userId);
             }
             else
             {
-                await TransactionService.CreateAsync(currentTransaction, userId);
+                await ExpenseIncomeService.CreateAsync(currentTransaction, userId);
             }
 
             await LoadData();
@@ -413,7 +413,7 @@
         {
             try
             {
-                await TransactionService.DeleteAsync(transactionId, userId);
+                await ExpenseIncomeService.DeleteAsync(transactionId, userId);
                 await LoadData();
             }
             catch (Exception ex)

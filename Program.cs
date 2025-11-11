@@ -60,10 +60,25 @@ builder.Services.AddIdentityCore<MisFinanzas.Domain.Entities.ApplicationUser>(op
     .AddSignInManager()
     .AddDefaultTokenProviders();
 
-// ⭐ REGISTRAR NUESTROS SERVICIOS (Dependency Injection)
+//  REGISTRAR NUESTROS SERVICIOS (Dependency Injection)
 builder.Services.AddScoped<ICategoryService, CategoryService> ();
-builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IExpenseIncomeService, ExpenseIncomeService>();
 builder.Services.AddScoped<IFinancialGoalService, FinancialGoalService>();
+// Servicios de negocio adicionales
+builder.Services.AddScoped<IBudgetService, BudgetService>();
+builder.Services.AddScoped<ILoanService, LoanService>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// Servicios de reportes
+builder.Services.AddScoped<IReportService, ReportService>();
+builder.Services.AddScoped<IPdfReportGenerator, PdfReportGenerator>();
+builder.Services.AddScoped<IExcelReportGenerator, ExcelReportGenerator>();
+
+// Cache temporal (Singleton porque mantiene estado en memoria)
+builder.Services.AddSingleton<ITemporaryFileCache, TemporaryFileCache>();
+
+// Servicio en background para notificaciones
+builder.Services.AddHostedService<NotificationBackgroundService>();
 
 builder.Services.AddSingleton<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Components.Account.IdentityNoOpEmailSender>();
 

@@ -39,6 +39,8 @@ namespace MisFinanzas.Domain.Entities
         [StringLength(10)]
         public string Icon { get; set; } = "🎯";
 
+        public DateTime? CompletedAt { get; set; }
+
         // Foreign Key
         [Required]
         public string UserId { get; set; } = string.Empty;
