@@ -25,6 +25,8 @@ CultureInfo.DefaultThreadCurrentUICulture = dominicanCulture;
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+// Agregar soporte para controladores API
+builder.Services.AddControllers();
 
 builder.Services.AddCascadingAuthenticationState();
 builder.Services.AddScoped<IdentityUserAccessor>();
@@ -106,5 +108,8 @@ app.MapRazorComponents<App>()
 
 // Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
+
+// Mapear controladores API
+app.MapControllers();
 
 app.Run();
