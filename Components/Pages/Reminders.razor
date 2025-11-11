@@ -1,0 +1,314 @@
+﻿@page "/reminders"
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@inject INotificationService NotificationService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Recordatorios - MisFinanzas</PageTitle>
+
+<div class="reminders-container">
+    <div class="reminders-header">
+        <h3>🔔 Recordatorios de Gastos Fijos</h3>
+        <p class="text-muted">Gestiona tus notificaciones de gastos recurrentes</p>
+    </div>
+
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    <!-- Filtros y acciones -->
+    <div class="filters-section">
+        <div class="filter-buttons">
+            <button class="btn-filter @(currentFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
+                Todas (@allNotifications.Count)
+            </button>
+            <button class="btn-filter @(currentFilter == "unread" ? "active" : "")" @onclick='() => SetFilter("unread")'>
+                No leídas (@allNotifications.Count(n => !n.IsRead))
+            </button>
+            <button class="btn-filter @(currentFilter == "read" ? "active" : "")" @onclick='() => SetFilter("read")'>
+                Leídas (@allNotifications.Count(n => n.IsRead))
+            </button>
+        </div>
+        @if (allNotifications.Any(n => !n.IsRead))
+        {
+            <button class="btn-mark-all-page" @onclick="MarkAllAsRead">
+                ✓ Marcar todas como leídas
+            </button>
+        }
+    </div>
+
+    <!-- Lista de notificaciones -->
+    <div class="notifications-list">
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p>Cargando notificaciones...</p>
+            </div>
+        }
+        else if (!filteredNotifications.Any())
+        {
+            <div class="empty-state">
+                <span style="font-size: 64px;">📭</span>
+                <h5>No hay notificaciones</h5>
+                <p>@GetEmptyMessage()</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var notification in filteredNotifications)
+            {
+                <div class="notification-card @(notification.IsRead ? "read" : "unread") @(notification.IsOverdue ? "overdue" : "")">
+                    <div class="notification-card-icon">
+                        <span style="font-size: 32px;">@(notification.CategoryIcon ?? "💰")</span>
+                    </div>
+                    <div class="notification-card-content">
+                        <div class="notification-card-header">
+                            <h6>@notification.CategoryTitle</h6>
+                            <span class="notification-status-badge @(notification.IsOverdue ? "overdue" : "")">
+                                @notification.StatusText
+                            </span>
+                        </div>
+                        <div class="notification-card-details">
+                            <div class="detail-item">
+                                <span class="detail-label">📅 Fecha de vencimiento:</span>
+                                <span class="detail-value">@notification.DueDate.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            @if (notification.CategoryEstimatedAmount != null)
+                            {
+                                <div class="detail-item">
+                                    <span class="detail-label">💵 Monto estimado:</span>
+                                    <span class="detail-value amount">@notification.CategoryEstimatedAmount.Value.ToString("C", System.Globalization.CultureInfo.CurrentCulture)</span>
+                                </div>
+                            }
+                            <div class="detail-item">
+                                <span class="detail-label">🕐 Notificación creada:</span>
+                                <span class="detail-value">@notification.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="notification-card-actions">
+                        @if (!notification.IsRead)
+                        {
+                            <button class="btn-mark-read" @onclick="() => MarkAsRead(notification.NotificationId)" title="Marcar como leída">
+                                ✓
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="read-checkmark" title="Leída">✓</span>
+                        }
+                        <button class="btn-delete-notification" @onclick="() => DeleteNotification(notification.NotificationId)" title="Eliminar notificación">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private string userId = string.Empty;
+    private List<NotificationDto> allNotifications = new();
+    private List<NotificationDto> filteredNotifications = new();
+    private string currentFilter = "all";
+    private bool isLoading = true;
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            await LoadNotifications();
+        }
+    }
+
+    private async Task LoadNotifications()
+    {
+        try
+        {
+            isLoading = true;
+
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            allNotifications = await NotificationService.GetAllNotificationsByUserAsync(userId);
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al cargar notificaciones: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetFilter(string filter)
+    {
+        currentFilter = filter;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        filteredNotifications = currentFilter switch
+        {
+            "unread" => allNotifications.Where(n => !n.IsRead).ToList(),
+            "read" => allNotifications.Where(n => n.IsRead).ToList(),
+            _ => allNotifications.ToList()
+        };
+    }
+
+    private async Task MarkAsRead(int notificationId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var success = await NotificationService.MarkAsReadAsync(notificationId, userId);
+            if (success)
+            {
+                await LoadNotifications();
+                ShowSuccessMessage("Notificación marcada como leída");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al marcar notificación: {ex.Message}");
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var success = await NotificationService.MarkAllAsReadAsync(userId);
+            if (success)
+            {
+                await LoadNotifications();
+                ShowSuccessMessage("Todas las notificaciones fueron marcadas como leídas");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al marcar notificaciones: {ex.Message}");
+        }
+    }
+
+    private string GetEmptyMessage()
+    {
+        return currentFilter switch
+        {
+            "unread" => "No tienes notificaciones sin leer",
+            "read" => "No tienes notificaciones leídas",
+            _ => "No tienes notificaciones aún. Las notificaciones de gastos fijos aparecerán aquí."
+        };
+    }
+
+    private async Task DeleteNotification(int notificationId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(userId))
+                return;
+
+            var success = await NotificationService.DeleteNotificationAsync(notificationId, userId);
+            if (success)
+            {
+                await LoadNotifications();
+                ShowSuccessMessage("Notificación eliminada correctamente");
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo eliminar la notificación");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al eliminar notificación: {ex.Message}");
+        }
+    }
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
+    }
+}

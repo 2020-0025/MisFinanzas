@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Domain.Entities;
+using MisFinanzas.Domain.DTOs;
 using MisFinanzas.Domain.Enums;
 using MisFinanzas.Infrastructure.Data;
 using MisFinanzas.Infrastructure.Interfaces;
@@ -15,22 +16,63 @@ namespace MisFinanzas.Infrastructure.Services
             _context = context;
         }
 
-        public async Task<List<Notification>> GetUnreadNotificationsByUserAsync(string userId)
+        // ==================== MÉTODOS DE MAPEO ====================
+
+        private NotificationDto MapToDto(Notification notification)
         {
-            return await _context.Notifications
+            return new NotificationDto
+            {
+                NotificationId = notification.NotificationId,
+                CategoryId = notification.CategoryId,
+                UserId = notification.UserId,
+                NotificationDate = notification.NotificationDate,
+                DueDate = notification.DueDate,
+                IsRead = notification.IsRead,
+                CreatedAt = notification.CreatedAt,
+
+                // Mapear propiedades de Category
+                CategoryIcon = notification.Category?.Icon,
+                CategoryTitle = notification.Category?.Title,
+                CategoryEstimatedAmount = notification.Category?.EstimatedAmount
+            };
+        }
+
+        private Notification MapToEntity(NotificationDto dto)
+        {
+            return new Notification
+            {
+                NotificationId = dto.NotificationId,
+                CategoryId = dto.CategoryId,
+                UserId = dto.UserId,
+                NotificationDate = dto.NotificationDate,
+                DueDate = dto.DueDate,
+                IsRead = dto.IsRead,
+                CreatedAt = dto.CreatedAt
+            };
+        }
+
+        // ==================== MÉTODOS PÚBLICOS (usan DTO) ====================
+
+        public async Task<List<NotificationDto>> GetUnreadNotificationsByUserAsync(string userId)
+        {
+            var notifications = await _context.Notifications
                 .Include(n => n.Category)
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .OrderBy(n => n.DueDate)
                 .ToListAsync();
+
+            return notifications.Select(MapToDto).ToList();
         }
 
-        public async Task<List<Notification>> GetAllNotificationsByUserAsync(string userId)
+        public async Task<List<NotificationDto>> GetAllNotificationsByUserAsync(string userId)
         {
-            return await _context.Notifications
+            var notifications = await _context.Notifications
                 .Include(n => n.Category)
                 .Where(n => n.UserId == userId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
+
+            return notifications.Select(MapToDto).ToList();
         }
 
         public async Task<int> GetUnreadCountAsync(string userId)
@@ -102,6 +144,8 @@ namespace MisFinanzas.Infrastructure.Services
             await GenerateNotificationForCategoryIfNeededAsync(category, today, daysToNotify);
             await _context.SaveChangesAsync();
         }
+
+        // ==================== MÉTODOS PRIVADOS (usan Entity internamente) ====================
 
         /// Lógica centralizada para generar notificación de una categoría
         /// Verifica:

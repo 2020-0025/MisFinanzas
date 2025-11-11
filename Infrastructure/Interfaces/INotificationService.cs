@@ -1,12 +1,12 @@
-﻿using MisFinanzas.Domain.Entities;
+﻿using MisFinanzas.Domain.DTOs;
 
 namespace MisFinanzas.Infrastructure.Interfaces
 {
     public interface INotificationService
     {
         // Obtener notificaciones
-        Task<List<Notification>> GetUnreadNotificationsByUserAsync(string userId);
-        Task<List<Notification>> GetAllNotificationsByUserAsync(string userId);
+        Task<List<NotificationDto>> GetUnreadNotificationsByUserAsync(string userId);
+        Task<List<NotificationDto>> GetAllNotificationsByUserAsync(string userId);
         Task<int> GetUnreadCountAsync(string userId);
 
         // Marcar como leído

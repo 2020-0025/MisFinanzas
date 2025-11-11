@@ -1,0 +1,439 @@
+﻿@page "/profile"
+@using MisFinanzas.Domain.Entities
+@using Microsoft.AspNetCore.Identity
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@inject UserManager<ApplicationUser> UserManager
+@inject SignInManager<ApplicationUser> SignInManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+@rendermode InteractiveServer
+
+<PageTitle>Mi Perfil - Mis Finanzas</PageTitle>
+
+<div class="profile-container">
+
+    <!-- Header -->
+    <div class="profile-header">
+        <div class="header-icon">👤</div>
+        <div>
+            <h1>Mi Perfil</h1>
+            <p class="text-white">Gestiona tu información personal</p>
+        </div>
+    </div>
+
+    @if (_isLoading)
+    {
+        <div class="loading-container">
+            <div class="spinner-border text-primary"></div>
+            <p>Cargando...</p>
+        </div>
+    }
+    else if (_loadError != null)
+    {
+        <div class="profile-card">
+            <div class="card-body">
+                <div class="alert alert-danger">@_loadError</div>
+                <div class="card-actions">
+                    <button class="btn btn-primary" @onclick="ReloadData">
+                        🔄 Intentar de nuevo
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+    else if (_currentUser != null)
+    {
+        <div class="cards-container">
+
+            <!-- Card: Información Personal -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <h2>📋 Información Personal</h2>
+                </div>
+                <div class="card-body">
+                    @if (_editingInfo)
+                    {
+                        <EditForm Model="_editModel" OnValidSubmit="SavePersonalInfo">
+                            <div class="form-group">
+                                <label>Nombre de Usuario</label>
+                                <input type="text" value="@_currentUser.UserName" class="form-control" disabled />
+                                <small class="text-muted">El nombre de usuario no se puede cambiar</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Correo Electrónico</label>
+                                <InputText @bind-Value="_editModel.Email" class="form-control" />
+                            </div>
+
+                            @if (_infoError != null)
+                            {
+                                <div class="alert alert-danger">@_infoError</div>
+                            }
+
+                            <div class="card-actions">
+                                <button type="submit" class="btn btn-primary" disabled="@_isSaving">
+                                    @if (_isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm"></span>
+                                    }
+                                    else
+                                    {
+                                        <span>💾 Guardar</span>
+                                    }
+                                </button>
+                                <button type="button" class="btn btn-secondary" @onclick="CancelEditInfo">
+                                    ❌ Cancelar
+                                </button>
+                            </div>
+                        </EditForm>
+                    }
+                    else
+                    {
+                        <div class="info-row">
+                            <span class="info-label text-white">Nombre de Usuario:</span>
+                            <span class="info-value">@_currentUser.UserName</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label text-white">Correo Electrónico:</span>
+                            <span class="info-value">@_currentUser.Email</span>
+                        </div>
+
+                        <div class="card-actions">
+                            <button class="btn btn-primary" @onclick="EnableEditInfo">
+                                ✏️ Editar Información
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Card: Cambiar Contraseña -->
+            <div class="profile-card">
+                <div class="card-header">
+                    <h2>🔐 Cambiar Contraseña</h2>
+                </div>
+                <div class="card-body">
+                    <EditForm Model="_passwordModel" OnValidSubmit="ChangePassword">
+                        <div class="form-group">
+                            <label>Contraseña Actual</label>
+                            <InputText @bind-Value="_passwordModel.CurrentPassword"
+                                       type="password" class="form-control"
+                                       placeholder="Ingresa tu contraseña actual" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Nueva Contraseña</label>
+                            <InputText @bind-Value="_passwordModel.NewPassword"
+                                       type="password" class="form-control"
+                                       placeholder="Mínimo 6 caracteres" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Confirmar Nueva Contraseña</label>
+                            <InputText @bind-Value="_passwordModel.ConfirmPassword"
+                                       type="password" class="form-control"
+                                       placeholder="Repite la nueva contraseña" />
+                        </div>
+
+                        @if (_passwordError != null)
+                        {
+                            <div class="alert alert-danger">@_passwordError</div>
+                        }
+
+                        @if (_passwordSuccess)
+                        {
+                            <div class="alert alert-success">¡Contraseña cambiada correctamente!</div>
+                        }
+
+                        <div class="card-actions">
+                            <button type="submit" class="btn btn-primary" disabled="@_isSaving">
+                                @if (_isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm"></span>
+                                }
+                                else
+                                {
+                                    <span>🔒 Cambiar Contraseña</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+
+            <!-- Card: Eliminar Cuenta -->
+            <div class="profile-card danger-card">
+                <div class="card-header">
+                    <h2>⚠️ Zona de Peligro</h2>
+                </div>
+                <div class="card-body">
+                    <p class="warning-text">
+                        Al eliminar tu cuenta, perderás permanentemente todos tus datos:
+                        categorías, transacciones, metas, presupuestos, préstamos y notificaciones.
+                    </p>
+                    <p class="warning-text"><strong>Esta acción no se puede deshacer.</strong></p>
+
+                    <div class="card-actions">
+                        <button class="btn btn-danger" @onclick="ConfirmDeleteAccount">
+                            🗑️ Eliminar Mi Cuenta
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    }
+</div>
+
+@code {
+    private bool _isLoading = true;
+    private bool _editingInfo = false;
+    private bool _isSaving = false;
+    private bool _passwordSuccess = false;
+    private string? _infoError;
+    private string? _passwordError;
+    private string? _loadError;
+    private string userId = string.Empty;
+
+    private ApplicationUser? _currentUser;
+    private EditInfoModel _editModel = new();
+    private PasswordModel _passwordModel = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUserData();
+    }
+
+    private async Task LoadUserData()
+    {
+        try
+        {
+            _isLoading = true;
+            _loadError = null;
+
+            var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            if (user.Identity?.IsAuthenticated ?? false)
+            {
+                userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    _currentUser = await UserManager.FindByIdAsync(userId);
+
+                    if (_currentUser == null)
+                    {
+                        _loadError = "No se encontró la información del usuario.";
+                        return;
+                    }
+
+                    _editModel.Email = _currentUser.Email ?? string.Empty;
+                }
+                else
+                {
+                    _loadError = "No se pudo obtener el ID del usuario.";
+                }
+            }
+            else
+            {
+                _loadError = "Usuario no autenticado.";
+            }
+        }
+        catch (Exception ex)
+        {
+            _loadError = $"Error al cargar datos: {ex.Message}";
+            Console.WriteLine($"❌ Profile Error: {ex}");
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task ReloadData()
+    {
+        await LoadUserData();
+        StateHasChanged();
+    }
+
+    private void EnableEditInfo()
+    {
+        if (_currentUser != null)
+        {
+            _editModel.Email = _currentUser.Email ?? string.Empty;
+            _editingInfo = true;
+            _infoError = null;
+        }
+    }
+
+    private void CancelEditInfo()
+    {
+        _editingInfo = false;
+        _infoError = null;
+        if (_currentUser != null)
+        {
+            _editModel.Email = _currentUser.Email ?? string.Empty;
+        }
+    }
+
+    private async Task SavePersonalInfo()
+    {
+        try
+        {
+            _isSaving = true;
+            _infoError = null;
+
+            if (_currentUser == null)
+            {
+                _infoError = "Error: Usuario no encontrado";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_editModel.Email))
+            {
+                _infoError = "El correo electrónico es requerido";
+                return;
+            }
+
+            _currentUser.Email = _editModel.Email;
+            var result = await UserManager.UpdateAsync(_currentUser);
+
+            if (result.Succeeded)
+            {
+                _editingInfo = false;
+                await JSRuntime.InvokeVoidAsync("alert", "Información actualizada correctamente");
+            }
+            else
+            {
+                _infoError = string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            _infoError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ChangePassword()
+    {
+        try
+        {
+            _isSaving = true;
+            _passwordError = null;
+            _passwordSuccess = false;
+
+            if (_currentUser == null)
+            {
+                _passwordError = "Error: Usuario no encontrado";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_passwordModel.CurrentPassword))
+            {
+                _passwordError = "Ingresa tu contraseña actual";
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(_passwordModel.NewPassword))
+            {
+                _passwordError = "Ingresa la nueva contraseña";
+                return;
+            }
+
+            if (_passwordModel.NewPassword.Length < 6)
+            {
+                _passwordError = "La contraseña debe tener al menos 6 caracteres";
+                return;
+            }
+
+            if (_passwordModel.NewPassword != _passwordModel.ConfirmPassword)
+            {
+                _passwordError = "Las contraseñas no coinciden";
+                return;
+            }
+
+            var result = await UserManager.ChangePasswordAsync(
+                _currentUser,
+                _passwordModel.CurrentPassword,
+                _passwordModel.NewPassword
+            );
+
+            if (result.Succeeded)
+            {
+                _passwordModel = new PasswordModel();
+                _passwordSuccess = true;
+                StateHasChanged();
+                await Task.Delay(3000);
+                _passwordSuccess = false;
+            }
+            else
+            {
+                _passwordError = string.Join(", ", result.Errors.Select(e => e.Description));
+            }
+        }
+        catch (Exception ex)
+        {
+            _passwordError = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task ConfirmDeleteAccount()
+    {
+        if (_currentUser == null)
+        {
+            return;
+        }
+
+        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+            "¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y perderás todos tus datos.");
+
+        if (confirmed)
+        {
+            try
+            {
+                // UserManager.DeleteAsync eliminará el usuario
+                // Si tienes cascade delete configurado en EF Core, las entidades relacionadas se eliminarán automáticamente
+                var result = await UserManager.DeleteAsync(_currentUser);
+
+                if (result.Succeeded)
+                {
+                    await SignInManager.SignOutAsync();
+                    Navigation.NavigateTo("/", forceLoad: true);
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("alert",
+                        $"No se pudo eliminar la cuenta: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+                }
+            }
+            catch (Exception ex)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar cuenta: {ex.Message}");
+            }
+        }
+    }
+
+    public class EditInfoModel
+    {
+        public string Email { get; set; } = "";
+    }
+
+    public class PasswordModel
+    {
+        public string CurrentPassword { get; set; } = "";
+        public string NewPassword { get; set; } = "";
+        public string ConfirmPassword { get; set; } = "";
+    }
+}
