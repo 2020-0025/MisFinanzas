@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using MisFinanzas.Infrastructure.Services;
+using MisFinanzas.Infrastructure.Interfaces;
 
 namespace MisFinanzas.Controllers 
 {
@@ -11,8 +12,8 @@ namespace MisFinanzas.Controllers
 
     {
 
-        private readonly TemporaryFileCache _fileCache;
-        public FileDownloadController(TemporaryFileCache fileCache)
+        private readonly ITemporaryFileCache _fileCache;
+        public FileDownloadController(ITemporaryFileCache fileCache)
 
         {
 
