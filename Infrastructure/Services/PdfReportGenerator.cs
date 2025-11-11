@@ -195,9 +195,9 @@ namespace MisFinanzas.Infrastructure.Services
             return yPosition;
         }
 
-        private string TruncateString(string text, int maxLength)
+        private string TruncateString(string? text, int maxLength)
         {
-            if (string.IsNullOrEmpty(text)) return text;
+            if (string.IsNullOrEmpty(text)) return string.Empty;
             return text.Length <= maxLength ? text : text.Substring(0, maxLength - 3) + "...";
         }
     }
