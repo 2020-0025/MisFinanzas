@@ -555,7 +555,7 @@
         }
     }
 
-    private async Task CalculateChartData()
+    private Task CalculateChartData()
     {
         var endDate = DateTime.Now.Date;
         var startDate = endDate.AddDays(-(selectedDays - 1));
@@ -613,6 +613,8 @@
                 weekNumber++;
             }
         }
+
+        return Task.CompletedTask;
     }
 
     private async Task PrepareBudgetData()
@@ -638,7 +640,7 @@
         }
     }
 
-    private async Task PrepareExpensesByCategoryData()
+    private Task PrepareExpensesByCategoryData()
     {
         expensesByCategoryData.Clear();
 
@@ -654,7 +656,7 @@
             .ToList();
 
         if (!expenses.Any())
-            return;
+            return Task.CompletedTask;
 
         var groupedByCategory = expenses
             .GroupBy(e => new { e.CategoryId, e.CategoryTitle, e.CategoryIcon })
@@ -670,11 +672,11 @@
 
         var colors = new[]
         {
-            "#f44336", "#e91e63", "#9c27b0", "#673ab7",
-            "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4",
-            "#009688", "#4caf50", "#8bc34a", "#cddc39",
-            "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
-        };
+        "#f44336", "#e91e63", "#9c27b0", "#673ab7",
+        "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4",
+        "#009688", "#4caf50", "#8bc34a", "#cddc39",
+        "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+    };
 
         int colorIndex = 0;
         foreach (var item in groupedByCategory)
@@ -688,6 +690,8 @@
             });
             colorIndex++;
         }
+
+        return Task.CompletedTask;
     }
 
     private void PrepareTopGoals()

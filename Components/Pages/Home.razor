@@ -11,7 +11,7 @@
 <AuthorizeView>
     <Authorized>
         @* Vista para usuarios autenticados *@
-        <div style="min-height: 100vh; padding: 20px;">
+        <div style="min-height: 100vh; padding: 20px; width:90%;">
 
             <!-- Navigation Bar Autenticado -->
             <nav class="glass-nav animate-slide-up" style="padding: 15px 30px; margin-bottom: 40px; border-radius: 16px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
@@ -26,7 +26,7 @@
                     <form action="/Account/Logout" method="post" class="logout-form">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="btn-logout" style="cursor: pointer; border: none;">🔐</button>
+                        <button type="submit" class="btn-logout text-white" style="cursor: pointer; border: none;">🔐 Salir</button>
                     </form>
                 </div>
             </nav>

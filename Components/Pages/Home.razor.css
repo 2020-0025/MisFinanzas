@@ -12,7 +12,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
+    width: 100px;
     height: 40px;
     background: rgba(244, 67, 54, 0.15);
     border: 1px solid rgba(244, 67, 54, 0.3);
