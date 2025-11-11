@@ -10,7 +10,7 @@
         public int CompletedGoals { get; set; }
 
         public List<CategoryExpenseDto> CategoryExpenses { get; set; } = new();
-        public List<ExpenseIncomeDto> RecentTransactions { get; set; }
+        public List<ExpenseIncomeDto> RecentTransactions { get; set; } = new();
         public List<FinancialGoalDto> ActiveGoals { get; set; } = new();
     }
 

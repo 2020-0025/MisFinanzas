@@ -1,0 +1,670 @@
+﻿@page "/categories"
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Domain.Enums
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
+@using MisFinanzas.Components.Shared
+@inject ICategoryService CategoryService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Categorías - Mis Finanzas</PageTitle>
+
+<div class="categories-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="mb-3 mb-md-0">
+                <h1>🏷️ Categorías</h1>
+                <p class="mb-0 text-white">Organiza tus gastos e ingresos</p>
+            </div>
+            <button class="btnAddCategory" @onclick="OpenModal">
+                <span style="font-size: 17px;">➕</span> Nueva Categoría
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    @if (isLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-light" role="status"></div>
+            <p class="text-white mt-3">Cargando categorías...</p>
+        </div>
+    }
+    else
+    {
+        <!-- Categorías de Gastos -->
+        <div class="categories-section">
+            <h4 class="section-title">📉 Categorías de Gastos</h4>
+            <div class="row">
+                @if (expenseCategories.Any())
+                {
+                    @foreach (var category in expenseCategories)
+                    {
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="category-card expense">
+                                <div class="category-icon">@category.Icon</div>
+                                <div class="category-info">
+                                    <h5>@category.Title</h5>
+                                    <span class="badge bg-danger">Gasto</span>
+                                    @if (category.IsFixedExpense)
+                                    {
+                                        <span class="badge bg-info ms-1" title="Gasto fijo mensual">📅</span>
+                                    }
+                                </div>
+                                <div class="category-actions">
+                                    <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditCategory(category)">
+                                        <span style="font-size: 13px;">📝</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(category.CategoryId, category.Title)">
+                                        <span style="font-size: 13px;">🗑️</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 glass-card">
+                        <p class="text-warning text-center mt-1">No hay categorías de gastos. Crea una para comenzar.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Categorías de Ingresos -->
+        <div class="categories-section">
+            <h4 class="section-title">📈 Categorías de Ingresos</h4>
+            <div class="row">
+                @if (incomeCategories.Any())
+                {
+                    @foreach (var category in incomeCategories)
+                    {
+                        <div class="col-md-3 col-sm-6 mb-3">
+                            <div class="category-card income">
+                                <div class="category-icon">@category.Icon</div>
+                                <div class="category-info">
+                                    <h5>@category.Title</h5>
+                                    <span class="badge bg-success">Ingreso</span>
+                                </div>
+                                <div class="category-actions">
+                                    <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditCategory(category)">
+                                        <span style="font-size: 13px;">📝</span>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(category.CategoryId, category.Title)">
+                                        <span style="font-size: 13px;">🗑️</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 glass-card">
+                        <p class="text-warning text-center mt-1">No hay categorías de ingresos. Crea una para comenzar.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal Agregar/Editar -->
+@if (showModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        @(isEditing ? "✏️ Editar Categoría" : "➕ Nueva Categoría")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="formModel" OnValidSubmit="SaveCategory">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre</label>
+                            <InputText @bind-Value="formModel.Title" class="form-control" placeholder="Ej: Alimentación" />
+                            <ValidationMessage For="() => formModel.Title" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(titleValidationError))
+                            {
+                                <div class="text-danger small mt-1">@titleValidationError</div>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Tipo</label>
+                            <InputSelect @bind-Value="formModel.Type" class="form-select glass-card text-white">
+                                <option value="@TransactionType.Expense">📉 Gasto</option>
+                                <option value="@TransactionType.Income">📈 Ingreso</option>
+                            </InputSelect>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label"></label>
+                            <IconSelector @bind-SelectedIcon="formModel.Icon" />
+                            <ValidationMessage For="() => formModel.Icon" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(iconValidationError))
+                            {
+                                <div class="text-danger small mt-1">@iconValidationError</div>
+                            }
+                        </div>
+
+                        <!-- Campos de Recordatorio (Solo para Gastos) -->
+                        @if (formModel.Type == TransactionType.Expense)
+                        {
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <InputCheckbox @bind-Value="formModel.IsFixedExpense" class="form-check-input" id="isFixedExpense" />
+                                    <label class="form-check-label text-white" for="isFixedExpense">
+                                        📅 Es un gasto fijo mensual (con recordatorio)
+                                    </label>
+                                </div>
+                            </div>
+
+                            @if (formModel.IsFixedExpense)
+                            {
+                                <div class="alert alert-info mb-3">
+                                    <small class="text-info">
+                                        <strong>💡 Recordatorio:</strong> Se te notificará 3 días antes de la fecha de pago.
+                                    </small>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-white">Día del mes de pago</label>
+                                        <InputNumber @bind-Value="formModel.DayOfMonth" class="form-control" placeholder="Ej: 15" min="1" max="31" />
+                                        <small class="form-text text-white">Número del 1 al 31</small>
+                                    </div>
+
+                                    <div class="col-md-6 mb-3">
+                                        <label class="form-label text-white">Monto estimado (opcional)</label>
+                                        <InputNumber @bind-Value="formModel.EstimatedAmount" class="form-control" placeholder="0.00" />
+                                        <small class="form-text text-white">Monto aproximado del gasto</small>
+                                    </div>
+                                </div>
+                            }
+                        }
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btnSaveEdit" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Guardando...</span>
+                                }
+                                else
+                                {
+                                    <span>Guardar</span>
+                                }
+                            </button>
+                            <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de Eliminación -->
+@if (showDeleteModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">⚠️ Confirmar Eliminación</h5>
+                    <button type="button" class="btn-close" @onclick="CancelDelete">❌</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar la categoría: <strong>@categoryToDelete</strong>?</p>
+
+                    @if (belongsToLoan)
+                    {
+                        <div class="alert alert-danger mb-3">
+                            <h6 class="alert-heading text-danger">
+                                <span style="font-size: 20px;">🚫</span> <strong>¡NO SE PUEDE ELIMINAR!</strong>
+                            </h6>
+                            <p class="mb-2 text-white">
+                                Esta categoría pertenece al préstamo: <strong>@loanTitle</strong>
+                            </p>
+                            <p class="mb-0 text-white">
+                                <strong>Para eliminar esta categoría, primero elimina el préstamo desde la sección "Préstamos".</strong>
+                            </p>
+                        </div>
+                    }
+                    else if (relatedTransactionsCount > 0)
+                    {
+                        <div class="alert alert-warning mb-3">
+                            <h6 class="alert-heading text-warning">
+                                <span style="font-size: 20px;">⚠️</span> <strong>¡ATENCIÓN!</strong>
+                            </h6>
+                            <p class="mb-2 text-white">
+                                Esta categoría tiene <strong>@relatedTransactionsCount transacción(es)</strong> relacionada(s).
+                            </p>
+                            <p class="mb-0 text-white">
+                                <strong>Al eliminar esta categoría, también se eliminarán todas sus transacciones.</strong>
+                            </p>
+                        </div>
+
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="confirmCheckbox"
+                                   @bind="confirmDeleteWithTransactions">
+                            <label class="form-check-label" for="confirmCheckbox">
+                                Entiendo que se eliminarán <strong>@relatedTransactionsCount transacción(es)</strong> junto con esta categoría
+                            </label>
+                        </div>
+                    }
+                    else
+                    {
+                        <p class="text-success mb-2">
+                            <small>✓ Esta categoría no tiene transacciones relacionadas.</small>
+                        </p>
+                    }
+
+                    <p class="text-danger mb-0">
+                        <small>⚠️ Esta acción no se puede deshacer.</small>
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CancelDelete">Cancelar</button>
+                    <button type="button" class="btnDelete" @onclick="DeleteCategory"
+                            disabled="@(belongsToLoan || (relatedTransactionsCount > 0 && !confirmDeleteWithTransactions))">
+                        <span style="font-size: 13px;">🗑️</span> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string currentUserId = string.Empty;
+
+    // Listas
+    private List<CategoryDto> allCategories = new();
+    private List<CategoryDto> expenseCategories = new();
+    private List<CategoryDto> incomeCategories = new();
+
+    // Mensajes
+    private string? successMessage;
+    private string? errorMessage;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    // Modal
+    private bool showModal = false;
+    private bool isSaving = false;
+    private bool isEditing = false;
+    private CategoryFormModel formModel = new();
+
+    // Modal de eliminación
+    private bool showDeleteModal = false;
+    private int categoryIdToDelete;
+    private string? categoryToDelete;
+    private int relatedTransactionsCount = 0;
+    private bool confirmDeleteWithTransactions = false;
+    private bool belongsToLoan = false;
+    private string? loanTitle = null;
+    private string? titleValidationError;
+    private string? iconValidationError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                await LoadData();
+            }
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Cargar todas las categorías
+            allCategories = await CategoryService.GetAllByUserAsync(currentUserId);
+
+            // Separar por tipo
+            expenseCategories = allCategories.Where(c => c.Type == TransactionType.Expense).ToList();
+            incomeCategories = allCategories.Where(c => c.Type == TransactionType.Income).ToList();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al cargar categorías: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenModal()
+    {
+        isEditing = false;
+        formModel = new CategoryFormModel
+        {
+            Type = TransactionType.Expense,
+            Icon = "📁",
+            IsFixedExpense = false,
+            DayOfMonth = null,
+            EstimatedAmount = null
+        };
+        showModal = true;
+    }
+
+    private void EditCategory(CategoryDto category)
+    {
+        isEditing = true;
+        formModel = new CategoryFormModel
+        {
+            CategoryId = category.CategoryId,
+            Title = category.Title,
+            Icon = category.Icon,
+            Type = category.Type,
+            IsFixedExpense = category.IsFixedExpense,
+            DayOfMonth = category.DayOfMonth,
+            EstimatedAmount = category.EstimatedAmount
+        };
+        showModal = true;
+    }
+
+    private async Task SaveCategory()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            if (string.IsNullOrWhiteSpace(formModel.Title))
+            {
+                ShowErrorMessage("El nombre de la categoría es requerido");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(formModel.Icon))
+            {
+                ShowErrorMessage("El icono es requerido");
+                return;
+            }
+
+            // Limpiar errores previos
+            titleValidationError = null;
+            iconValidationError = null;
+
+            // Validar nombre duplicado
+            var nameExists = await CategoryService.ExistsCategoryWithNameAsync(
+                formModel.Title.Trim(),
+                formModel.Type,
+                currentUserId,
+                isEditing ? formModel.CategoryId : null
+            );
+
+            if (nameExists)
+            {
+                titleValidationError = $"Ya existe una categoría de {(formModel.Type == TransactionType.Expense ? "gastos" : "ingresos")} con este nombre";
+                return;
+            }
+
+            // Validar icono duplicado
+            var iconExists = await CategoryService.ExistsCategoryWithIconAsync(
+                formModel.Icon.Trim(),
+                formModel.Type,
+                currentUserId,
+                isEditing ? formModel.CategoryId : null
+            );
+
+            if (iconExists)
+            {
+                iconValidationError = $"Ya existe una categoría de {(formModel.Type == TransactionType.Expense ? "gastos" : "ingresos")} con este icono";
+                return;
+            }
+
+            var dto = new CategoryDto
+            {
+                CategoryId = formModel.CategoryId,
+                Title = formModel.Title.Trim(),
+                Icon = formModel.Icon.Trim(),
+                Type = formModel.Type,
+                IsFixedExpense = formModel.IsFixedExpense,
+                DayOfMonth = formModel.DayOfMonth,
+                EstimatedAmount = formModel.EstimatedAmount
+            };
+
+            if (isEditing)
+            {
+                var result = await CategoryService.UpdateAsync(formModel.CategoryId, dto, currentUserId);
+
+                if (result)
+                {
+                    ShowSuccessMessage("Categoría actualizada correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo actualizar la categoría");
+                }
+            }
+            else
+            {
+                var created = await CategoryService.CreateAsync(dto, currentUserId);
+
+                if (created != null)
+                {
+                    ShowSuccessMessage("Categoría creada correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo crear la categoría");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        formModel = new();
+        isEditing = false;
+        titleValidationError = null;
+        iconValidationError = null;
+    }
+
+    private async Task ConfirmDelete(int id, string title)
+    {
+        categoryIdToDelete = id;
+        categoryToDelete = title;
+        confirmDeleteWithTransactions = false;
+        belongsToLoan = false;
+        loanTitle = null;
+
+        // Verificar si pertenece a un préstamo
+        var loanCheck = await CategoryService.CheckIfBelongsToLoanAsync(id, currentUserId);
+        if (loanCheck.BelongsToLoan)
+        {
+            belongsToLoan = true;
+            loanTitle = loanCheck.LoanTitle;
+        }
+
+        // Verificar si hay transacciones relacionadas
+        relatedTransactionsCount = await CategoryService.GetRelatedTransactionsCountAsync(id, currentUserId);
+
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        categoryIdToDelete = 0;
+        categoryToDelete = null;
+        relatedTransactionsCount = 0;
+        confirmDeleteWithTransactions = false;
+        belongsToLoan = false;
+        loanTitle = null;
+    }
+
+    private async Task DeleteCategory()
+    {
+        try
+        {
+            // Si hay transacciones relacionadas, verificar confirmación
+            if (relatedTransactionsCount > 0 && !confirmDeleteWithTransactions)
+            {
+                ShowErrorMessage("Debes confirmar que entiendes que se eliminarán las transacciones relacionadas");
+                return;
+            }
+
+            var result = await CategoryService.DeleteAsync(categoryIdToDelete, currentUserId);
+
+            if (result)
+            {
+                if (relatedTransactionsCount > 0)
+                {
+                    ShowSuccessMessage($"Categoría '{categoryToDelete}' y {relatedTransactionsCount} transacción(es) relacionada(s) eliminadas correctamente");
+                }
+                else
+                {
+                    ShowSuccessMessage($"Categoría '{categoryToDelete}' eliminada correctamente");
+                }
+
+                showDeleteModal = false;
+                categoryIdToDelete = 0;
+                categoryToDelete = null;
+                relatedTransactionsCount = 0;
+                confirmDeleteWithTransactions = false;
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo eliminar la categoría");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private class CategoryFormModel
+    {
+        public int CategoryId { get; set; }
+
+        [Required(ErrorMessage = "El nombre es requerido")]
+        [StringLength(50, ErrorMessage = "El nombre no puede exceder 50 caracteres")]
+        public string Title { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El icono es requerido")]
+        [StringLength(10, ErrorMessage = "El icono no puede exceder 10 caracteres")]
+        public string Icon { get; set; } = "📁";
+
+        public TransactionType Type { get; set; } = TransactionType.Expense;
+
+        // Campos de Recordatorio
+        public bool IsFixedExpense { get; set; } = false;
+
+        [Range(1, 31, ErrorMessage = "El día debe estar entre 1 y 31")]
+        public int? DayOfMonth { get; set; }
+
+        public decimal? EstimatedAmount { get; set; }
+    }
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
+    }
+}

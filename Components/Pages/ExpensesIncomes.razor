@@ -1,0 +1,795 @@
+﻿@page "/expenses-incomes"
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Domain.Enums
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
+@inject IExpenseIncomeService ExpenseIncomeService
+@inject ICategoryService CategoryService
+@inject IBudgetService BudgetService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+@inject IReportService ReportService
+@inject IPdfReportGenerator PdfReportGenerator
+@inject IExcelReportGenerator ExcelReportGenerator
+@inject ITemporaryFileCache FileCache
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Gastos e Ingresos - Mis Finanzas</PageTitle>
+
+<div class="expenses-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="mb-3 mb-md-0">
+                <h1>💸 Gastos e Ingresos</h1>
+                <p class="mb-0 text-white">Registra tus Gastos e Ingresos</p>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btnDelete" @onclick="() => OpenModal(TransactionType.Expense)">
+                    <span style="font-size: 17px;">➕</span> Agregar Gasto
+                </button>
+                <button class="btnSaveEdit" @onclick="() => OpenModal(TransactionType.Income)">
+                    <span style="font-size: 17px;">➕</span> Agregar Ingreso
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Balance -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="balance-card income">
+                <div class="balance-icon">📈</div>
+                <div class="balance-info">
+                    <p class="text-success">Total Ingresos</p>
+                    <h3>@totalIngresos.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="balance-card expense">
+                <div class="balance-icon">📉</div>
+                <div class="balance-info">
+                    <p class="text-danger">Total Gastos</p>
+                    <h3>@totalGastos.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="balance-card balance">
+                <div class="balance-icon">💵</div>
+                <div class="balance-info">
+                    <p class="text-info">Balance</p>
+                    <h3>@balance.ToString("C")</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Filtros de Reportes -->
+    <div class="glass-card mb-4">
+        <div class="card-header">
+            <h4 class="text-white">📊 Generar Reporte</h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <!-- Período -->
+                <div class="col-md-3">
+                    <label class="form-label text-white">Período</label>
+                    <select class="form-select glass-card text-white" @bind="reportPeriodType">
+                        <option value="@ReportPeriodType.LastWeek">Última semana</option>
+                        <option value="@ReportPeriodType.LastMonth">Último mes</option>
+                        <option value="@ReportPeriodType.Last3Months">Últimos 3 meses</option>
+                        <option value="@ReportPeriodType.Last6Months">Últimos 6 meses</option>
+                        <option value="@ReportPeriodType.LastYear">Último año</option>
+                        <option value="@ReportPeriodType.Custom">Personalizado</option>
+                    </select>
+                </div>
+
+                <!-- Fechas personalizadas (solo si es Custom) -->
+                @if (reportPeriodType == ReportPeriodType.Custom)
+                {
+                    <div class="col-md-2">
+                        <label class="form-label text-white">Fecha Inicio</label>
+                        <input type="date" class="form-control" @bind="customStartDate" />
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label text-white">Fecha Fin</label>
+                        <input type="date" class="form-control" @bind="customEndDate" />
+                    </div>
+                }
+
+                <!-- Tipo de transacción -->
+                <div class="col-md-3">
+                    <label class="form-label text-white">Tipo</label>
+                    <select class="form-select glass-card text-white" @bind="reportTransactionType">
+                        <option value="">Ambos</option>
+                        <option value="@TransactionType.Income">Solo Ingresos</option>
+                        <option value="@TransactionType.Expense">Solo Gastos</option>
+                    </select>
+                </div>
+
+                <!-- Categoría -->
+                <div class="col-md-3">
+                    <label class="form-label text-white">Categoría</label>
+                    <select class="form-select glass-card text-white" @bind="reportCategoryId">
+                        <option value="0">Todas las categorías</option>
+                        @foreach (var category in allCategories)
+                        {
+                            <option value="@category.CategoryId">@category.Icon @category.Title</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Botones -->
+                <div class="col-12">
+                    <div class="d-flex gap-2 justify-content-end">
+                        <button class="btnSaveEdit" @onclick="GeneratePdfReport" disabled="@isGeneratingReport">
+                            @if (isGeneratingReport)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            📄 Descargar PDF
+                        </button>
+                        <button class="btnSaveEdit" @onclick="GenerateExcelReport" disabled="@isGeneratingReport">
+                            @if (isGeneratingReport)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                            }
+                            📊 Descargar Excel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    <!-- Tabla de Transacciones -->
+    <div class="transactions-card">
+        <div class="card-header">
+            <h4>📋 Historial</h4>
+        </div>
+        <div class="card-body">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-light" role="status"></div>
+                    <p class="text-white mt-3">Cargando transacciones...</p>
+                </div>
+            }
+            else if (expensesIncomes == null || !expensesIncomes.Any())
+            {
+                <div class="text-center py-5">
+                    <p class="text-white">No hay registros</p>
+                    <p class="text-white">Comienza agregando un gasto o ingreso</p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-dark">
+                        <thead>
+                            <tr class="text-white">
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Categoría</th>
+                                <th>Descripción</th>
+                                <th>Monto</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in expensesIncomes)
+                            {
+                                <tr>
+                                    <td>
+                                        <small class="text-white">@item.Date.ToString("dd/MM/yyyy")</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.Type == TransactionType.Income ? "bg-success" : "bg-danger")">
+                                            @item.TypeDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="text-white">@item.CategoryIcon @item.CategoryTitle</span>
+                                    </td>
+                                    <td class="text-white">
+                                        @(item.Description ?? "-")
+                                    </td>
+                                    <td>
+                                        <strong class="@(item.Type == TransactionType.Income ? "text-success" : "text-danger")">
+                                            @item.Amount.ToString("C")
+                                        </strong>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <button class="btn btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditTransaction(item)">
+                                                <span style="font-size: 13px;">📝</span>
+                                            </button>
+                                            <button class="btn btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(item.Id, item.Description ?? item.CategoryTitle)">
+                                                <span style="font-size: 13px;">🗑️</span>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar/Editar -->
+@if (showModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    @(isEditing ? "✏️ Editar" : (currentType == TransactionType.Income ? "📈 Agregar Ingreso" : "📉 Agregar Gasto"))
+                </h5>
+                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="formModel" OnValidSubmit="SaveTransaction">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label">Categoría</label>
+                        <InputSelect @bind-Value="formModel.CategoryId" class="form-select glass-card text-white">
+                            <option value="0">Selecciona una categoría</option>
+                            @foreach (var category in availableCategories)
+                            {
+                                <option value="@category.CategoryId">@category.Icon @category.Title</option>
+                            }
+                        </InputSelect>
+                        <ValidationMessage For="() => formModel.CategoryId" class="text-danger" />
+                        @if (!string.IsNullOrEmpty(categoryValidationError))
+                        {
+                            <div class="text-danger small mt-1">@categoryValidationError</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Monto</label>
+                        <InputNumber @bind-Value="formModel.Amount" class="form-control" placeholder="0.00" />
+                        <ValidationMessage For="() => formModel.Amount" class="text-danger" />
+                        @if (!string.IsNullOrEmpty(amountValidationError))
+                        {
+                            <div class="text-danger small mt-1">@amountValidationError</div>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Fecha</label>
+                        <InputDate @bind-Value="formModel.Date" class="form-control" />
+                        <ValidationMessage For="() => formModel.Date" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción (Opcional)</label>
+                        <InputTextArea @bind-Value="formModel.Description" class="form-control" rows="3" placeholder="Ej: Compra en supermercado" />
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btnSaveEdit" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span>Guardar</span>
+                            }
+                        </button>
+                        <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal de Confirmación de Eliminación -->
+@if (showDeleteModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">⚠️ Confirmar Eliminación</h5>
+                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar este registro?</p>
+                <p class="text-white"><strong>@transactionToDelete</strong></p>
+                <p class="text-danger mb-0">
+                    <small>Esta acción no se puede deshacer.</small>
+                </p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btnCancel" @onclick="CancelDelete">Cancelar</button>
+                <button type="button" class="btnDelete" @onclick="DeleteTransaction">
+                    <span style="font-size: 13px;">🗑️</span> Eliminar
+                </button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string currentUserId = string.Empty;
+    private string currentUserName = string.Empty;
+
+    // Listas
+    private List<ExpenseIncomeDto> expensesIncomes = new();
+    private List<CategoryDto> allCategories = new();
+    private List<CategoryDto> availableCategories = new();
+
+    // Balance
+    private decimal totalIngresos = 0;
+    private decimal totalGastos = 0;
+    private decimal balance = 0;
+
+    // Mensajes
+    private string? successMessage;
+    private string? errorMessage;
+    private string? categoryValidationError;
+    private string? amountValidationError;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    // Modal
+    private bool showModal = false;
+    private bool isSaving = false;
+    private bool isEditing = false;
+    private TransactionType currentType = TransactionType.Expense;
+    private ExpenseIncomeFormModel formModel = new();
+
+    // Modal de eliminación
+    private bool showDeleteModal = false;
+    private int transactionIdToDelete;
+    private string? transactionToDelete;
+
+    // Variables para reportes
+    private ReportPeriodType reportPeriodType = ReportPeriodType.LastMonth;
+    private string reportTransactionType = "";
+    private int reportCategoryId = 0;
+    private DateTime? customStartDate;
+    private DateTime? customEndDate;
+    private bool isGeneratingReport = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            currentUserName = user.Identity?.Name ?? "Usuario";
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                await LoadData();
+            }
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+
+            // Cargar transacciones
+            expensesIncomes = await ExpenseIncomeService.GetAllByUserAsync(currentUserId);
+
+            // Cargar categorías
+            allCategories = await CategoryService.GetAllByUserAsync(currentUserId);
+
+            // Calcular balance
+            totalIngresos = await ExpenseIncomeService.GetTotalIngresosByUserAsync(currentUserId);
+            totalGastos = await ExpenseIncomeService.GetTotalGastosByUserAsync(currentUserId);
+            balance = totalIngresos - totalGastos;
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al cargar datos: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void OpenModal(TransactionType type)
+    {
+        currentType = type;
+        isEditing = false;
+        formModel = new ExpenseIncomeFormModel
+        {
+            Date = DateTime.Now,
+            Type = type
+        };
+
+        // Filtrar categorías por tipo
+        availableCategories = allCategories
+            .Where(c => c.Type == type)
+            .ToList();
+
+        showModal = true;
+    }
+
+    private void EditTransaction(ExpenseIncomeDto transaction)
+    {
+        isEditing = true;
+        currentType = transaction.Type;
+
+        formModel = new ExpenseIncomeFormModel
+        {
+            Id = transaction.Id,
+            CategoryId = transaction.CategoryId,
+            Amount = transaction.Amount,
+            Date = transaction.Date,
+            Description = transaction.Description,
+            Type = transaction.Type
+        };
+
+        // Filtrar categorías por tipo
+        availableCategories = allCategories
+            .Where(c => c.Type == currentType)
+            .ToList();
+
+        showModal = true;
+    }
+
+    private async Task SaveTransaction()
+    {
+        try
+        {
+            // Limpiar errores previos
+            categoryValidationError = null;
+            amountValidationError = null;
+
+            if (formModel.CategoryId == 0)
+            {
+                categoryValidationError = "Debes seleccionar una categoría";
+                return;
+            }
+
+            if (formModel.Amount <= 0)
+            {
+                amountValidationError = "El monto debe ser mayor a cero";
+                return;
+            }
+
+            isSaving = true;
+
+            var dto = new ExpenseIncomeDto
+            {
+                Id = formModel.Id,
+                CategoryId = formModel.CategoryId,
+                Amount = formModel.Amount,
+                Date = formModel.Date,
+                Description = formModel.Description,
+                Type = formModel.Type
+            };
+
+            if (isEditing)
+            {
+                var result = await ExpenseIncomeService.UpdateAsync(formModel.Id, dto, currentUserId);
+
+                if (result)
+                {
+                    ShowSuccessMessage("Transacción actualizada correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo actualizar la transacción");
+                }
+            }
+            else
+            {
+                var created = await ExpenseIncomeService.CreateAsync(dto, currentUserId);
+
+                if (created != null)
+                {
+                    ShowSuccessMessage($"{(formModel.Type == TransactionType.Income ? "Ingreso" : "Gasto")} agregado correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo crear la transacción");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        showDeleteModal = false;
+        formModel = new();
+        isEditing = false;
+        categoryValidationError = null;
+        amountValidationError = null;
+    }
+
+    private void ConfirmDelete(int id, string? description)
+    {
+        transactionIdToDelete = id;
+        transactionToDelete = description ?? "esta transacción";
+        showDeleteModal = true;
+    }
+
+    private void CancelDelete()
+    {
+        showDeleteModal = false;
+        transactionIdToDelete = 0;
+        transactionToDelete = null;
+    }
+
+    private async Task DeleteTransaction()
+    {
+        try
+        {
+            var result = await ExpenseIncomeService.DeleteAsync(transactionIdToDelete, currentUserId);
+
+            if (result)
+            {
+                ShowSuccessMessage("Transacción eliminada correctamente");
+                showDeleteModal = false;
+                transactionIdToDelete = 0;
+                transactionToDelete = null;
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo eliminar la transacción");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private class ExpenseIncomeFormModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "La categoría es requerida")]
+        public int CategoryId { get; set; }
+
+        [Required(ErrorMessage = "El monto es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero")]
+        public decimal Amount { get; set; }
+
+        [Required(ErrorMessage = "La fecha es requerida")]
+        public DateTime Date { get; set; } = DateTime.Now;
+
+        public string? Description { get; set; }
+
+        public TransactionType Type { get; set; }
+    }
+
+    #region Métodos de Reportes
+
+    private async Task GeneratePdfReport()
+    {
+        try
+        {
+            isGeneratingReport = true;
+            StateHasChanged();
+
+            // Validar fechas personalizadas
+            if (reportPeriodType == ReportPeriodType.Custom)
+            {
+                if (!customStartDate.HasValue || !customEndDate.HasValue)
+                {
+                    ShowErrorMessage("Debes seleccionar ambas fechas para el período personalizado");
+                    return;
+                }
+
+                if (customStartDate.Value > customEndDate.Value)
+                {
+                    ShowErrorMessage("La fecha de inicio no puede ser mayor que la fecha fin");
+                    return;
+                }
+            }
+
+            // Crear filtro
+            var filter = new ReportFilterDto
+            {
+                UserId = currentUserId,
+                UserName = currentUserName,
+                PeriodType = reportPeriodType,
+                CustomStartDate = customStartDate,
+                CustomEndDate = customEndDate,
+                TransactionTypeFilter = string.IsNullOrEmpty(reportTransactionType)
+                        ? null
+                        : Enum.Parse<TransactionType>(reportTransactionType),
+                CategoryIdFilter = reportCategoryId > 0 ? reportCategoryId : null
+            };
+
+            // Generar datos del reporte
+            var reportData = await ReportService.GenerateReportDataAsync(filter);
+
+            // Generar PDF
+            var pdfBytes = PdfReportGenerator.GeneratePdf(reportData);
+
+            // Guardar en caché temporal
+            var fileName = $"Reporte_MisFinanzas_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+            var fileId = FileCache.StoreFile(pdfBytes, fileName, "application/pdf");
+
+            // Abrir URL de descarga
+            var downloadUrl = $"/api/FileDownload/{fileId}";
+            await JSRuntime.InvokeVoidAsync("eval", $"window.open('{downloadUrl}', '_blank')");
+
+            ShowSuccessMessage("Reporte PDF generado correctamente");
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al generar PDF: {ex.Message}");
+            Console.WriteLine($"Error en GeneratePdfReport: {ex}");
+        }
+        finally
+        {
+            isGeneratingReport = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerateExcelReport()
+    {
+        try
+        {
+            isGeneratingReport = true;
+            StateHasChanged();
+
+            // Validar fechas personalizadas
+            if (reportPeriodType == ReportPeriodType.Custom)
+            {
+                if (!customStartDate.HasValue || !customEndDate.HasValue)
+                {
+                    ShowErrorMessage("Debes seleccionar ambas fechas para el período personalizado");
+                    return;
+                }
+
+                if (customStartDate.Value > customEndDate.Value)
+                {
+                    ShowErrorMessage("La fecha de inicio no puede ser mayor que la fecha fin");
+                    return;
+                }
+            }
+
+            // Crear filtro
+            var filter = new ReportFilterDto
+            {
+                UserId = currentUserId,
+                UserName = currentUserName,
+                PeriodType = reportPeriodType,
+                CustomStartDate = customStartDate,
+                CustomEndDate = customEndDate,
+                TransactionTypeFilter = string.IsNullOrEmpty(reportTransactionType)
+                        ? null
+                        : Enum.Parse<TransactionType>(reportTransactionType),
+                CategoryIdFilter = reportCategoryId > 0 ? reportCategoryId : null
+            };
+
+            // Generar datos del reporte
+            var reportData = await ReportService.GenerateReportDataAsync(filter);
+
+            // Generar Excel
+            var excelBytes = ExcelReportGenerator.GenerateExcel(reportData);
+
+            // Guardar en caché temporal
+            var fileName = $"Reporte_MisFinanzas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+            var fileId = FileCache.StoreFile(excelBytes, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+
+            // Abrir URL de descarga
+            var downloadUrl = $"/api/FileDownload/{fileId}";
+            await JSRuntime.InvokeVoidAsync("eval", $"window.open('{downloadUrl}', '_blank')");
+
+            ShowSuccessMessage("Reporte Excel generado correctamente");
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al generar Excel: {ex.Message}");
+            Console.WriteLine($"Error en GenerateExcelReport: {ex}");
+        }
+        finally
+        {
+            isGeneratingReport = false;
+            StateHasChanged();
+        }
+    }
+
+    #endregion
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
+    }
+}

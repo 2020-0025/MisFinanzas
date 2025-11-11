@@ -1,5 +1,11 @@
-﻿@implements IDisposable
+﻿@using System.Security.Claims
+@using MisFinanzas.Infrastructure.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@implements IDisposable
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject INotificationService NotificationService
+@inject IJSRuntime JSRuntime
 
 <!-- Nav Horizontal -->
 <nav class="navbar-horizontal">
@@ -9,11 +15,23 @@
         <div class="navbar-user">
             <AuthorizeView>
                 <Authorized>
+                    <!-- Bell Icon con Badge -->
+                    <div class="notification-bell-container">
+                        <button @onclick="ToggleNotifications" class="btn-bell" title="Notificaciones">
+                            <span style="font-size: 18px;">🔔</span>
+                            @if (unreadCount > 0)
+                            {
+                                <span class="notification-badge">@unreadCount</span>
+                            }
+                        </button>
+                    </div>
+
                     <form action="/Account/Logout" method="post" class="logout-form">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="btn-logout" title="Cerrar Sesión">
+                        <button type="submit" class="btn-logout text-white" title="Cerrar Sesión">
                             <span style="font-size: 15px;">🔐</span>
+                            Salir
                         </button>
                     </form>
                     <div class="user-info">
@@ -29,24 +47,34 @@
                 </NotAuthorized>
             </AuthorizeView>
         </div>
-        
+
 
         <!-- Links Horizontales (solo desktop) -->
-        <div class="navbar-links" style="margin-left:16rem">
+        <div class="navbar-links">
             <AuthorizeView>
                 <Authorized>
                     <NavLink class="nav-link-horizontal" href="/" Match="NavLinkMatch.All">
                         <span style="font-size: 17px;">🏠</span>
                         <span class="text-white">Inicio</span>
                     </NavLink>
-                    <NavLink class="nav-link-horizontal" href="/dashboard" Match="NavLinkMatch.All">
+                    <NavLink class="nav-link-horizontal" href="/dashboard">
                         <span style="font-size: 17px;">📊</span>
-                        <span class="text-white">Dashboard</span>
+                        <span class="text-white">Control</span>
                     </NavLink>
 
                     <NavLink class="nav-link-horizontal" href="/categories">
-                        <span style="font-size: 17px;">📁</span>
+                        <span style="font-size: 17px;">🏷️</span>
                         <span class="text-white">Categorías</span>
+                    </NavLink>
+
+                    <NavLink class="nav-link-horizontal" href="/budgets">
+                        <span style="font-size: 17px;">💰</span>
+                        <span class="text-white">Presupuestos</span>
+                    </NavLink>
+
+                    <NavLink class="nav-link-horizontal" href="/goals">
+                        <span style="font-size: 17px;">🎯</span>
+                        <span class="text-white">Metas</span>
                     </NavLink>
 
                     <NavLink class="nav-link-horizontal" href="/transactions">
@@ -54,25 +82,37 @@
                         <span class="text-white">Transacciones</span>
                     </NavLink>
 
-                    <NavLink class="nav-link-horizontal" href="/goals">
-                        <span style="font-size: 17px;">🎯</span>
-                        <span class="text-white">Metas</span>
+                    <NavLink class="nav-link-horizontal" href="/loans">
+                        <span style="font-size: 17px;">🏦</span>
+                        <span class="text-white">Préstamos</span>
                     </NavLink>
                 </Authorized>
             </AuthorizeView>
         </div>
 
-        
+
 
         <!-- Menu Horizontal en Mobile-->
         <div class="navbar-mobile">
             <AuthorizeView>
                 <Authorized>
+                    <!-- Bell Icon Mobile -->
+                    <div class="notification-bell-container">
+                        <button @onclick="ToggleNotifications" class="btn-bell-mobile" title="Notificaciones">
+                            <span style="font-size: 18px;">🔔</span>
+                            @if (unreadCount > 0)
+                            {
+                                <span class="notification-badge-mobile">@unreadCount</span>
+                            }
+                        </button>
+                    </div>
+
                     <form action="/Account/Logout" method="post" class="logout-form-mobile-nav">
                         <AntiforgeryToken />
                         <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="btn-logout-mobile" title="Cerrar Sesión">
+                        <button type="submit" class="btn-logout-mobile text-white" title="Cerrar Sesión">
                             <span style="font-size: 15px;">🔐</span>
+                            Salir
                         </button>
                     </form>
                     <div class="user-info-mobile">
@@ -96,12 +136,22 @@
 
             <NavLink href="/dashboard" class="footer-nav-item">
                 <span style="font-size: 17px;">📊</span>
-                <span class="text-white">Dashboard</span>
+                <span class="text-white">Control</span>
             </NavLink>
 
             <NavLink href="/categories" class="footer-nav-item">
-                <span style="font-size: 17px;">📁</span>
+                <span style="font-size: 17px;">🏷️</span>
                 <span class="text-white">Categorías</span>
+            </NavLink>
+
+            <NavLink href="/budgets" class="footer-nav-item">
+                <span style="font-size: 17px;">💰</span>
+                <span class="text-white">Presupuestos</span>
+            </NavLink>
+
+            <NavLink href="/goals" class="footer-nav-item">
+                <span style="font-size: 17px;">🎯</span>
+                <span class="text-white">Metas</span>
             </NavLink>
 
             <NavLink href="/transactions" class="footer-nav-item">
@@ -109,23 +159,104 @@
                 <span class="text-white">Transacciones</span>
             </NavLink>
 
-            <NavLink href="/goals" class="footer-nav-item">
-                <span style="font-size: 17px;">🎯</span>
-                <span class="text-white">Metas</span>
+            <NavLink href="/loans" class="footer-nav-item">
+                <span style="font-size: 17px;">🏦</span>
+                <span class="text-white">Préstamos</span>
             </NavLink>
         </Authorized>
     </AuthorizeView>
 </nav>
 
+<!-- Overlay y Dropdown de Notificaciones -->
+@if (showDropdown)
+{
+    <div class="notification-overlay-global" @onclick="CloseNotifications"></div>
+
+    <!-- Dropdown Global (responsive desktop/mobile) -->
+    <div class="notification-dropdown notification-dropdown-global" @onclick:stopPropagation="true">
+        <div class="dropdown-header">
+            <h6>Notificaciones</h6>
+            @if (unreadCount > 0)
+            {
+                <button @onclick="MarkAllAsRead" class="btn-mark-all">Marcar todas</button>
+            }
+        </div>
+        <div class="dropdown-body">
+            @if (notifications == null || !notifications.Any())
+            {
+                <div class="no-notifications">
+                    <span style="font-size: 32px;">📭</span>
+                    <p>No tienes notificaciones</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var notification in notifications.Take(5))
+                {
+                    <div class="notification-item @(notification.IsRead ? "read" : "unread")">
+                        <div class="notification-icon">
+                            <span style="font-size: 20px;">@(notification.Category?.Icon ?? "💰")</span>
+                        </div>
+                        <div class="notification-content">
+                            <p class="notification-title">@notification.Category?.Title</p>
+                            <p class="notification-status">@notification.StatusText</p>
+                            @if (notification.Category?.EstimatedAmount != null)
+                            {
+                                <p class="notification-amount">~@notification.Category.EstimatedAmount.Value.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("es-DO"))</p>
+                            }
+                        </div>
+                        <div class="notification-action">
+                            @if (!notification.IsRead)
+                            {
+                                <button class="btn-mark-read-dropdown" @onclick="() => MarkAsRead(notification.NotificationId)" title="Marcar como leída">
+                                    ✓
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="read-checkmark-dropdown" title="Leída">✓</span>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+        <div class="dropdown-footer">
+            <NavLink href="/reminders" class="btn-view-all" @onclick="CloseNotifications">Ver todas las notificaciones</NavLink>
+        </div>
+    </div>
+}
+
 
 @code {
     private string? currentUrl;
-    private bool isMenuOpen = false;
+    private string currentUserId = string.Empty;
 
-    protected override void OnInitialized()
+    // Notificaciones
+    private List<MisFinanzas.Domain.Entities.Notification> notifications = new();
+    private int unreadCount = 0;
+    private bool showDropdown = false;
+    private System.Threading.Timer? notificationTimer;
+
+    protected override async Task OnInitializedAsync()
     {
         currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
         NavigationManager.LocationChanged += OnLocationChanged;
+
+        // Obtener usuario autenticado
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                await LoadNotifications();
+                StartNotificationTimer();
+            }
+        }
     }
 
     private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
@@ -134,15 +265,520 @@
         StateHasChanged();
     }
 
-    
+    // ========== MÉTODOS DE NOTIFICACIONES ==========
+
+    private async Task LoadNotifications()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            notifications = await NotificationService.GetUnreadNotificationsByUserAsync(currentUserId);
+            unreadCount = notifications.Count;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading notifications: {ex.Message}");
+        }
+    }
+
+    private void ToggleNotifications()
+    {
+        showDropdown = !showDropdown;
+    }
+
+    private async Task MarkAsRead(int notificationId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await NotificationService.MarkAsReadAsync(notificationId, currentUserId);
+            if (success)
+            {
+                await LoadNotifications();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marking notification as read: {ex.Message}");
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await NotificationService.MarkAllAsReadAsync(currentUserId);
+            if (success)
+            {
+                await LoadNotifications();
+                showDropdown = false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marking all notifications as read: {ex.Message}");
+        }
+    }
+
+    private void StartNotificationTimer()
+    {
+        // Refrescar notificaciones cada 5 minutos
+        notificationTimer = new System.Threading.Timer(async _ =>
+        {
+            await InvokeAsync(async () =>
+            {
+                try
+                {
+                    if (string.IsNullOrEmpty(currentUserId))
+                        return;
+
+                    await LoadNotifications();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error loading notifications from timer: {ex.Message}");
+                }
+            });
+        }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+    }
+
+    private void StopNotificationTimer()
+    {
+        notificationTimer?.Dispose();
+        notificationTimer = null;
+    }
+
+    private void CloseNotifications()
+    {
+        showDropdown = false;
+    }
 
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        StopNotificationTimer();
     }
 }
 
 <style>
+    /* ===== NOTIFICACIONES ===== */
+
+    /* Contenedor de campana */
+    .notification-bell-container {
+        position: relative;
+    }
+
+    /* Botón de campana Desktop */
+    .btn-bell {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        background: rgba(255, 193, 7, 0.15);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 10px;
+        color: #FFC107;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.1rem;
+    }
+
+        .btn-bell:hover {
+            background: rgba(255, 193, 7, 0.25);
+            transform: translateY(-2px);
+        }
+
+    /* Botón de campana Mobile */
+    .btn-bell-mobile {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 44px;
+        height: 44px;
+        background: rgba(255, 193, 7, 0.15);
+        border: 1px solid rgba(255, 193, 7, 0.3);
+        border-radius: 10px;
+        color: #FFC107;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 1.2rem;
+    }
+
+        .btn-bell-mobile:hover {
+            background: rgba(255, 193, 7, 0.25);
+            transform: scale(1.05);
+        }
+
+    /* Badge de notificaciones Desktop */
+    .notification-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        background: #F44336;
+        color: white;
+        font-size: 0.65rem;
+        font-weight: 700;
+        min-width: 18px;
+        height: 18px;
+        border-radius: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        box-shadow: 0 2px 6px rgba(244, 67, 54, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    /* Badge de notificaciones Mobile */
+    .notification-badge-mobile {
+        position: absolute;
+        top: -6px;
+        right: -6px;
+        background: #F44336;
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 700;
+        min-width: 20px;
+        height: 20px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 5px;
+        box-shadow: 0 2px 6px rgba(244, 67, 54, 0.5);
+        animation: pulse 2s infinite;
+    }
+
+    /* Animación de pulso para el badge */
+    @@keyframes pulse {
+        0%, 100% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.1);
+        }
+    }
+
+    /* Overlay Global para cerrar dropdown */
+    .notification-overlay-global {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9998;
+        background: rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(3px);
+        cursor: pointer;
+        animation: fadeInOverlay 0.2s ease-out;
+    }
+
+    @@keyframes fadeInOverlay {
+        0% {
+            opacity: 0;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    /* Dropdown Global - Adaptativo Desktop/Mobile */
+    .notification-dropdown-global {
+        position: fixed;
+        max-height: 500px;
+        background: rgba(30, 30, 30, 0.98);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        overflow: hidden;
+    }
+
+    /* Desktop: alineado a la derecha */
+    @@media (min-width: 993px) {
+        .notification-dropdown-global {
+            top: 75px;
+            right: 1rem;
+            left: auto;
+            width: 380px;
+            max-width: calc(100vw - 2rem);
+            animation: slideDownFadeIn 0.3s ease-out forwards;
+        }
+    }
+
+    /* Mobile: centrado */
+    @@media (max-width: 992px) {
+        .notification-dropdown-global {
+            top: 75px;
+            left: 5vw;
+            right: auto;
+            width: 90vw;
+            max-width: 380px;
+            max-height: calc(100vh - 150px);
+            animation: slideDownFadeInMobile 0.3s ease-out forwards;
+        }
+    }
+
+    /* Animación de apertura (slide down + fade in + scale) */
+    @@keyframes slideDownFadeIn {
+        0% {
+            opacity: 0;
+            transform: translateY(-15px) scale(0.95);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Animación para mobile */
+    @@keyframes slideDownFadeInMobile {
+        0% {
+            opacity: 0;
+            transform: translateY(-15px) scale(0.95);
+        }
+
+        100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    /* Header del dropdown */
+    .dropdown-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+        .dropdown-header h6 {
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 600;
+            color: white;
+        }
+
+    .btn-mark-all {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.4);
+        color: #4CAF50;
+        padding: 0.35rem 0.75rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-mark-all:hover {
+            background: rgba(76, 175, 80, 0.3);
+            transform: scale(1.05);
+        }
+
+    /* Body del dropdown */
+    .dropdown-body {
+        max-height: 350px;
+        overflow-y: auto;
+        padding: 0.5rem 0;
+    }
+
+        /* Scrollbar personalizado */
+        .dropdown-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .dropdown-body::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .dropdown-body::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+
+            .dropdown-body::-webkit-scrollbar-thumb:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+    /* Sin notificaciones */
+    .no-notifications {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 3rem 1.5rem;
+        text-align: center;
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+        .no-notifications p {
+            margin: 0.75rem 0 0 0;
+            font-size: 0.95rem;
+        }
+
+    /* Item de notificación */
+    .notification-item {
+        display: flex;
+        gap: 0.75rem;
+        padding: 1rem 1.25rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.3s ease;
+    }
+
+        .notification-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .notification-item:last-child {
+            border-bottom: none;
+        }
+
+        /* Notificación no leída */
+        .notification-item.unread {
+            background: rgba(33, 150, 243, 0.08);
+            border-left: 3px solid #2196F3;
+        }
+
+            .notification-item.unread:hover {
+                background: rgba(33, 150, 243, 0.15);
+            }
+
+        /* Notificación leída */
+        .notification-item.read {
+            opacity: 0.7;
+        }
+
+    /* Ícono de la notificación */
+    .notification-icon {
+        flex-shrink: 0;
+        width: 45px;
+        height: 45px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+    }
+
+    /* Contenido de la notificación */
+    .notification-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .notification-title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: white;
+    }
+
+    .notification-status {
+        margin: 0;
+        font-size: 0.85rem;
+        color: rgba(255, 255, 255, 0.7);
+    }
+
+    .notification-amount {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4CAF50;
+    }
+
+    /* Acción de la notificación en dropdown */
+    .notification-action {
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 0.5rem;
+    }
+
+    .btn-mark-read-dropdown {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.4);
+        border-radius: 8px;
+        color: #4CAF50;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-mark-read-dropdown:hover {
+            background: rgba(76, 175, 80, 0.35);
+            transform: scale(1.1);
+        }
+
+    .read-checkmark-dropdown {
+        width: 32px;
+        height: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.25);
+        border-radius: 8px;
+        color: rgba(76, 175, 80, 0.5);
+        font-size: 1rem;
+    }
+
+    /* Footer del dropdown */
+    .dropdown-footer {
+        padding: 0.75rem 1.25rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .btn-view-all {
+        display: block;
+        width: 100%;
+        text-align: center;
+        padding: 0.6rem;
+        background: rgba(33, 150, 243, 0.2);
+        border: 1px solid rgba(33, 150, 243, 0.4);
+        border-radius: 8px;
+        color: #2196F3;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.3s ease;
+    }
+
+        .btn-view-all:hover {
+            background: rgba(33, 150, 243, 0.3);
+            color: #42A5F5;
+            transform: translateY(-2px);
+        }
+
+
     /* ===== NAVBAR HORIZONTAL ===== */
     .navbar-horizontal {
         position: fixed;
@@ -163,68 +799,49 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 2rem;
+        gap: 3rem;
     }
 
-    /* Brand */
-    .navbar-brand {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: white;
-        font-size: 1.5rem;
-        font-weight: 700;
-    }
-
-        .navbar-brand i {
-            color: #4CAF50;
-        }
-
-    .brand-text {
-        font-size: 1.25rem;
-    }
-
-    /* Links Desktop */
+    /* ===== LINKS DESKTOP ===== */
     .navbar-links {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         flex: 1;
+        justify-content: center;
     }
 
     .nav-link-horizontal {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        padding: 0.625rem 1rem;
+        padding: 0.5rem 1rem;
         color: rgba(255, 255, 255, 0.8);
         text-decoration: none;
         background: rgba(255, 255, 255, 0.05);
         border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 10px;
+        border-radius: 13px;
         transition: all 0.3s ease;
         font-weight: 500;
         font-size: 0.95rem;
     }
 
-        .nav-link-horizontal i {
-            font-size: 1.1rem;
-        }
-
         .nav-link-horizontal:hover {
-            background: rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.15);
             color: white;
             transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         }
 
         .nav-link-horizontal.active {
-            background: rgba(76, 175, 80, 0.2);
-            border-color: rgba(76, 175, 80, 0.4);
+            background: rgba(76, 175, 80, 0.25);
+            border-color: rgba(76, 175, 80, 0.5);
             color: #4CAF50;
             font-weight: 600;
+            box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
         }
 
-    /* User Section Desktop */
+    /* ===== USER SECTION DESKTOP ===== */
     .navbar-user {
         display: flex;
         align-items: center;
@@ -240,11 +857,12 @@
         border: 1px solid rgba(33, 150, 243, 0.3);
         border-radius: 10px;
         color: white;
+        height: 40px;
     }
 
-        .user-info i {
-            font-size: 1.5rem;
-            color: #2196F3;
+        .user-info:hover {
+            background: rgba(33, 150, 243, 0.25);
+            transform: translateY(-2px);
         }
 
     .user-name {
@@ -263,7 +881,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
+        gap: 0.5rem;
+        width: 90px;
         height: 40px;
         background: rgba(244, 67, 54, 0.15);
         border: 1px solid rgba(244, 67, 54, 0.3);
@@ -271,7 +890,7 @@
         color: #F44336;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 1.1rem;
+        font-size: 1rem;
     }
 
         .btn-logout:hover {
@@ -279,7 +898,7 @@
             transform: translateY(-2px);
         }
 
-    /* Mobile Section (oculto en desktop) */
+    /* ===== MOBILE SECTION ===== */
     .navbar-mobile {
         display: none;
         width: 100%;
@@ -288,7 +907,6 @@
         gap: 1rem;
     }
 
-    /* User info móvil (igual que desktop) */
     .user-info-mobile {
         display: flex;
         align-items: center;
@@ -301,10 +919,8 @@
         max-width: 200px;
     }
 
-        .user-info-mobile i {
-            font-size: 1.5rem;
-            color: #2196F3;
-            flex-shrink: 0;
+        .user-info-mobile:hover {
+            background: rgba(33, 150, 243, 0.25);
         }
 
         .user-info-mobile span {
@@ -315,160 +931,6 @@
             flex: 1;
         }
 
-   
-
-    /* ===== MENU VERTICAL MOVIL ===== */
-    .mobile-menu {
-        position: fixed;
-        top: 0;
-        right: -100%;
-        width: 300px;
-        height: 100vh;
-        background: rgba(15, 23, 42, 0.95);
-        backdrop-filter: blur(20px);
-        border-left: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 1002;
-        transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        overflow-y: auto;
-        box-shadow: -4px 0 25px rgba(0, 0, 0, 0.5);
-    }
-
-        .mobile-menu.open {
-            right: 0;
-        }
-
-    .mobile-menu-header {
-        padding: 1.5rem;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .user-info-menu {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        color: white;
-    }
-
-        .user-info-menu i {
-            font-size: 2rem;
-            color: #2196F3;
-        }
-
-    .user-details {
-        display: flex;
-        flex-direction: column;
-    }
-
-        .user-details small {
-            color: rgba(255, 255, 255, 0.6);
-            font-size: 0.75rem;
-        }
-
-        .user-details strong {
-            color: white;
-            font-size: 0.9rem;
-        }
-
-    .btn-close-menu {
-        background: rgba(255, 255, 255, 0.1);
-        border: none;
-        color: white;
-        width: 36px;
-        height: 36px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-        .btn-close-menu:hover {
-            background: rgba(255, 255, 255, 0.2);
-            transform: rotate(90deg);
-        }
-
-    .mobile-menu-links {
-        padding: 1rem;
-        display: flex;
-        flex-direction: column;
-        gap: 0.5rem;
-    }
-
-    .mobile-nav-link {
-        display: flex;
-        align-items: center;
-        gap: 0.75rem;
-        padding: 0.875rem 1rem;
-        color: rgba(255, 255, 255, 0.8);
-        text-decoration: none;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        border-radius: 12px;
-        transition: all 0.3s ease;
-        font-weight: 500;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-    }
-
-        .mobile-nav-link i {
-            font-size: 1.25rem;
-            width: 24px;
-            text-align: center;
-        }
-
-        .mobile-nav-link:hover {
-            background: rgba(255, 255, 255, 0.1);
-            color: white;
-            transform: translateX(-5px);
-        }
-
-        .mobile-nav-link.active {
-            background: rgba(76, 175, 80, 0.2);
-            border-color: rgba(76, 175, 80, 0.4);
-            color: #4CAF50;
-            font-weight: 600;
-        }
-
-    .logout-form-mobile {
-        margin: 0;
-    }
-
-    .logout-btn {
-        background: rgba(244, 67, 54, 0.15);
-        border: 1px solid rgba(244, 67, 54, 0.3);
-        color: #F44336;
-    }
-
-        .logout-btn:hover {
-            background: rgba(244, 67, 54, 0.25);
-        }
-
-    /* Overlay */
-    .menu-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.6);
-        backdrop-filter: blur(4px);
-        z-index: 1001;
-        opacity: 0;
-        visibility: hidden;
-        transition: all 0.3s ease;
-    }
-
-        .menu-overlay.active {
-            opacity: 1;
-            visibility: visible;
-        }
-
-    /* Logout móvil en navbar (oculto en desktop) */
     .logout-form-mobile-nav {
         margin: 0;
     }
@@ -477,7 +939,8 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 44px;
+        gap: 0.5rem;
+        width: 180px;
         height: 44px;
         background: rgba(244, 67, 54, 0.15);
         border: 1px solid rgba(244, 67, 54, 0.3);
@@ -485,27 +948,13 @@
         color: #F44336;
         cursor: pointer;
         transition: all 0.3s ease;
-        font-size: 1.2rem;
+        font-size: 1rem;
     }
 
         .btn-logout-mobile:hover {
             background: rgba(244, 67, 54, 0.25);
             transform: scale(1.05);
         }
-
-    /* Scrollbar del menú móvil */
-    .mobile-menu::-webkit-scrollbar {
-        width: 6px;
-    }
-
-    .mobile-menu::-webkit-scrollbar-track {
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    .mobile-menu::-webkit-scrollbar-thumb {
-        background: rgba(255, 255, 255, 0.2);
-        border-radius: 3px;
-    }
 
     /* ===== FOOTER NAVEGACIÓN MÓVIL ===== */
     .footer-mobile-nav {
@@ -533,21 +982,11 @@
         color: rgba(255, 255, 255, 0.7);
         text-decoration: none;
         transition: all 0.3s ease;
-        padding: 0.5rem;
+        padding: 0.5rem 0.25rem;
         gap: 0.25rem;
-  
+        background: transparent;
+        min-width: 0;
     }
-
-        .footer-nav-item i {
-            font-size: 1.5rem;
-            transition: all 0.3s ease;
-        }
-
-        .footer-nav-item span {
-            font-size: 0.7rem;
-            font-weight: 500;
-            text-align: center;
-        }
 
         .footer-nav-item:hover {
             color: white;
@@ -557,7 +996,117 @@
             color: #4CAF50;
         }
 
-            .footer-nav-item.active i {
-                transform: scale(1.2);
+            .footer-nav-item.active span:first-child {
+                transform: scale(1.15);
             }
+
+        .footer-nav-item span {
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-align: center;
+            white-space: nowrap;
+        }
+
+            .footer-nav-item span:first-child {
+                font-size: 1.5rem;
+                line-height: 1;
+            }
+
+    /* ===== RESPONSIVE ===== */
+
+    /* Tablet Grande (hasta 1200px) */
+    @@media (max-width: 1200px) {
+        .navbar-links {
+            gap: 0.25rem;
+        }
+
+        .nav-link-horizontal {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Tablet (hasta 992px) */
+    @@media (max-width: 992px) {
+        .navbar-links {
+            display: none;
+        }
+
+        .navbar-user {
+            display: none;
+        }
+
+        .navbar-mobile {
+            display: flex;
+        }
+
+        .footer-mobile-nav {
+            display: flex;
+        }
+
+        .footer-nav-item span:first-child {
+            font-size: 1.75rem;
+        }
+
+        .footer-nav-item span {
+            font-size: 0.8rem;
+        }
+    }
+
+    /* Mobile Grande (hasta 768px) */
+    @@media (max-width: 768px) {
+        .footer-mobile-nav {
+            height: 75px;
+            padding: 0.75rem 0;
+        }
+
+        .footer-nav-item {
+            padding: 0.5rem 0.5rem;
+        }
+
+            .footer-nav-item span:first-child {
+                font-size: 2rem;
+            }
+
+            .footer-nav-item span {
+                font-size: 0.85rem;
+            }
+    }
+
+    /* Mobile (hasta 576px) */
+    @@media (max-width: 576px) {
+        .navbar-content {
+            padding: 0 1rem;
+        }
+
+        .footer-mobile-nav {
+            height: 80px;
+            padding: 0.75rem 0.25rem;
+        }
+
+        .footer-nav-item {
+            padding: 0.5rem 0.25rem;
+            gap: 0.35rem;
+        }
+
+            .footer-nav-item span:first-child {
+                font-size: 2.25rem;
+            }
+
+            .footer-nav-item span {
+                font-size: 0.7rem;
+                font-weight: 600;
+            }
+    }
+
+    /* Mobile Pequeño (hasta 400px) */
+    @@media (max-width: 400px) {
+        .footer-nav-item span:first-child {
+            font-size: 2rem;
+        }
+
+        .footer-nav-item span {
+            font-size: 0.65rem;
+        }
+    }
 </style>

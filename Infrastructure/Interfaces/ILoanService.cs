@@ -1,17 +1,18 @@
-﻿using MisFinanzas.Domain.Entities;
+﻿using MisFinanzas.Domain.DTOs;
+using MisFinanzas.Domain.Entities;
 
 namespace MisFinanzas.Infrastructure.Interfaces
 {
     public interface ILoanService
     {
         // Consultas básicas
-        Task<List<Loan>> GetAllByUserAsync(string userId);
-        Task<List<Loan>> GetActiveByUserAsync(string userId);
-        Task<Loan?> GetByIdAsync(int loanId, string userId);
+        Task<List<LoanDto>> GetAllByUserAsync(string userId);
+        Task<List<LoanDto>> GetActiveByUserAsync(string userId);
+        Task<LoanDto?> GetByIdAsync(int loanId, string userId);
 
         // CRUD
-        Task<(bool Success, string? Error, Loan? Loan)> CreateAsync(Loan loan, string userId, bool createReminder = false);
-        Task<bool> UpdateAsync(int loanId, Loan loan, string userId);
+        Task<(bool Success, string? Error, LoanDto? Loan)> CreateAsync(LoanDto loan, string userId, bool createReminder = false);
+        Task<bool> UpdateAsync(int loanId, LoanDto loan, string userId);
         Task<bool> DeleteAsync(int loanId, string userId, bool deleteHistory = false);
 
         // Operaciones específicas de préstamos
@@ -32,6 +33,6 @@ namespace MisFinanzas.Infrastructure.Interfaces
         Task<decimal> GetAverageInterestRateAsync(string userId);
 
         // Para dashboard
-        Task<List<Loan>> GetLoansWithUpcomingPaymentsAsync(string userId, int daysAhead = 7);
+        Task<List<LoanDto>> GetLoansWithUpcomingPaymentsAsync(string userId, int daysAhead = 7);
     }
 }

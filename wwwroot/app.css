@@ -96,7 +96,7 @@ body {
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     color: white;
-    padding: 10px 24px;
+    padding: 10px 13px;
     border-radius: 8px;
     transition: all 0.3s ease;
     text-decoration: none;
@@ -263,6 +263,76 @@ input[type="checkbox"] {
     }
 
 
+/* Mensajes de alerta personalizados */
+.custom-alert {
+    position: fixed;
+    top: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(10px);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    min-width: 300px;
+    max-width: 500px;
+}
+
+    .custom-alert.show {
+        animation: fadeIn 0.3s ease forwards;
+    }
+
+    .custom-alert.success {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 1);
+        color: white;
+    }
+
+    .custom-alert.error {
+        background: rgba(244, 67, 54, 0.15);
+        border: 1px solid rgba(244, 67, 54, 1);
+        color: white;
+    }
+
+.alert-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+    flex-shrink: 0;
+}
+
+.alert-text {
+    flex: 1;
+    font-size: 0.95rem;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-20px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+    .custom-alert {
+        min-width: calc(100vw - 2rem);
+        max-width: calc(100vw - 2rem);
+    }
+}
+
+
+
 /* ===================================
    MEDIA QUERIES - RESPONSIVE MOBILE
    =================================== */
@@ -281,9 +351,9 @@ input[type="checkbox"] {
         display: none !important;
     }
 
-    
 
-   
+
+
 
     /* Ajustes de padding para navbar móvil */
     .navbar-content {
@@ -295,7 +365,7 @@ input[type="checkbox"] {
         font-size: 1.1rem;
     }
 
-    
+
 
 
     /* Mostrar footer móvil */
@@ -338,12 +408,12 @@ input[type="checkbox"] {
     /* Ajustes de cards para tablets */
 
     /* Mostrar elementos móviles */
-    
+
     .glass-card {
         margin: 10px;
         padding: 15px;
     }
-        
+
     /* Mostrar footer móvil */
     .footer-mobile-nav {
         display: flex !important;
@@ -358,8 +428,6 @@ input[type="checkbox"] {
     .dashboard-container {
         padding-bottom: 90px;
     }
-
-
 }
 
 /* ===================================
@@ -376,7 +444,7 @@ input[type="checkbox"] {
         max-width: 80px;
     }
 
-    
+
     /* Cards más compactos 
     .glass-card {
         margin: 5px;

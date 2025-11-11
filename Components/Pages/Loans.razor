@@ -1,0 +1,885 @@
+﻿@page "/loans"
+@using Microsoft.JSInterop
+@using MisFinanzas.Infrastructure.Interfaces
+@using MisFinanzas.Domain.DTOs
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using MisFinanzas.Components.Shared
+@inject ILoanService LoanService
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Préstamos - MisFinanzas</PageTitle>
+
+<div class="loans-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="mb-3 mb-md-0">
+                <h1>🏦 Préstamos</h1>
+                <p class="mb-0 text-white">Gestiona tus préstamos y cuotas</p>
+            </div>
+            <button class="btnAddLoans" @onclick="OpenCreateModal">
+                <span style="font-size: 17px;">➕</span> Nuevo Préstamo
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="summary-card">
+        <h4>📊 Resumen General</h4>
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total Prestado</span>
+                    <h5 class="text-info">@totalBorrowed.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total a Pagar</span>
+                    <h5 class="text-warning">@totalToPay.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total Pagado</span>
+                    <h5 class="text-success">@totalPaid.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Deuda Pendiente</span>
+                    <h5 class="text-danger">@totalRemaining.ToString("C")</h5>
+                </div>
+            </div>
+        </div>
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Cuotas Mensuales</span>
+                    <h5 class="text-primary">@monthlyPaymentsTotal.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Tasa Promedio</span>
+                    <h5 class="text-warning">@averageInterestRate.ToString("F2")%</h5>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-card">
+        <div class="btn-group" role="group">
+            <button class="text-white btn @(showActiveOnly ? "btn-primary" : "btn-outline-primary")"
+                    @onclick="() => ToggleFilter(true)">
+                🟢 Activos (@activeLoans.Count)
+            </button>
+            <button class="text-white btn @(!showActiveOnly ? "btn-secondary" : "btn-outline-secondary")"
+                    @onclick="() => ToggleFilter(false)">
+                📋 Todos (@allLoans.Count)
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    <!-- Lista de Préstamos -->
+    <div class="row">
+        @if (isLoading)
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-light" role="status"></div>
+                    <p class="text-white mt-3">Cargando préstamos...</p>
+                </div>
+            </div>
+        }
+        else if (!filteredLoans.Any())
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <p class="text-white" style="font-size:30px;"><strong>No hay préstamos.</strong></p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var loan in filteredLoans)
+            {
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="loan-card @(loan.IsActive ? "" : "inactive")">
+                        <div class="loan-header">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="loan-icon">@loan.Icon</div>
+                                <div class="flex-grow-1">
+                                    <h4>@loan.Title</h4>
+                                    @if (loan.IsActive)
+                                    {
+                                        <span class="text-white badge bg-success">Activo</span>
+                                    }
+                                    else if (loan.IsCompleted)
+                                    {
+                                        <span class="text-white badge bg-primary">Completado ✓</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-white badge bg-warning">Cancelado</span>
+                                    }
+                                </div>
+                                <div class="loan-actions">
+                                    @if (loan.IsActive && !loan.IsCompleted)
+                                    {
+                                        <button class="btn btn-sm btn-success" @onclick="() => RegisterPayment(loan.LoanId)" title="Registrar Pago">
+                                            <span style="font-size: 13px;">💵</span>
+                                        </button>
+                                        @if (loan.InstallmentsPaid > 0)
+                                        {
+                                            <button class="btn btn-sm btn-info" @onclick="() => UndoLastPayment(loan.LoanId)" title="Deshacer Último Pago">
+                                                <span style="font-size: 13px;">↩️</span>
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-warning" @onclick="() => OpenEditModal(loan)" title="Editar">
+                                            <span style="font-size: 13px;">📝</span>
+                                        </button>
+                                    }
+                                    else if (!loan.IsActive && !loan.IsCompleted)
+                                    {
+                                        <!-- Préstamo cancelado - mostrar botón reactivar -->
+                                        <button class="btn btn-sm btn-primary" @onclick="() => ReactivateLoan(loan.LoanId)" title="Reactivar Préstamo">
+                                            <span style="font-size: 13px;">🔄</span> Reactivar
+                                        </button>
+                                    }
+                                    <button class="btn btn-sm btn-danger"
+                                            @onclick="() => HandleDeleteLoan(loan)"
+                                            title="@(loan.IsActive ? "Eliminar" : "Eliminar del historial")">
+                                        <span style="font-size: 13px;">🗑️</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(loan.Description))
+                        {
+                            <p class="text-white loan-description">@loan.Description</p>
+                        }
+
+                        <div class="loan-info">
+                            <div class="row text-white">
+                                <div class="col-6">
+                                    <small>💵 Monto Prestado:</small>
+                                    <p><strong>@loan.PrincipalAmount.ToString("C")</strong></p>
+                                </div>
+                                <div class="col-6">
+                                    <small>📅 Cuota Mensual:</small>
+                                    <p><strong>@loan.InstallmentAmount.ToString("C")</strong></p>
+                                </div>
+                                <div class="col-6">
+                                    <small>💰 Total a Pagar:</small>
+                                    <p><strong>@loan.TotalToPay.ToString("C")</strong></p>
+                                </div>
+                                <div class="col-6">
+                                    <small>📈 Interés Cobrado:</small>
+                                    <p>
+                                        <strong class="@GetInterestColorClass(loan.InterestRateCategory)">
+                                            @loan.TotalInterest.ToString("C") (@loan.ApproximateInterestRate.ToString("F2")%)
+                                        </strong>
+                                    </p>
+                                </div>
+                            </div>
+
+                            @if (loan.ApproximateInterestRate > 30)
+                            {
+                                <div class="alert alert-warning py-2 mt-2">
+                                    <small>⚠️ @loan.InterestRateLabel</small>
+                                </div>
+                            }
+                        </div>
+
+                        <div class="loan-progress">
+                            <div class="d-flex justify-content-between mb-2 text-white">
+                                <span>Progreso: @loan.InstallmentsPaid / @loan.NumberOfInstallments cuotas</span>
+                                <span><strong>@loan.ProgressPercentage.ToString("F1")%</strong></span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar @GetProgressBarClass(loan.ProgressPercentage)"
+                                     role="progressbar"
+                                     style="width: @Math.Min(loan.ProgressPercentage, 100)%">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="loan-footer text-white">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small>🗓️ Inicio:</small>
+                                    <p>@loan.StartDate.ToString("dd/MM/yyyy")</p>
+                                </div>
+                                <div class="col-6">
+                                    <small>📆 Próximo Pago:</small>
+                                    <p>@(loan.IsActive && !loan.IsCompleted ? loan.NextPaymentDate.ToString("dd/MM/yyyy") : "N/A")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Préstamo -->
+@if (showModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom" @onclick:stopPropagation="true">
+            <div class="modal-header-custom border-secondary">
+                <h5>@(isEditMode ? "✏️ Editar Préstamo" : "➕ Nuevo Préstamo")</h5>
+                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
+            </div>
+            <div class="modal-body-custom">
+                <EditForm Model="currentLoan" OnValidSubmit="SaveLoan">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label text-white">Título *</label>
+                        <InputText class="form-control glass-input" @bind-Value="currentLoan.Title" placeholder="Ej: Préstamo Personal Banco Popular" />
+                        <ValidationMessage For="@(() => currentLoan.Title)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-white">Descripción</label>
+                        <InputTextArea class="form-control glass-input" @bind-Value="currentLoan.Description" placeholder="Descripción opcional" rows="2" />
+                        <ValidationMessage For="@(() => currentLoan.Description)" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-white">Monto del Préstamo *</label>
+                            <InputNumber class="form-control glass-input" @bind-Value="currentLoan.PrincipalAmount" @bind-Value:after="CalculatePreview" placeholder="10000" ParsingErrorMessage="Este campo es requerido" />
+                            <ValidationMessage For="@(() => currentLoan.PrincipalAmount)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-white">Cuota Mensual *</label>
+                            <InputNumber class="form-control glass-input" @bind-Value="currentLoan.InstallmentAmount" @bind-Value:after="CalculatePreview" placeholder="500" ParsingErrorMessage="Este campo es requerido" />
+                            <ValidationMessage For="@(() => currentLoan.InstallmentAmount)" />
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-white">Cantidad de Cuotas *</label>
+                            <InputNumber class="form-control glass-input" @bind-Value="currentLoan.NumberOfInstallments" @bind-Value:after="CalculatePreview" placeholder="12" ParsingErrorMessage="Este campo es requerido" />
+                            <ValidationMessage For="@(() => currentLoan.NumberOfInstallments)" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-white">Día de Pago (1-31) *</label>
+                            <InputNumber class="form-control glass-input" @bind-Value="currentLoan.DueDay" placeholder="15" ParsingErrorMessage="Este campo es requerido" />
+                            <ValidationMessage For="@(() => currentLoan.DueDay)" />
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label text-white">Fecha de Inicio *</label>
+                        <InputDate class="form-control glass-input" @bind-Value="currentLoan.StartDate" />
+                        <ValidationMessage For="@(() => currentLoan.StartDate)" />
+                    </div>
+
+                    <div class="mb-3">
+                        <IconSelector @bind-SelectedIcon="currentLoan.Icon" Label="Icono" />
+                    </div>
+
+                    @if (!isEditMode)
+                    {
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" @bind="createReminder" id="createReminderCheck">
+                                <label class="form-check-label text-white" for="createReminderCheck">
+                                    🔔 Crear recordatorio mensual
+                                </label>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- Vista Previa -->
+                    @if (previewTotalToPay > 0)
+                    {
+                        <div class="preview-card">
+                            <h6 class="text-white">💡 Vista Previa</h6>
+                            <div class="preview-info">
+                                <div class="d-flex justify-content-between">
+                                    <span>Total a Pagar:</span>
+                                    <strong>@previewTotalToPay.ToString("C")</strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Interés Total:</span>
+                                    <strong class="@GetInterestColorClass(previewInterestCategory)">
+                                        @previewInterest.ToString("C")
+                                    </strong>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Tasa Aproximada:</span>
+                                    <strong class="@GetInterestColorClass(previewInterestCategory)">
+                                        @previewInterestRate.ToString("F2")%
+                                    </strong>
+                                </div>
+                                <div class="mt-2">
+                                    <small class="@GetInterestColorClass(previewInterestCategory)">
+                                        @previewInterestLabel
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <div class="modal-footer-custom">
+                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancelar</button>
+                        <button type="submit" class="btn btn-primary">
+                            @(isEditMode ? "Actualizar" : "Crear")
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Eliminar -->
+@if (showDeleteModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom modal-delete" @onclick:stopPropagation="true">
+            <div class="modal-header-custom">
+                <h5>🗑️ Eliminar Préstamo</h5>
+                <button class="btn-close-custom" @onclick="CloseDeleteModal">✕</button>
+            </div>
+            <div class="modal-body-custom">
+                <p class="text-white">¿Estás seguro de eliminar este préstamo <strong>activo</strong>?</p>
+                <div class="alert alert-info">
+                    <strong>@loanToDelete?.Icon @loanToDelete?.Title</strong>
+                    <p class="mb-0 mt-2">Este préstamo tiene @loanToDelete?.InstallmentsPaid pagos registrados</p>
+                </div>
+
+                <div class="form-check mt-3">
+                    <input class="form-check-input" type="checkbox" @bind="deleteHistory" id="deleteHistoryCheck">
+                    <label class="form-check-label text-white" for="deleteHistoryCheck">
+                        <strong>Eliminar también el historial de pagos</strong>
+                    </label>
+                </div>
+
+                @if (deleteHistory)
+                {
+                    <div class="alert alert-danger mt-3">
+                        <strong>⚠️ Esta acción NO se puede deshacer.</strong>
+                        <p class="mb-0">Se eliminarán:</p>
+                        <ul class="mb-0">
+                            <li>La categoría del préstamo</li>
+                            <li>Los @loanToDelete?.InstallmentsPaid pagos registrados</li>
+                            <li>El préstamo completo</li>
+                        </ul>
+                    </div>
+                }
+            </div>
+            <div class="modal-footer-custom">
+                <button class="btn btn-secondary" @onclick="CloseDeleteModal">Cancelar</button>
+                <button class="btn btn-danger" @onclick="ConfirmDelete">Eliminar</button>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private string currentUserId = string.Empty;
+    private List<LoanDto> allLoans = new();
+    private List<LoanDto> activeLoans = new();
+    private List<LoanDto> filteredLoans = new();
+    private bool showActiveOnly = true;
+    private bool isLoading = true;
+
+    // Resumen
+    private decimal totalBorrowed = 0;
+    private decimal totalToPay = 0;
+    private decimal totalPaid = 0;
+    private decimal totalRemaining = 0;
+    private decimal monthlyPaymentsTotal = 0;
+    private decimal averageInterestRate = 0;
+
+    // Modales
+    private bool showModal = false;
+    private bool showDeleteModal = false;
+    private bool isEditMode = false;
+    private LoanDto currentLoan = new();
+    private LoanDto? loanToDelete;
+    private bool deleteHistory = false;
+    private bool createReminder = false;
+
+    // Vista previa
+    private decimal previewTotalToPay = 0;
+    private decimal previewInterest = 0;
+    private decimal previewInterestRate = 0;
+    private string previewInterestCategory = "";
+    private string previewInterestLabel = "";
+
+    // Mensajes
+    private string errorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            await LoadLoans();
+            await LoadSummary();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadLoans()
+    {
+        try
+        {
+            isLoading = true;
+
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            allLoans = await LoanService.GetAllByUserAsync(currentUserId);
+            activeLoans = allLoans.Where(l => l.IsActive).ToList();
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al cargar préstamos: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadSummary()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            totalBorrowed = await LoanService.GetTotalBorrowedAsync(currentUserId);
+            totalToPay = await LoanService.GetTotalToPayAsync(currentUserId);
+            totalPaid = await LoanService.GetTotalPaidAsync(currentUserId);
+            totalRemaining = await LoanService.GetTotalRemainingAsync(currentUserId);
+            monthlyPaymentsTotal = await LoanService.GetMonthlyPaymentsTotalAsync(currentUserId);
+            averageInterestRate = await LoanService.GetAverageInterestRateAsync(currentUserId);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar resumen: {ex.Message}");
+        }
+    }
+
+    private void ToggleFilter(bool activeOnly)
+    {
+        showActiveOnly = activeOnly;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        filteredLoans = showActiveOnly ? activeLoans : allLoans;
+    }
+
+    // ========== CRUD ==========
+
+    private void OpenCreateModal()
+    {
+        isEditMode = false;
+        currentLoan = new LoanDto
+        {
+            Icon = "🏦",
+            StartDate = DateTime.Now,
+            DueDay = DateTime.Now.Day,
+            NumberOfInstallments = 12
+        };
+        createReminder = false;
+        ResetPreview();
+        showModal = true;
+    }
+
+    private void OpenEditModal(LoanDto loan)
+    {
+        isEditMode = true;
+        currentLoan = new LoanDto
+        {
+            LoanId = loan.LoanId,
+            Title = loan.Title,
+            Description = loan.Description,
+            PrincipalAmount = loan.PrincipalAmount,
+            InstallmentAmount = loan.InstallmentAmount,
+            NumberOfInstallments = loan.NumberOfInstallments,
+            DueDay = loan.DueDay,
+            StartDate = loan.StartDate,
+            Icon = loan.Icon,
+            CategoryId = loan.CategoryId,
+            InstallmentsPaid = loan.InstallmentsPaid
+        };
+        CalculatePreview();
+        showModal = true;
+    }
+
+    private async Task SaveLoan()
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+            {
+                ShowErrorMessage("Error: No se pudo identificar el usuario");
+                return;
+            }
+
+            if (isEditMode)
+            {
+                var success = await LoanService.UpdateAsync(currentLoan.LoanId, currentLoan, currentUserId);
+
+                if (success)
+                {
+                    ShowSuccessMessage("Préstamo actualizado correctamente");
+                    await LoadLoans();
+                    await LoadSummary();
+                    CloseModal();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo actualizar el préstamo");
+                }
+            }
+            else
+            {
+                var result = await LoanService.CreateAsync(currentLoan, currentUserId, createReminder);
+
+                if (result.Success && result.Loan != null)
+                {
+                    ShowSuccessMessage("Préstamo creado correctamente");
+                    await LoadLoans();
+                    await LoadSummary();
+                    CloseModal();
+                }
+                else
+                {
+                    ShowErrorMessage($"Error al crear préstamo: {result.Error ?? "Error desconocido"}");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private void HandleDeleteLoan(LoanDto loan)
+    {
+        if (!loan.IsActive)
+        {
+            // Préstamo en historial - eliminar directamente con TODO el historial
+            DeleteLoanFromHistory(loan);
+        }
+        else
+        {
+            // Préstamo activo - mostrar modal con opciones
+            OpenDeleteModal(loan);
+        }
+    }
+
+    private void OpenDeleteModal(LoanDto loan)
+    {
+        loanToDelete = loan;
+        deleteHistory = false;
+        showDeleteModal = true;
+    }
+
+    private async void DeleteLoanFromHistory(LoanDto loan)
+    {
+        // Confirmación simple sin modal
+        loanToDelete = loan;
+        deleteHistory = true;
+        await ConfirmDelete();
+    }
+
+    private async Task ConfirmDelete()
+    {
+        try
+        {
+            if (loanToDelete == null || string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await LoanService.DeleteAsync(loanToDelete.LoanId, currentUserId, deleteHistory);
+            if (success)
+            {
+                ShowSuccessMessage("Préstamo eliminado correctamente");
+                await LoadLoans();
+                await LoadSummary();
+                CloseDeleteModal();
+            }
+            else
+            {
+                ShowErrorMessage("Error al eliminar el préstamo");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task RegisterPayment(int loanId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await LoanService.RegisterPaymentAsync(loanId, currentUserId);
+            if (success)
+            {
+                ShowSuccessMessage("Pago registrado correctamente");
+                await LoadLoans();
+                await LoadSummary();
+            }
+            else
+            {
+                ShowErrorMessage("Error al registrar el pago");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task UndoLastPayment(int loanId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await LoanService.UndoLastPaymentAsync(loanId, currentUserId);
+            if (success)
+            {
+                ShowSuccessMessage("Pago deshecho correctamente");
+                await LoadLoans();
+                await LoadSummary();
+            }
+            else
+            {
+                ShowErrorMessage("Error al deshacer el pago");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private async Task ReactivateLoan(int loanId)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var success = await LoanService.ReactivateLoanAsync(loanId, currentUserId);
+            if (success)
+            {
+                ShowSuccessMessage("Préstamo reactivado correctamente");
+                await LoadLoans();
+                await LoadSummary();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo reactivar el préstamo");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    // ========== VISTA PREVIA ==========
+
+    private void CalculatePreview()
+    {
+        try
+        {
+            if (currentLoan.PrincipalAmount > 0 &&
+                currentLoan.InstallmentAmount > 0 &&
+                currentLoan.NumberOfInstallments > 0)
+            {
+                previewTotalToPay = currentLoan.InstallmentAmount * currentLoan.NumberOfInstallments;
+                previewInterest = previewTotalToPay - currentLoan.PrincipalAmount;
+
+                // Calcular tasa aproximada
+                if (currentLoan.PrincipalAmount > 0 && currentLoan.NumberOfInstallments > 0)
+                {
+                    previewInterestRate = (previewInterest / currentLoan.PrincipalAmount) *
+                                         (12m / currentLoan.NumberOfInstallments) * 100m;
+                    previewInterestRate = Math.Round(previewInterestRate, 2);
+                }
+                else
+                {
+                    previewInterestRate = 0;
+                }
+
+                // Categorizar tasa
+                if (previewInterestRate <= 15)
+                {
+                    previewInterestCategory = "favorable";
+                    previewInterestLabel = "✅ Tasa favorable";
+                }
+                else if (previewInterestRate <= 30)
+                {
+                    previewInterestCategory = "moderada";
+                    previewInterestLabel = "⚠️ Tasa moderada";
+                }
+                else
+                {
+                    previewInterestCategory = "alta";
+                    previewInterestLabel = "🔴 Tasa alta - Considerar refinanciar";
+                }
+            }
+            else
+            {
+                ResetPreview();
+            }
+
+            StateHasChanged();
+        }
+        catch
+        {
+            ResetPreview();
+        }
+    }
+
+    private void ResetPreview()
+    {
+        previewTotalToPay = 0;
+        previewInterest = 0;
+        previewInterestRate = 0;
+        previewInterestCategory = "";
+        previewInterestLabel = "";
+    }
+
+    // ========== UI HELPERS ==========
+
+    private string GetProgressBarClass(decimal percentage)
+    {
+        if (percentage >= 100) return "bg-success";
+        if (percentage >= 75) return "bg-info";
+        if (percentage >= 50) return "bg-warning";
+        return "bg-danger";
+    }
+
+    private string GetInterestColorClass(string category)
+    {
+        return category switch
+        {
+            "favorable" => "text-success",
+            "moderada" => "text-warning",
+            "alta" => "text-danger",
+            _ => "text-white"
+        };
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        currentLoan = new LoanDto();
+        ResetPreview();
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        loanToDelete = null;
+        deleteHistory = false;
+    }
+
+    // ========== MENSAJES ==========
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
+    }
+}

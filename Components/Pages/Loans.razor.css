@@ -1,0 +1,555 @@
+﻿/* Contenedor principal */
+.loans-container {
+    min-height: 100vh;
+    padding: 30px;
+}
+
+/* Header de página */
+.page-header {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+    .page-header h1 {
+        color: white;
+        margin-bottom: 5px;
+        font-weight: 600;
+    }
+
+    .page-header p {
+        color: rgba(255, 255, 255, 0.8);
+    }
+
+.btnAddLoans {
+    background: rgba(33, 150, 243, 0.25);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+    border-radius: 20px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+}
+
+    .btnAddLoans:hover {
+        background: rgba(33, 150, 243, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+    }
+
+/* Resumen General */
+.summary-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 30px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+    .summary-card h4 {
+        color: white;
+        margin-bottom: 25px;
+        font-weight: 600;
+    }
+
+.summary-item {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.summary-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.85rem;
+    display: block;
+    margin-bottom: 8px;
+}
+
+.summary-item h5 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 0;
+}
+
+/* Filtros */
+.filters-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 20px;
+    margin-bottom: 30px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+}
+
+    .filters-card .btn-group {
+        width: 100%;
+    }
+
+    .filters-card .btn {
+        flex: 1;
+        border-radius: 10px;
+        margin: 0 5px;
+        padding: 10px;
+        transition: all 0.3s ease;
+    }
+
+    .filters-card .btn-primary {
+        background: rgba(33, 150, 243, 0.35);
+        border: 1px solid rgba(33, 150, 243, 0.5);
+    }
+
+    .filters-card .btn-secondary {
+        background: rgba(158, 158, 158, 0.35);
+        border: 1px solid rgba(158, 158, 158, 0.5);
+    }
+
+    .filters-card .btn-outline-primary,
+    .filters-card .btn-outline-secondary {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+/* Tarjetas de Préstamos */
+.loan-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 25px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    transition: all 0.3s ease;
+    height: 100%;
+}
+
+    .loan-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+        border-color: rgba(33, 150, 243, 0.3);
+    }
+
+    .loan-card.inactive {
+        opacity: 0.7;
+        border-color: rgba(158, 158, 158, 0.3);
+    }
+
+.loan-header {
+    margin-bottom: 20px;
+}
+
+    .loan-header h4 {
+        color: white;
+        margin: 0;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+.loan-icon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.loan-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+    .loan-actions .btn {
+        border-radius: 8px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        transition: all 0.3s ease;
+    }
+
+        .loan-actions .btn:hover {
+            transform: scale(1.1);
+        }
+
+.loan-description {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 20px;
+    font-style: italic;
+}
+
+.loan-info {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+    .loan-info small {
+        color: rgba(255, 255, 255, 0.7);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .loan-info p {
+        margin: 0 0 10px 0;
+        font-size: 1rem;
+    }
+
+.loan-progress {
+    margin-bottom: 20px;
+}
+
+    .loan-progress .progress {
+        height: 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .loan-progress .progress-bar {
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+
+.loan-footer {
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+    .loan-footer small {
+        color: rgba(255, 255, 255, 0.7);
+        display: block;
+        margin-bottom: 5px;
+    }
+
+    .loan-footer p {
+        margin: 0;
+        font-weight: 600;
+    }
+
+/* Modales */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal-content-custom {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    width: 100%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.3s ease;
+    /* 1. Define un límite de altura */
+    max-height: 475px;
+    /* 2. Muestra el scroll vertical SI es necesario */
+    overflow-y: auto;
+    margin-top: 20px;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.modal-content-custom.modal-delete {
+    max-width: 500px;
+}
+
+.modal-header-custom {
+    padding: 25px 30px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+    .modal-header-custom h5 {
+        color: white;
+        margin: 0;
+        font-weight: 600;
+        font-size: 1.25rem;
+    }
+
+
+
+.btn-close-custom {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.4);
+    color: #F44336;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .btn-close-custom:hover {
+        background: rgba(244, 67, 54, 0.3);
+        transform: scale(1.1);
+    }
+
+.modal-body-custom {
+    padding: 30px;
+}
+
+.modal-footer-custom {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+    .modal-footer-custom .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+/* Inputs en modal */
+.glass-input {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    border-radius: 8px;
+}
+
+    .glass-input:focus {
+        background: rgba(255, 255, 255, 0.15) !important;
+        border-color: rgba(33, 150, 243, 0.5) !important;
+        color: white !important;
+        box-shadow: 0 0 0 0.25rem rgba(33, 150, 243, 0.15);
+    }
+
+    .glass-input::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+
+.form-label {
+    color: white;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+/* Selector de iconos */
+.icon-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.icon-option {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .icon-option:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: scale(1.1);
+    }
+
+    .icon-option.selected {
+        background: rgba(33, 150, 243, 0.3);
+        border-color: rgba(33, 150, 243, 0.6);
+        box-shadow: 0 0 15px rgba(33, 150, 243, 0.4);
+    }
+
+/* Vista Previa */
+.preview-card {
+    background: rgba(33, 150, 243, 0.1);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-top: 20px;
+}
+
+    .preview-card h6 {
+        margin-bottom: 15px;
+        font-weight: 600;
+    }
+
+.preview-info {
+    color: white;
+}
+
+    .preview-info > div {
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+        .preview-info > div:last-child {
+            border-bottom: none;
+        }
+
+/* Alertas */
+.custom-alert {
+    position: fixed;
+    top: 90px;
+    right: 20px;
+    min-width: 300px;
+    max-width: 500px;
+    padding: 15px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(400px);
+    transition: all 0.3s ease;
+}
+
+    .custom-alert.show {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .custom-alert.success {
+        background: rgba(76, 175, 80, 0.9);
+        border: 1px solid rgba(76, 175, 80, 1);
+    }
+
+    .custom-alert.error {
+        background: rgba(244, 67, 54, 0.9);
+        border: 1px solid rgba(244, 67, 54, 1);
+    }
+
+.alert-icon {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.alert-text {
+    color: white;
+    font-weight: 500;
+    flex: 1;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .loans-container {
+        padding: 15px;
+    }
+
+    .page-header {
+        padding: 20px;
+    }
+
+    .summary-card {
+        padding: 20px;
+    }
+
+    .summary-item h5 {
+        font-size: 1.2rem;
+    }
+
+    .loan-card {
+        padding: 20px;
+    }
+
+    .loan-actions {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .modal-content-custom {
+        margin: 10px;
+        max-height: 95vh;
+    }
+
+    .modal-body-custom {
+        padding: 20px;
+    }
+
+    .custom-alert {
+        right: 10px;
+        left: 10px;
+        min-width: auto;
+        top: 80px;
+    }
+
+    .filters-card .btn-group {
+        flex-direction: column;
+    }
+
+    .filters-card .btn {
+        margin: 5px 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .loan-header h4 {
+        font-size: 1rem;
+    }
+
+    .loan-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+
+    .icon-option {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
+    }
+}

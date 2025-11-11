@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MisFinanzas.Domain.DTOs;
 using MisFinanzas.Domain.Entities;
 using MisFinanzas.Domain.Enums;
 using MisFinanzas.Infrastructure.Data;
@@ -17,74 +18,123 @@ namespace MisFinanzas.Infrastructure.Services
             _notificationService = notificationService;
         }
 
+        // ========== MÉTODOS DE MAPEO ==========
+
+        private LoanDto MapToDto(Loan loan)
+        {
+            return new LoanDto
+            {
+                LoanId = loan.LoanId,
+                Title = loan.Title,
+                Description = loan.Description,
+                PrincipalAmount = loan.PrincipalAmount,
+                InstallmentAmount = loan.InstallmentAmount,
+                NumberOfInstallments = loan.NumberOfInstallments,
+                DueDay = loan.DueDay,
+                StartDate = loan.StartDate,
+                Icon = loan.Icon,
+                IsActive = loan.IsActive,
+                InstallmentsPaid = loan.InstallmentsPaid,
+                UserId = loan.UserId,
+                CategoryId = loan.CategoryId
+            };
+        }
+
+        private Loan MapToEntity(LoanDto dto)
+        {
+            return new Loan
+            {
+                LoanId = dto.LoanId,
+                Title = dto.Title,
+                Description = dto.Description,
+                PrincipalAmount = dto.PrincipalAmount,
+                InstallmentAmount = dto.InstallmentAmount,
+                NumberOfInstallments = dto.NumberOfInstallments,
+                DueDay = dto.DueDay,
+                StartDate = dto.StartDate,
+                Icon = dto.Icon,
+                IsActive = dto.IsActive,
+                InstallmentsPaid = dto.InstallmentsPaid,
+                UserId = dto.UserId,
+                CategoryId = dto.CategoryId
+            };
+        }
+
         // ========== CONSULTAS BÁSICAS ==========
 
-        public async Task<List<Loan>> GetAllByUserAsync(string userId)
+        public async Task<List<LoanDto>> GetAllByUserAsync(string userId)
         {
-            return await _context.Loans
+            var loans = await _context.Loans
                 .Include(l => l.Category)
                 .Where(l => l.UserId == userId)
                 .OrderByDescending(l => l.StartDate)
                 .ToListAsync();
+
+            return loans.Select(MapToDto).ToList();
         }
 
-        public async Task<List<Loan>> GetActiveByUserAsync(string userId)
+        public async Task<List<LoanDto>> GetActiveByUserAsync(string userId)
         {
-            return await _context.Loans
+            var loans = await _context.Loans
                 .Include(l => l.Category)
                 .Where(l => l.UserId == userId && l.IsActive)
                 .OrderByDescending(l => l.StartDate)
                 .ToListAsync();
+
+            return loans.Select(MapToDto).ToList();
         }
 
-        public async Task<Loan?> GetByIdAsync(int loanId, string userId)
+        public async Task<LoanDto?> GetByIdAsync(int loanId, string userId)
         {
-            return await _context.Loans
+            var loan = await _context.Loans
                 .Include(l => l.Category)
                 .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
+
+            return loan != null ? MapToDto(loan) : null;
         }
 
         // ========== CRUD ==========
 
-        public async Task<(bool Success, string? Error, Loan? Loan)> CreateAsync(Loan loan, string userId, bool createReminder = false)
+        public async Task<(bool Success, string? Error, LoanDto? Loan)> CreateAsync(LoanDto loanDto, string userId, bool createReminder = false)
         {
             try
             {
                 // Validar que no exista préstamo con el mismo título
-                if (await ExistsLoanWithTitleAsync(loan.Title, userId))
+                if (await ExistsLoanWithTitleAsync(loanDto.Title, userId))
                 {
                     return (false, "Ya existe un préstamo con ese título.", null);
                 }
 
                 // Validar datos
-                if (loan.PrincipalAmount <= 0)
+                if (loanDto.PrincipalAmount <= 0)
                     return (false, "El monto del préstamo debe ser mayor a cero.", null);
 
-                if (loan.InstallmentAmount <= 0)
+                if (loanDto.InstallmentAmount <= 0)
                     return (false, "La cuota mensual debe ser mayor a cero.", null);
 
-                if (loan.NumberOfInstallments < 1)
+                if (loanDto.NumberOfInstallments < 1)
                     return (false, "El número de cuotas debe ser al menos 1.", null);
 
-                if (loan.DueDay < 1 || loan.DueDay > 31)
+                if (loanDto.DueDay < 1 || loanDto.DueDay > 31)
                     return (false, "El día de pago debe estar entre 1 y 31.", null);
 
                 // 1. Crear categoría automáticamente para este préstamo
                 var category = new Category
                 {
                     UserId = userId,
-                    Title = loan.Title,
-                    Icon = loan.Icon,
+                    Title = loanDto.Title,
+                    Icon = loanDto.Icon,
                     Type = TransactionType.Expense,
-                    IsFixedExpense = createReminder, // Si se activa recordatorio, es gasto fijo
-                    DayOfMonth = createReminder ? loan.DueDay : null,
-                    EstimatedAmount = createReminder ? loan.InstallmentAmount : null
+                    IsFixedExpense = createReminder,
+                    DayOfMonth = createReminder ? loanDto.DueDay : null,
+                    EstimatedAmount = createReminder ? loanDto.InstallmentAmount : null
                 };
 
                 _context.Categories.Add(category);
                 await _context.SaveChangesAsync();
 
-                // 2. Asignar categoría al préstamo
+                // 2. Convertir DTO a entidad y asignar categoría
+                var loan = MapToEntity(loanDto);
                 loan.UserId = userId;
                 loan.CategoryId = category.CategoryId;
                 loan.IsActive = true;
@@ -94,13 +144,12 @@ namespace MisFinanzas.Infrastructure.Services
                 await _context.SaveChangesAsync();
 
                 // 3. Las notificaciones se generarán automáticamente por el background service
-                // No generamos notificación inmediata para evitar conflictos de DbContext
                 if (createReminder)
                 {
                     Console.WriteLine($"✅ Recordatorio configurado para préstamo {loan.LoanId}. El background service generará las notificaciones.");
                 }
 
-                return (true, null, loan);
+                return (true, null, MapToDto(loan));
             }
             catch (Exception ex)
             {
@@ -109,7 +158,7 @@ namespace MisFinanzas.Infrastructure.Services
             }
         }
 
-        public async Task<bool> UpdateAsync(int loanId, Loan updatedLoan, string userId)
+        public async Task<bool> UpdateAsync(int loanId, LoanDto updatedLoanDto, string userId)
         {
             try
             {
@@ -121,25 +170,25 @@ namespace MisFinanzas.Infrastructure.Services
                     return false;
 
                 // Validar que no exista otro préstamo con el mismo título
-                if (await ExistsLoanWithTitleAsync(updatedLoan.Title, userId, loanId))
+                if (await ExistsLoanWithTitleAsync(updatedLoanDto.Title, userId, loanId))
                     return false;
 
                 // Actualizar datos del préstamo
-                loan.Title = updatedLoan.Title;
-                loan.Description = updatedLoan.Description;
-                loan.PrincipalAmount = updatedLoan.PrincipalAmount;
-                loan.InstallmentAmount = updatedLoan.InstallmentAmount;
-                loan.NumberOfInstallments = updatedLoan.NumberOfInstallments;
-                loan.DueDay = updatedLoan.DueDay;
-                loan.StartDate = updatedLoan.StartDate;
-                loan.Icon = updatedLoan.Icon;
+                loan.Title = updatedLoanDto.Title;
+                loan.Description = updatedLoanDto.Description;
+                loan.PrincipalAmount = updatedLoanDto.PrincipalAmount;
+                loan.InstallmentAmount = updatedLoanDto.InstallmentAmount;
+                loan.NumberOfInstallments = updatedLoanDto.NumberOfInstallments;
+                loan.DueDay = updatedLoanDto.DueDay;
+                loan.StartDate = updatedLoanDto.StartDate;
+                loan.Icon = updatedLoanDto.Icon;
 
                 // Actualizar categoría asociada
                 if (loan.Category != null)
                 {
-                    loan.Category.Title = updatedLoan.Title;
-                    loan.Category.Icon = updatedLoan.Icon;
-                    loan.Category.EstimatedAmount = updatedLoan.InstallmentAmount;
+                    loan.Category.Title = updatedLoanDto.Title;
+                    loan.Category.Icon = updatedLoanDto.Icon;
+                    loan.Category.EstimatedAmount = updatedLoanDto.InstallmentAmount;
                 }
 
                 await _context.SaveChangesAsync();
@@ -225,7 +274,8 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
-                var loan = await GetByIdAsync(loanId, userId);
+                var loan = await _context.Loans
+                    .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null || !loan.IsActive)
                     return false;
@@ -270,7 +320,8 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
-                var loan = await GetByIdAsync(loanId, userId);
+                var loan = await _context.Loans
+                    .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null)
                     return false;
@@ -289,7 +340,6 @@ namespace MisFinanzas.Infrastructure.Services
                 if (lastPayment == null)
                 {
                     // Inconsistencia: Hay contador pero no hay pago registrado
-                    // Resetear el contador
                     loan.InstallmentsPaid = 0;
                     await _context.SaveChangesAsync();
                     return false;
@@ -323,7 +373,8 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
-                var loan = await GetByIdAsync(loanId, userId);
+                var loan = await _context.Loans
+                    .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null)
                     return false;
@@ -343,7 +394,8 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
-                var loan = await GetByIdAsync(loanId, userId);
+                var loan = await _context.Loans
+                    .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null)
                     return false;
@@ -355,7 +407,7 @@ namespace MisFinanzas.Infrastructure.Services
                     return false;
                 }
 
-                if (loan.IsCompleted)
+                if (loan.InstallmentsPaid >= loan.NumberOfInstallments)
                 {
                     Console.WriteLine($"⚠️ El préstamo '{loan.Title}' está completado. No se puede reactivar.");
                     return false;
@@ -393,37 +445,54 @@ namespace MisFinanzas.Infrastructure.Services
 
         public async Task<decimal> GetTotalBorrowedAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             return activeLoans.Sum(l => l.PrincipalAmount);
         }
 
         public async Task<decimal> GetTotalToPayAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             return activeLoans.Sum(l => l.TotalToPay);
         }
 
         public async Task<decimal> GetTotalPaidAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             return activeLoans.Sum(l => l.TotalPaid);
         }
 
         public async Task<decimal> GetTotalRemainingAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             return activeLoans.Sum(l => (l.TotalToPay - l.TotalPaid));
         }
 
         public async Task<decimal> GetMonthlyPaymentsTotalAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             return activeLoans.Sum(l => l.InstallmentAmount);
         }
 
         public async Task<decimal> GetAverageInterestRateAsync(string userId)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
 
             if (!activeLoans.Any())
                 return 0;
@@ -433,16 +502,21 @@ namespace MisFinanzas.Infrastructure.Services
 
         // ========== PARA DASHBOARD ==========
 
-        public async Task<List<Loan>> GetLoansWithUpcomingPaymentsAsync(string userId, int daysAhead = 7)
+        public async Task<List<LoanDto>> GetLoansWithUpcomingPaymentsAsync(string userId, int daysAhead = 7)
         {
-            var activeLoans = await GetActiveByUserAsync(userId);
+            var activeLoans = await _context.Loans
+                .Where(l => l.UserId == userId && l.IsActive)
+                .ToListAsync();
+
             var today = DateTime.Now;
             var futureDate = today.AddDays(daysAhead);
 
-            return activeLoans
+            var filtered = activeLoans
                 .Where(l => l.NextPaymentDate >= today && l.NextPaymentDate <= futureDate)
                 .OrderBy(l => l.NextPaymentDate)
                 .ToList();
+
+            return filtered.Select(MapToDto).ToList();
         }
     }
 }

@@ -21,5 +21,7 @@ namespace MisFinanzas.Infrastructure.Interfaces
         Task<bool> ExistsCategoryWithNameAsync(string title, TransactionType type, string userId, int? excludeCategoryId = null);
         // Verifica si ya existe una categoría con ese ícono
         Task<bool> ExistsCategoryWithIconAsync(string icon, TransactionType type, string userId, int? excludeCategoryId = null);
+
+        
     }
 }

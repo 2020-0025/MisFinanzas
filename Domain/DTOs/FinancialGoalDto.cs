@@ -43,6 +43,7 @@ namespace MisFinanzas.Domain.DTOs
             : 0;
         public int DaysRemaining => (TargetDate - DateTime.Now).Days;
         public bool IsOverdue => DateTime.Now > TargetDate && Status == GoalStatus.InProgress;
+        public bool IsCompleted => CurrentAmount >= TargetAmount;
 
         public string StatusDisplay => Status switch
         {

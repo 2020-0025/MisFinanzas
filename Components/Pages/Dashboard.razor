@@ -7,33 +7,16 @@
 @inject IExpenseIncomeService ExpenseIncomeService
 @inject ICategoryService CategoryService
 @inject IFinancialGoalService GoalService
+@inject IBudgetService BudgetService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @attribute [Authorize]
 @rendermode InteractiveServer
 @implements IAsyncDisposable
 
-<PageTitle>Dashboard - Mis Finanzas</PageTitle>
+<PageTitle>Panel de Control - Mis Finanzas</PageTitle>
 
 <div class="dashboard-container">
-    
-    <!-- Header con efecto glass -->
-    <div class="glass-card dashboard-header animate-slide-up">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h1 class="h3 mb-1 text-white fw-bold">
-                    <span style="font-size: 32px;">📊</span>
-                    <strong>Dashboard</strong>
-                </h1>
-                <p class="text-white mb-0">Resumen de tus finanzas</p>
-            </div>
-            <div class="glass-badge">
-                <span style="font-size: 17px;">📅</span>
-                <span class="text-white">Últimos @selectedDays días</span>
-            </div>
-        </div>
-    </div>
-
     @if (isLoading)
     {
         <div class="glass-card text-center py-5 animate-slide-up">
@@ -45,6 +28,23 @@
     }
     else
     {
+        <!-- Header con efecto glass -->
+        <div class="glass-card dashboard-header animate-slide-up">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                <div>
+                    <h1 class="h3 mb-1 text-white fw-bold">
+                        <span style="font-size: 32px;">📊</span>
+                        <strong>Panel de Control</strong>
+                    </h1>
+                    <p class="text-white mb-0">Resumen de tus finanzas</p>
+                </div>
+                <div class="glass-badge">
+                    <span style="font-size: 17px;">📅</span>
+                    <span class="text-white">Últimos @selectedDays días</span>
+                </div>
+            </div>
+        </div>
+
         <!-- Summary Cards -->
         <div class="row g-4 mb-4">
             <!-- Balance Card -->
@@ -56,15 +56,32 @@
                         </div>
                         <div class="stat-content">
                             <p class="stat-label text-white">Balance</p>
-                            <h2 class="stat-value">@dashboardData.Balance.ToString("C0")</h2>
-                            <small class="stat-subtitle text-white">
-                                <span style="font-size: 15px;">📅</span>@selectedDays días
+                            <h2 class="stat-value @(balance >= 0 ? "text-info" : "text-danger")">
+                                @if (balance >= 0)
+                                {
+                                    <text>@balance.ToString("C0")</text>
+                                }
+                                else
+                                {
+                                    <text>-@Math.Abs(balance).ToString("C0")</text>
+                                }
+                            </h2>
+                            <small class="stat-subtitle @(balance >= 0 ? "text-info" : "text-danger")">
+                                <span style="font-size: 15px;">@(balance >= 0 ? "✅" : "⚠️")</span>
+                                @(balance >= 0 ? "Superávit" : "Déficit")
                             </small>
                         </div>
                     </div>
                     <div class="stat-footer text-white">
                         <span style="font-size: 17px;">💲</span>
-                        Balance actual
+                        @if (balance >= 0)
+                        {
+                            <text>Situación positiva</text>
+                        }
+                        else
+                        {
+                            <text>Gastos exceden ingresos</text>
+                        }
                     </div>
                 </div>
             </div>
@@ -78,7 +95,7 @@
                         </div>
                         <div class="stat-content">
                             <p class="stat-label text-white">Ingresos</p>
-                            <h2 class="stat-value text-info">@dashboardData.TotalIncome.ToString("C0")</h2>
+                            <h2 class="stat-value text-info">@totalIncome.ToString("C0")</h2>
                             <small class="stat-subtitle text-white">
                                 <span style="font-size: 15px;">🔼</span>Entradas
                             </small>
@@ -100,8 +117,8 @@
                         </div>
                         <div class="stat-content">
                             <p class="stat-label text-white">Gastos</p>
-                            <h2 class="stat-value text-danger">@dashboardData.TotalExpense.ToString("C0")</h2>
-                            <small class="stat-subtitle text-danger">
+                            <h2 class="stat-value text-danger">@totalExpense.ToString("C0")</h2>
+                            <small class="stat-subtitle text-white">
                                 <span style="font-size: 15px;">🔽</span>Salidas
                             </small>
                         </div>
@@ -122,16 +139,16 @@
                         </div>
                         <div class="stat-content">
                             <p class="stat-label text-white">Metas</p>
-                            <h2 class="stat-value text-info">@dashboardData.CompletedGoals/@dashboardData.TotalGoals</h2>
+                            <h2 class="stat-value text-info">@completedGoalsCount/@totalGoalsCount</h2>
                             <small class="stat-subtitle text-info">
                                 <span style="font-size: 15px;">🚩</span>Completadas
                             </small>
                         </div>
                     </div>
                     <div class="stat-footer text-white">
-                        @if (dashboardData.TotalGoals > 0)
+                        @if (totalGoalsCount > 0)
                         {
-                            var percentage = (dashboardData.CompletedGoals * 100.0 / dashboardData.TotalGoals).ToString("F0");
+                            var percentage = (completedGoalsCount * 100.0 / totalGoalsCount).ToString("F0");
                             <span>
                                 <span style="font-size: 17px;">🏆</span>
                                 @percentage% progreso
@@ -149,38 +166,11 @@
             </div>
         </div>
 
-        <!-- Charts Row -->
+        <!-- Main Charts Row -->
         <div class="row g-4 mb-4">
-            <!-- Doughnut Chart -->
-            <div class="col-lg-4">
-                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.4s;">
-                    <div class="card-header-glass">
-                        <h5 class="mb-0 text-white fw-semibold">
-                            <span style="font-size: 20px;">🧾</span>
-                            Gastos por Categoría
-                        </h5>
-                    </div>
-                    <div class="card-body-glass">
-                        @if (dashboardData.CategoryExpenses.Any())
-                        {
-                            <div style="height: 300px; position: relative;">
-                                <canvas id="doughnutChart"></canvas>
-                            </div>
-                        }
-                        else
-                        {
-                            <div class="empty-state">
-                                <i class="bi bi-inbox"></i>
-                                <p>No hay gastos registrados</p>
-                            </div>
-                        }
-                    </div>
-                </div>
-            </div>
-
             <!-- Bar Chart -->
-            <div class="col-lg-8">
-                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.5s;">
+            <div class="col-lg-12">
+                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.4s;">
                     <div class="card-header-glass">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
                             <h5 class="mb-0 text-white fw-semibold">
@@ -204,7 +194,7 @@
                     <div class="card-body-glass">
                         @if (chartData.Any())
                         {
-                            <div style="height: 300px; position: relative;">
+                            <div style="height: 350px; position: relative;">
                                 <canvas id="barChart"></canvas>
                             </div>
                         }
@@ -218,17 +208,166 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Expenses Distribution Doughnut Chart -->
+            <div class="col-lg-6">
+                <div class="glass-card animate-slide-up" style="animation-delay: 0.8s;">
+                    <div class="card-header-glass">
+                        <h5 class="mb-0 text-white fw-semibold">
+                            <span style="font-size: 20px;">🧾</span>
+                            Gastos por Categorias
+                        </h5>
+                    </div>
+                    <div class="card-body-glass">
+                        @if (expensesByCategoryData.Any())
+                        {
+                            <div style="height: 350px; position: relative; margin-bottom:1rem;">
+                                <canvas id="expensesChart"></canvas>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <p class="text-white">No hay gastos en el período seleccionado</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Doughnut Chart -->
+            <div class="col-lg-6">
+                <div class="glass-card animate-slide-up" style="animation-delay: 0.6s;">
+                    <div class="card-header-glass">
+                        <h5 class="mb-0 text-white fw-semibold">
+                            <span style="font-size: 20px;">💰</span>
+                            % Presupuesto Gastado
+                        </h5>
+                    </div>
+                    <div class="card-body-glass">
+                        @if (budgetData.Any())
+                        {
+                            <div style="height: 250px; position: relative; margin-bottom: 1rem;">
+                                <canvas id="budgetChart"></canvas>
+                            </div>
+                            <div class="budget-legend">
+                                @foreach (var item in budgetData)
+                                {
+                                    <div class="legend-item @GetBudgetStatusClass(item.PercentageUsed)">
+                                        <span class="legend-color"></span>
+                                        <span class="legend-label">@item.CategoryName</span>
+                                        <span class="legend-value">@item.PercentageUsed.ToString("F0")%</span>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <p class="text-white">No tienes presupuestos activos</p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Goals + Alerts -->
+        <div class="row g-4 mb-4">
+            <!-- Goals -->
+            <div class="col-lg-6">
+                <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.5s;">
+                    <div class="card-header-glass">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 text-white fw-semibold">
+                                <span style="font-size: 20px;">🎯</span>
+                                Metas Activas
+                            </h5>
+                            <a href="/goals" class="glass-link-small">Ver todas →</a>
+                        </div>
+                    </div>
+                    <div class="card-body-glass">
+                        @if (topGoals.Any())
+                        {
+                            @foreach (var goal in topGoals)
+                            {
+                                var percentage = goal.TargetAmount > 0 ? (goal.CurrentAmount / goal.TargetAmount) * 100 : 0;
+                                var daysRemaining = (goal.TargetDate - DateTime.Now).Days;
+
+                                <div class="goal-item">
+                                    <div class="goal-header">
+                                        <span class="goal-name">@goal.Title</span>
+                                        <span class="goal-percentage">@percentage.ToString("F0")%</span>
+                                    </div>
+                                    <div class="progress-bar-container">
+                                        <div class="progress-bar-fill" style="width: @percentage%"></div>
+                                    </div>
+                                    <div class="goal-footer">
+                                        <span class="text-info">@goal.CurrentAmount.ToString("C0") / @goal.TargetAmount.ToString("C0")</span>
+                                        @if (goal.Status != GoalStatus.Completed)
+                                        {
+                                            <span class="days-remaining text-white">@daysRemaining días</span>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state-small">
+                                <p class="text-white">No tienes metas activas</p>
+                                <a href="/goals" class="glass-button-small text-white">Crear Meta</a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Alerts Widget -->
+            <div class="col-lg-6">
+                <div class="glass-card animate-slide-up" style="animation-delay: 0.7s;">
+                    <div class="card-header-glass">
+                        <h5 class="mb-0 text-white fw-semibold">
+                            <span style="font-size: 20px;">⚠️</span>
+                            Alertas de Presupuestos
+                        </h5>
+                    </div>
+                    <div class="card-body-glass">
+                        @if (alerts.Any())
+                        {
+                            @foreach (var alert in alerts)
+                            {
+                                <div class="alert-item @alert.Type">
+                                    <div class="alert-icon">@alert.Icon</div>
+                                    <div class="alert-content">
+                                        <strong>@alert.Title</strong>
+                                        <p class="text-white">@alert.Message</p>
+                                    </div>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="empty-state-small success">
+                                <span style="font-size: 2rem;">✅</span>
+                                <p class="text-white">¡Todo bajo control!</p>
+                                <small class="text-white">No hay alertas</small>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- Recent Transactions -->
         <div class="row g-4">
             <div class="col-12">
-                <div class="glass-card animate-slide-up" style="animation-delay: 0.6s;">
+                <div class="glass-card">
                     <div class="card-header-glass">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-                            <h5 class="mb-0 text-white fw-semibold" style="text-align:center">
+                            <h5 class="mb-0 text-white fw-semibold">
                                 <span style="font-size: 32px;">💳</span>
-                                Transacciones Recientes
+                                Historial
                             </h5>
                             <a href="/transactions" class="glass-link">
                                 Ver todas <i class="bi bi-arrow-right ms-1"></i>
@@ -236,7 +375,7 @@
                         </div>
                     </div>
                     <div class="card-body-glass">
-                        @if (dashboardData.RecentTransactions.Any())
+                        @if (recentTransactions.Any())
                         {
                             <div class="table-responsive">
                                 <table class="table-glass mb-0">
@@ -244,12 +383,12 @@
                                         <tr>
                                             <th class="text-white">Categoría</th>
                                             <th class="text-white">Monto</th>
-                                            <th class="text-white">Nota</th>
+                                            <th class="text-white">Descripción</th>
                                             <th class="text-white">Fecha</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        @foreach (var transaction in dashboardData.RecentTransactions.Take(5))
+                                        @foreach (var transaction in recentTransactions.Take(5))
                                         {
                                             <tr class="transaction-row">
                                                 <td>
@@ -260,7 +399,7 @@
                                                 </td>
                                                 <td>
                                                     <span class="fw-bold @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "text-success" : "text-danger")">
-                                                        @transaction.FormattedAmount
+                                                        @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "+" : "-")@transaction.Amount.ToString("C0")
                                                     </span>
                                                 </td>
                                                 <td>
@@ -279,9 +418,9 @@
                         {
                             <div class="empty-state">
                                 <i class="bi bi-receipt"></i>
-                                <p class="mb-3 text-white">No hay transacciones recientes</p>
-                                <a href="/transactions" class="glass-button">
-                                    <span style="font-size: 17px;">💳</span>Crear Transacción
+                                <p class="mb-3 text-white">No Hay Registros recientes</p>
+                                <a href="/transactions" class="glass-button text-white">
+                                    Registrar Gasto/Ingreso
                                 </a>
                             </div>
                         }
@@ -291,13 +430,35 @@
         </div>
     }
 </div>
+
 @code {
+    // ===== VARIABLES DE ESTADO =====
     private bool isLoading = true;
     private string userId = string.Empty;
     private int selectedDays = 7;
-    private DashboardDto dashboardData = new();
+
+    // Datos principales
     private List<CategoryDto> categories = new();
+    private List<ExpenseIncomeDto> allTransactions = new();
+    private List<ExpenseIncomeDto> recentTransactions = new();
+    private List<BudgetDto> budgets = new();
+    private List<FinancialGoalDto> allGoals = new();
+    private List<FinancialGoalDto> topGoals = new();
+
+    // Resúmenes
+    private decimal balance = 0;
+    private decimal totalIncome = 0;
+    private decimal totalExpense = 0;
+    private int totalGoalsCount = 0;
+    private int completedGoalsCount = 0;
+
+    // Datos para gráficos
     private Dictionary<string, DayData> chartData = new();
+    private List<BudgetData> budgetData = new();
+    private List<CategoryExpenseData> expensesByCategoryData = new();
+    private List<AlertItem> alerts = new();
+
+    // ===== CICLO DE VIDA DEL COMPONENTE =====
 
     protected override async Task OnInitializedAsync()
     {
@@ -332,63 +493,65 @@
     {
         try
         {
+            isLoading = true;
+
+            if (string.IsNullOrEmpty(userId))
+            {
+                isLoading = false;
+                return;
+            }
+
             var endDate = DateTime.Now;
             var startDate = endDate.AddDays(-selectedDays);
 
-            // Cargar datos del período seleccionado
-            dashboardData.TotalIncome = await ExpenseIncomeService.GetTotalIncomeAsync(userId, startDate, endDate);
-            dashboardData.TotalExpense = await ExpenseIncomeService.GetTotalExpenseAsync(userId, startDate, endDate);
-            dashboardData.Balance = dashboardData.TotalIncome - dashboardData.TotalExpense;
-            dashboardData.RecentTransactions = await ExpenseIncomeService.GetRecentAsync(userId, 10);
+            // Cargar datos básicos del período seleccionado
+            var periodTransactions = await ExpenseIncomeService.GetByUserAndDateRangeAsync(userId, startDate, endDate);
 
-            categories = await CategoryService.GetAllAsync(userId);
+            totalIncome = periodTransactions
+                .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+                .Sum(t => t.Amount);
 
-            // Calcular gastos por categoría (últimos 30 días para el dona)
-            var thirtyDaysAgo = DateTime.Now.AddDays(-30);
-            var allTransactions = await ExpenseIncomeService.GetByDateRangeAsync(userId, thirtyDaysAgo, DateTime.Now);
+            totalExpense = periodTransactions
+                .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+                .Sum(t => t.Amount);
 
-            var expenseCategories = categories.Where(c => c.Type == TransactionType.Expense).ToList();
-            dashboardData.CategoryExpenses.Clear();
+            balance = totalIncome - totalExpense;
 
-            foreach (var category in expenseCategories)
-            {
-                // Convierte a double para la suma y luego a decimal
-                var amount = (decimal)allTransactions
-                    .Where(t => t.CategoryId == category.CategoryId)
-                    .Sum(t => (double)t.Amount);
+            // Cargar transacciones recientes
+            recentTransactions = await ExpenseIncomeService.GetRecentTransactionsAsync(userId, 10);
 
-                if (amount > 0)
-                {
-                    dashboardData.CategoryExpenses.Add(new CategoryExpenseDto
-                    {
-                        CategoryName = category.Title,
-                        CategoryIcon = category.Icon,
-                        Amount = amount
-                    });
-                }
-            }
+            // Cargar categorías
+            categories = await CategoryService.GetAllByUserAsync(userId);
 
-            // Calcular porcentajes
-            var totalExpenses = dashboardData.CategoryExpenses.Sum(c => c.Amount);
-            if (totalExpenses > 0)
-            {
-                foreach (var cat in dashboardData.CategoryExpenses)
-                {
-                    cat.Percentage = (cat.Amount / totalExpenses) * 100;
-                }
-            }
+            // Cargar todas las transacciones para gráficos
+            allTransactions = await ExpenseIncomeService.GetByUserAndDateRangeAsync(userId, startDate.AddDays(-30), endDate);
 
             // Cargar datos de metas
-            var allGoals = await GoalService.GetAllAsync(userId);
-            dashboardData.TotalGoals = allGoals.Count;
-            dashboardData.CompletedGoals = await GoalService.GetCompletedGoalsCountAsync(userId);
+            allGoals = await GoalService.GetAllByUserAsync(userId);
+            totalGoalsCount = allGoals.Count;
+            completedGoalsCount = await GoalService.GetCompletedGoalsCountAsync(userId);
 
-            // Calcular datos del gráfico según el período seleccionado
+            // Preparar top metas activas
+            PrepareTopGoals();
+
+            // Calcular datos del gráfico de barras
             await CalculateChartData();
+
+            // Preparar datos de presupuestos
+            await PrepareBudgetData();
+
+            // Preparar datos de gastos por categoría
+            await PrepareExpensesByCategoryData();
+
+            // Generar alertas
+            GenerateAlerts();
+
+            isLoading = false;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading dashboard: {ex.Message}");
+            Console.WriteLine($"❌ ERROR en LoadDashboardData: {ex.Message}");
+            isLoading = false;
         }
     }
 
@@ -397,13 +560,14 @@
         var endDate = DateTime.Now.Date;
         var startDate = endDate.AddDays(-(selectedDays - 1));
 
-        var transactions = await ExpenseIncomeService.GetByDateRangeAsync(userId, startDate, endDate);
+        var transactions = allTransactions
+            .Where(t => t.Date.Date >= startDate && t.Date.Date <= endDate)
+            .ToList();
+
         chartData.Clear();
 
-        // Agrupar por días o semanas según el período
         if (selectedDays == 7)
         {
-            // Mostrar día por día
             for (int i = 0; i < selectedDays; i++)
             {
                 var date = startDate.AddDays(i);
@@ -422,7 +586,7 @@
                 chartData[dayLabel] = new DayData { Income = income, Expense = expense };
             }
         }
-        else // 30 días - agrupar por semanas
+        else
         {
             int weekNumber = 1;
             for (int i = 0; i < selectedDays; i += 7)
@@ -451,19 +615,150 @@
         }
     }
 
+    private async Task PrepareBudgetData()
+    {
+        var now = DateTime.Now;
+        budgetData.Clear();
+
+        // Obtener presupuestos del mes y año actual
+        budgets = await BudgetService.GetByUserAndPeriodAsync(userId, now.Month, now.Year);
+
+        foreach (var budget in budgets)
+        {
+            var percentage = budget.AssignedAmount > 0 ? (budget.SpentAmount / budget.AssignedAmount) * 100 : 0;
+
+            budgetData.Add(new BudgetData
+            {
+                CategoryName = budget.CategoryTitle ?? "Sin categoría",
+                CategoryIcon = budget.CategoryIcon ?? "📁",
+                BudgetAmount = budget.AssignedAmount,
+                SpentAmount = budget.SpentAmount,
+                PercentageUsed = percentage
+            });
+        }
+    }
+
+    private async Task PrepareExpensesByCategoryData()
+    {
+        expensesByCategoryData.Clear();
+
+        var endDate = DateTime.Now;
+        var startDate = endDate.AddDays(-selectedDays);
+
+        var periodTransactions = allTransactions
+            .Where(t => t.Date.Date >= startDate && t.Date.Date <= endDate)
+            .ToList();
+
+        var expenses = periodTransactions
+            .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+            .ToList();
+
+        if (!expenses.Any())
+            return;
+
+        var groupedByCategory = expenses
+            .GroupBy(e => new { e.CategoryId, e.CategoryTitle, e.CategoryIcon })
+            .Select(g => new
+            {
+                CategoryId = g.Key.CategoryId,
+                CategoryName = g.Key.CategoryTitle ?? "Sin categoría",
+                CategoryIcon = g.Key.CategoryIcon ?? "📁",
+                TotalExpense = g.Sum(e => e.Amount)
+            })
+            .OrderByDescending(x => x.TotalExpense)
+            .ToList();
+
+        var colors = new[]
+        {
+            "#f44336", "#e91e63", "#9c27b0", "#673ab7",
+            "#3f51b5", "#2196f3", "#03a9f4", "#00bcd4",
+            "#009688", "#4caf50", "#8bc34a", "#cddc39",
+            "#ffeb3b", "#ffc107", "#ff9800", "#ff5722"
+        };
+
+        int colorIndex = 0;
+        foreach (var item in groupedByCategory)
+        {
+            expensesByCategoryData.Add(new CategoryExpenseData
+            {
+                CategoryName = item.CategoryName,
+                CategoryIcon = item.CategoryIcon,
+                TotalExpense = item.TotalExpense,
+                Color = colors[colorIndex % colors.Length]
+            });
+            colorIndex++;
+        }
+    }
+
+    private void PrepareTopGoals()
+    {
+        topGoals = allGoals
+            .Where(g => g.Status != GoalStatus.Completed)
+            .OrderByDescending(g => g.TargetAmount > 0 ? (g.CurrentAmount / g.TargetAmount) : 0)
+            .Take(5)
+            .ToList();
+    }
+
+    private void GenerateAlerts()
+    {
+        alerts = new List<AlertItem>();
+
+        var exceededBudgets = budgetData.Where(b => b.PercentageUsed >= 100).ToList();
+        foreach (var budget in exceededBudgets)
+        {
+            alerts.Add(new AlertItem
+            {
+                Type = "danger",
+                Icon = "🔴",
+                Title = $"{budget.CategoryName} excedido",
+                Message = $"Has gastado {budget.SpentAmount:C} de {budget.BudgetAmount:C}"
+            });
+        }
+
+        var warningBudgets = budgetData.Where(b => b.PercentageUsed >= 80 && b.PercentageUsed < 100).ToList();
+        foreach (var budget in warningBudgets)
+        {
+            alerts.Add(new AlertItem
+            {
+                Type = "warning",
+                Icon = "🟡",
+                Title = $"{budget.CategoryName} cerca del límite",
+                Message = $"Has gastado {budget.PercentageUsed:F0}% del presupuesto"
+            });
+        }
+
+        var urgentGoals = allGoals
+            .Where(g => g.Status != GoalStatus.Completed
+                && (g.TargetDate - DateTime.Now).Days <= 30
+                && (g.TargetDate - DateTime.Now).Days > 0)
+            .ToList();
+
+        foreach (var goal in urgentGoals)
+        {
+            var daysLeft = (goal.TargetDate - DateTime.Now).Days;
+            alerts.Add(new AlertItem
+            {
+                Type = "info",
+                Icon = "🎯",
+                Title = $"Meta '{goal.Title}' próxima",
+                Message = $"Vence en {daysLeft} días"
+            });
+        }
+
+        alerts = alerts.Take(5).ToList();
+    }
+
     private async Task RenderCharts()
     {
         try
         {
-            // Gráfico de dona (gastos por categoría)
-            if (dashboardData.CategoryExpenses.Any())
-            {
-                var labels = dashboardData.CategoryExpenses.Select(c => $"{c.CategoryIcon} {c.CategoryName}").ToArray();
-                var data = dashboardData.CategoryExpenses.Select(c => (double)c.Amount).ToArray();
-                var colors = GenerateColors(data.Length);
+            var chartExists = await JSRuntime.InvokeAsync<bool>("eval",
+                "typeof chartHelpers !== 'undefined'");
 
-                await JSRuntime.InvokeVoidAsync("chartHelpers.createDoughnutChart",
-                    "doughnutChart", labels, data, colors);
+            if (!chartExists)
+            {
+                Console.WriteLine("⚠️ chartHelpers no está disponible aún");
+                return;
             }
 
             // Gráfico de barras (ingresos vs gastos)
@@ -476,10 +771,32 @@
                 await JSRuntime.InvokeVoidAsync("chartHelpers.createBarChart",
                     "barChart", labels, incomeData, expenseData);
             }
+
+            // Gráfico de presupuestos
+            if (budgetData.Any())
+            {
+                var labels = budgetData.Select(b => b.CategoryName).ToArray();
+                var values = budgetData.Select(b => b.PercentageUsed).ToArray();
+                var colors = budgetData.Select(b => GetBudgetColor(b.PercentageUsed)).ToArray();
+
+                await JSRuntime.InvokeVoidAsync("chartHelpers.createBudgetChart",
+                    "budgetChart", labels, values, colors);
+            }
+
+            // Gráfico de distribución de gastos por categoría
+            if (expensesByCategoryData.Any())
+            {
+                var labels = expensesByCategoryData.Select(e => e.CategoryName).ToArray();
+                var values = expensesByCategoryData.Select(e => (double)e.TotalExpense).ToArray();
+                var colors = expensesByCategoryData.Select(e => e.Color).ToArray();
+
+                await JSRuntime.InvokeVoidAsync("chartHelpers.createDoughnutChart",
+                    "expensesChart", labels, values, colors);
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error rendering charts: {ex.Message}");
+            Console.WriteLine($"❌ Error rendering charts: {ex.Message}");
         }
     }
 
@@ -488,39 +805,62 @@
         return categories.FirstOrDefault(c => c.CategoryId == categoryId)?.Type ?? TransactionType.Expense;
     }
 
-    private string[] GenerateColors(int count)
+    private string GetBudgetStatusClass(decimal percentage)
     {
-        var colors = new[]
-        {
-            "rgba(59, 130, 246, 0.8)",   // Azul
-            "rgba(139, 92, 246, 0.8)",   // Púrpura
-            "rgba(236, 72, 153, 0.8)",   // Rosa
-            "rgba(251, 146, 60, 0.8)",   // Naranja
-            "rgba(34, 197, 94, 0.8)",    // Verde
-            "rgba(6, 182, 212, 0.8)",    // Cyan
-            "rgba(245, 158, 11, 0.8)",   // Amarillo
-            "rgba(239, 68, 68, 0.8)",    // Rojo
-            "rgba(168, 85, 247, 0.8)",   // Violeta
-            "rgba(20, 184, 166, 0.8)",   // Teal
-        };
+        if (percentage >= 100) return "status-exceeded";
+        if (percentage >= 80) return "status-warning";
+        return "status-ok";
+    }
 
-        return colors.Take(count).ToArray();
+    private string GetBudgetColor(decimal percentage)
+    {
+        if (percentage >= 100) return "#f44336";
+        if (percentage >= 80) return "#ffc107";
+        return "#4CAF50";
     }
 
     public async ValueTask DisposeAsync()
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "doughnutChart");
             await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "barChart");
+            await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "budgetChart");
+            await JSRuntime.InvokeVoidAsync("chartHelpers.destroyChart", "expensesChart");
         }
         catch { }
     }
+
+    // ===== CLASES AUXILIARES =====
 
     private class DayData
     {
         public decimal Income { get; set; }
         public decimal Expense { get; set; }
+    }
+
+    public class BudgetData
+    {
+        public string CategoryName { get; set; } = "";
+        public string CategoryIcon { get; set; } = "";
+        public decimal BudgetAmount { get; set; }
+        public decimal SpentAmount { get; set; }
+        public decimal PercentageUsed { get; set; }
+    }
+
+    public class CategoryExpenseData
+    {
+        public string CategoryName { get; set; } = "";
+        public string CategoryIcon { get; set; } = "";
+        public decimal TotalExpense { get; set; }
+        public string Color { get; set; } = "";
+    }
+
+    public class AlertItem
+    {
+        public string Type { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Message { get; set; } = "";
     }
 }
 

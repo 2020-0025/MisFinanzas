@@ -29,5 +29,7 @@ namespace MisFinanzas.Infrastructure.Interfaces
 
         // Para Dashboard - Comparativa mensual
         Task<(decimal Ingresos, decimal Gastos)> GetTotalsByMonthAsync(string userId, int month, int year);
+
+
     }
 }

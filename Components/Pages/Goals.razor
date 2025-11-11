@@ -4,339 +4,288 @@
 @using MisFinanzas.Infrastructure.Interfaces
 @using MisFinanzas.Components.Shared
 @using System.Security.Claims
+@using System.ComponentModel.DataAnnotations
 @inject IFinancialGoalService GoalService
+@inject IExpenseIncomeService ExpenseIncomeService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @attribute [Authorize]
 @rendermode InteractiveServer
+@implements IDisposable
 
 <PageTitle>Metas Financieras - Mis Finanzas</PageTitle>
 
 <div class="goals-container">
-    <!-- Header con efecto glass -->
-    <div class="glass-card goals-header animate-slide-up">
-        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
-            <div>
-                <h1 class="h3 mb-1 text-white fw-bold">
-                    <span style="font-size: 32px;">🎯</span>
-                    <strong>Metas Financieras</strong>
-                </h1>
-                <p class="text-white mb-0">Define tus metas</p>
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="mb-3 mb-md-0">
+                <h1>🎯 Metas Financieras</h1>
+                <p class="mb-0 text-white">Define y alcanza tus objetivos</p>
             </div>
-            <button class="glass-button-action text-white" @onclick="OpenCreateModal">
-                <span style="font-size: 17px;">➕</span>Nueva Meta
+            <button class="btnAddGoals" @onclick="OpenCreateModal">
+                <span style="font-size: 17px;">➕</span> Nueva Meta
             </button>
         </div>
     </div>
-    
-    @if (isLoading)
-    {
-        <div class="text-center py-5">
-            <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Cargando...</span>
-            </div>
-        </div>
-    }
-    else if (!goals.Any())
-    {
-        <div class="glass-card border-0 shadow-sm rounded-4">
-            <div class="card-body text-center py-5">
-                <span style="font-size: 25px;">🚩</span>
-                <h5 class="mt-3 text-white">No hay metas definidas</h5>
-                <p class="text-white">Establece tus objetivos financieros y haz seguimiento de tu progreso</p>
-                <button class="glass-button-action text-white mt-3" @onclick="OpenCreateModal">
-                    <span style="font-size: 17px;">➕</span>Crear Mi Primera Meta
-                </button>
-            </div>
-        </div>
-    }
-    else
-    {
-        <!-- Estadísticas rápidas -->
-        <div class="row g-4 mb-4">
-            <!-- Metas totales -->
-            <div class="col-md-3">
-                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-primary bg-opacity-10 p-3 rounded-3">
-                                <span style="font-size: 25px;">🚩</span>
-                            </div>
-                            <div class="w-100 text-white">
-                                <p class="mb-1">Total Metas</p>
-                                <h3 class="mb-0 fw-bold fs-5">@goals.Count</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Metas Completadas -->
-            <div class="col-md-3">
-                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-success bg-opacity-10 p-3 rounded-3">
-                                <span style="font-size: 25px;">✅</span>
-                            </div>
-                            <div class="w-100 text-white">
-                                <p class="mb-1">Completadas</p>
-                                <h3 class="mb-0 fw-bold text-success fs-5">@goals.Count(g => g.IsCompleted)</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Metas en progreso -->
-            <div class="col-md-3">
-                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-warning bg-opacity-10 p-3 rounded-3">
-                                <span style="font-size: 25px;">⏳</span>
-                            </div>
-                            <div class="w-100 text-white">
-                                <p class="mb-1">En Progreso</p>
-                                <h3 class="mb-0 fw-bold text-warning fs-5">@goals.Count(g => g.Status == GoalStatus.InProgress)</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Metas objetivo -->
-            <div class="col-md-3">
-                <div class="glass-card border-0 shadow-sm rounded-4 card-hover">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center gap-3">
-                            <div class="bg-info bg-opacity-10 p-3 rounded-3">
-                                <span style="font-size: 25px;">🎯</span>
-                            </div>
-                            <div class="w-100 text-white">
-                                <p class="mb-1">Total Objetivo</p>
-                                <h3 class="mb-0 fw-bold text-info fs-5">@goals.Sum(g => g.TargetAmount).ToString("C0")</h3>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
-        <!-- Lista de metas -->
-        <div class="row g-4">
-            @foreach (var goal in goals.OrderBy(g => g.IsCompleted).ThenBy(g => g.TargetDate))
+    <!-- Balance Disponible -->
+    <div class="balance-info-card">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h5 class="text-white">💵 Balance Disponible</h5>
+                <h3 class="@(availableBalance >= 0 ? "text-info" : "text-danger")">
+                    @availableBalance.ToString("C")
+                </h3>
+                <small class="text-white">
+                    Comprometido en metas: @totalCommitted.ToString("C")
+                </small>
+            </div>
+            <div class="text-end">
+                <p class="mb-1"><strong>Total Ingresos:</strong> @totalIngresos.ToString("C")</p>
+                <p class="mb-0"><strong>Total Gastos:</strong> @totalGastos.ToString("C")</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="filters-card">
+        <div class="btn-group" role="group">
+            <button class="text-white btn @(currentFilter == GoalStatus.InProgress ? "" : "btn-outline-primary")"
+                    @onclick="() => FilterGoals(GoalStatus.InProgress)">
+                🟢 En Progreso (@activeCount)
+            </button>
+            <button class="text-white btn @(currentFilter == GoalStatus.Completed ? "" : "btn-outline-success")"
+                    @onclick="() => FilterGoals(GoalStatus.Completed)">
+                ✅ Completadas (@completedCount)
+            </button>
+            <button class="text-white btn @(currentFilter == GoalStatus.Cancelled ? "" : "btn-outline-secondary")"
+                    @onclick="() => FilterGoals(GoalStatus.Cancelled)">
+                ❌ Canceladas (@cancelledCount)
+            </button>
+            <button class="text-white btn @(currentFilter == null ? "" : "btn-outline-info")"
+                    @onclick="() => FilterGoals(null)">
+                📋 Todas (@allGoals.Count)
+            </button>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    <!-- Lista de Metas -->
+    <div class="row">
+        @if (isLoading)
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-light" role="status"></div>
+                    <p class="text-white mt-3">Cargando metas...</p>
+                </div>
+            </div>
+        }
+        else if (!filteredGoals.Any())
+        {
+            <div class="col-12">
+                <div class="text-center py-5">
+                    <p class="text-white" style="font-size:30px;"> <strong>Vacío.</strong></p>
+                </div>
+            </div>
+        }
+        else
+        {
+            @foreach (var goal in filteredGoals)
             {
-                <div class="col-md-6 col-lg-4">
-                    <div class="glass-card border-0 shadow-sm rounded-4 h-100 goal-card @(goal.IsCompleted ? "goal-completed" : goal.IsOverdue ? "goal-overdue" : "")">
-                        <div class="card-body">
-                            <!-- Header con icono y estado -->
-                            <div class="d-flex justify-content-between align-items-start mb-3">
-                                <div class="d-flex align-items-center gap-2">
-                                    <span class="goal-icon">@goal.Icon</span>
-                                    <div class="text-white">
-                                        <h5 class="mb-0 fw-bold">@goal.Title</h5>
-                                        @if (!string.IsNullOrEmpty(goal.Description))
-                                        {
-                                            <small>@goal.Description</small>
-                                        }
-                                    </div>
+                <div class="col-lg-6 col-md-12 mb-4">
+                    <div class="goal-card @GetGoalStatusClass(goal.Status)">
+                        <div class="goal-header">
+                            <div class="d-flex align-items-center gap-3">
+                                <div class="goal-icon">@goal.Icon</div>
+                                <div class="flex-grow-1">
+                                    <h4>@goal.Title</h4>
+                                    <span class="text-white badge @GetStatusBadgeColor(goal.Status)">
+                                        @goal.StatusDisplay
+                                    </span>
                                 </div>
-                                <div class="dropdown">
-                                    <button class="btn btn-sm btn-link text-white dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                        <span style="font-size: 13px;">🔸🔸🔸</span>
+                                <div class="goal-actions">
+                                    @if (goal.Status == GoalStatus.InProgress)
+                                    {
+                                        <button class="btn btn-sm btn-success" style="background-color:rgba(76, 175, 80, 0.25);" @onclick="() => OpenProgressModal(goal)" title="Agregar progreso">
+                                            <span style="font-size: 13px;">➕</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-secondary" style="background-color:rgba(158, 158, 158, 0.25);" @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
+                                            <span style="font-size: 13px;">➖</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => OpenEditModal(goal)" title="Editar">
+                                            <span style="font-size: 13px;">📝</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-secondary" style="background-color: rgba(33, 150, 243, 0.25);" @onclick="() => ConfirmCancel(goal.GoalId, goal.Title)" title="Cancelar">
+                                            <span style="font-size: 13px;">❌</span>
+                                        </button>
+                                    }
+                                    else if (goal.Status == GoalStatus.Completed)
+                                    {
+                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(158, 158, 158, 0.25);" @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
+                                            <span style="font-size: 13px;">➖</span>
+                                        </button>
+                                    }
+                                    else if (goal.Status == GoalStatus.Cancelled)
+                                    {
+                                        <button class="btn btn-sm btn-success" style="background-color:rgba(76, 175, 80, 0.25);" @onclick="() => ConfirmReactivate(goal.GoalId, goal.Title)" title="Reactivar meta">
+                                            <span style="font-size: 13px;">🔄</span>
+                                        </button>
+                                    }
+                                    <!-- Eliminar está disponible para todas las metas -->
+                                    <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(goal.GoalId, goal.Title)" title="Eliminar">
+                                        <span style="font-size: 13px;">🗑️</span>
                                     </button>
-                                    <ul class="glass-card dropdown-menu dropdown-menu-end" data-bs-auto-close="outside">
-                                        <li>
-                                            <button class="dropdown-item text-warning" @onclick="() => OpenEditModal(goal)">
-                                                <span style="font-size: 13px;">📝</span>Editar
-                                            </button>
-                                        </li>
-                                        <li>
-                                            <button class="dropdown-item text-success" @onclick="() => OpenProgressModal(goal)">
-                                                <span style="font-size: 13px;">➕</span>Agregar Progreso
-                                            </button>
-                                        </li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li>
-                                            <button class="dropdown-item text-danger" @onclick="() => DeleteGoal(goal.GoalId)">
-                                                <i class="bi bi-trash me-2"></i>Eliminar
-                                            </button>
-                                        </li>
-                                    </ul>
                                 </div>
                             </div>
-
-                            <!-- Montos -->
-                            <div class="mb-3">
-                                <div class="d-flex justify-content-between mb-2 text-white">
-                                    <span>Progreso</span>
-                                    <span class="fw-bold">@goal.ProgressPercentage.ToString("F1")%</span>
-                                </div>
-                                <div class="progress" style="height: 12px;">
-                                    <div class="progress-bar @GetProgressBarColor(goal)"
-                                         role="progressbar"
-                                         style="width: @goal.ProgressPercentage%"
-                                         aria-valuenow="@goal.ProgressPercentage"
-                                         aria-valuemin="0"
-                                         aria-valuemax="100">
-                                    </div>
-                                </div>
-                                <div class="d-flex justify-content-between mt-2 text-white">
-                                    <small>@goal.CurrentAmount.ToString("C2")</small>
-                                    <small>@goal.TargetAmount.ToString("C2")</small>
-                                </div>
-                            </div>
-
-                            <!-- Estado y días restantes -->
-                            <div class="d-flex justify-content-between align-items-center">
-                                <div>
-                                    @if (goal.IsCompleted)
-                                    {
-                                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-2">
-                                            <span style="font-size: 13px;">🏆</span>Completada
-                                        </span>
-                                    }
-                                    else if (goal.IsOverdue)
-                                    {
-                                        <span class="badge bg-danger-subtle text-danger rounded-pill px-3 py-2">
-                                            <span style="font-size: 13px;">❌</span> Vencida
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2">
-                                            <span style="font-size: 13px;">🔁</span> En progreso
-                                        </span>
-                                    }
-                                </div>
-                                <small>
-                                    @if (goal.DaysRemaining > 0)
-                                    {
-                                        <span style="font-size: 13px;">📅</span>
-                                        <span class="text-white">@goal.DaysRemaining días</span>
-                                    }
-                                    else if (!goal.IsCompleted)
-                                    {
-                                       @*  <i class="bi bi-exclamation-triangle-fill me-1"></i>
-                                        <span class="text-danger">Vencida</span> *@
-                                    }
-                                    else
-                                    {
-                                        
-                                        @* <i class="bi bi-check-circle-fill me-1"></i>
-                                        <span class="text-success">¡Lograda!</span> *@
-                                    }
-                                </small>
-                            </div>
-
-                            <!-- Falta por alcanzar -->
-                            @if (!goal.IsCompleted && goal.RemainingAmount > 0)
-                            {
-                                <div class="mt-3 pt-3 border-top">
-                                    <small class="text-white d-block mb-1">Falta por alcanzar</small>
-                                    <h6 class="mb-0 fw-bold text-primary">@goal.RemainingAmount.ToString("C2")</h6>
-                                </div>
-                            }
                         </div>
 
-                        <!-- Footer con fecha objetivo -->
-                        <div class="card-footer border-0 py-2">
-                            <small class="text-white">
-                                <i class="bi bi-calendar-event me-1"></i>
-                                Meta: @goal.TargetDate.ToString("dd/MM/yyyy")
-                            </small>
+                        @if (!string.IsNullOrWhiteSpace(goal.Description))
+                        {
+                            <p class="text-white goal-description">@goal.Description</p>
+                        }
+
+                        <div class="goal-progress">
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>Progreso: @goal.CurrentAmount.ToString("C") / @goal.TargetAmount.ToString("C")</span>
+                                <span><strong>@goal.ProgressPercentage.ToString("F1")%</strong></span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar @GetProgressBarClass(goal.ProgressPercentage)"
+                                     role="progressbar"
+                                     style="width: @Math.Min(goal.ProgressPercentage, 100)%"
+                                     aria-valuenow="@goal.ProgressPercentage"
+                                     aria-valuemin="0"
+                                     aria-valuemax="100">
+                                </div>
+                            </div>
                         </div>
+
+                        <div class="goal-dates">
+                            <div class="row">
+                                <div class="col-6">
+                                    <small class="text-white">Inicio:</small>
+                                    <p class="mb-0">@goal.StartDate.ToString("dd/MM/yyyy")</p>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-white">Meta:</small>
+                                    <p class="mb-0 @(goal.IsOverdue ? "text-danger" : "")">
+                                        @goal.TargetDate.ToString("dd/MM/yyyy")
+                                        @if (goal.Status == GoalStatus.InProgress)
+                                        {
+                                            <span>(@goal.DaysRemaining días)</span>
+                                        }
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (goal.Status == GoalStatus.Completed && goal.CompletedAt.HasValue)
+                        {
+                            <div class="goal-completed text-white">
+                                <span style="font-size: 13px;">✅</span> Completada el @goal.CompletedAt.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
                     </div>
                 </div>
             }
-        </div>
-    }
+        }
+    </div>
 </div>
 
 <!-- Modal Crear/Editar Meta -->
 @if (showModal)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class=" glass-card  modal-content rounded-4 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold">
-                        @(isEditMode ? "Editar Meta" : "Nueva Meta Financiera")
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        @(isEditing ? "✏️ Editar Meta" : "🎯 Nueva Meta")
                     </h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal"></button>
+                    <button type="button" class="btn-close" @onclick="CloseModal">❌</button>
                 </div>
-                <div class=" modal-body pt-2">
-                    <EditForm Model="currentGoal" OnValidSubmit="SaveGoal">
+                <div class="modal-body">
+                    <EditForm Model="formModel" OnValidSubmit="SaveGoal">
                         <DataAnnotationsValidator />
 
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-white">Título</label>
-                                <InputText class="form-control" @bind-Value="currentGoal.Title"
-                                           placeholder="Ej: Vacaciones, Casa nueva" />
-                                <ValidationMessage For="@(() => currentGoal.Title)" class="text-danger small" />
+                        <div class="row">
+                            <div class="col-md-7 mb-0">
+                                <label class="form-label text-white">Nombre de la Meta</label>
+                                <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Fondo de emergencia" />
+                                <ValidationMessage For="() => formModel.Name" class="text-danger" />
+                                @if (!string.IsNullOrEmpty(nameValidationError))
+                                {
+                                    <div class="text-danger small mt-1">@nameValidationError</div>
+                                }
                             </div>
 
-                            <div class="col-md-6 text-white">
-                                <!-- Selector de iconos -->
-                                <IconSelector Label="Icono"
-                                              @bind-SelectedIcon="currentGoal.Icon" />
-                                <ValidationMessage For="@(() => currentGoal.Icon)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-12">
-                                <label class="form-label fw-semibold text-white">Descripción (Opcional)</label>
-                                <InputText class="form-control" @bind-Value="currentGoal.Description"
-                                           placeholder="Describe tu meta..." />
-                                <ValidationMessage For="@(() => currentGoal.Description)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-white">Monto Objetivo (RD$)</label>
-                                <InputNumber class="form-control" @bind-Value="currentGoal.TargetAmount"
-                                             placeholder="0.00" step="100" />
-                                <ValidationMessage For="@(() => currentGoal.TargetAmount)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-white">Monto Actual (RD$)</label>
-                                <InputNumber class="form-control" @bind-Value="currentGoal.CurrentAmount"
-                                             placeholder="0.00" step="100" />
-                                <ValidationMessage For="@(() => currentGoal.CurrentAmount)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-white">Fecha de Inicio</label>
-                                <InputDate class="form-control" @bind-Value="currentGoal.StartDate" />
-                                <ValidationMessage For="@(() => currentGoal.StartDate)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-md-6">
-                                <label class="form-label fw-semibold text-white">Fecha Objetivo</label>
-                                <InputDate class="form-control" @bind-Value="currentGoal.TargetDate" />
-                                <ValidationMessage For="@(() => currentGoal.TargetDate)" class="text-danger small" />
-                            </div>
-
-                            <div class="col-12" style="gap:5rem">
-                                <label class="form-label fw-semibold text-white" >Estado:</label>
-                                <InputSelect class=" glass-card form-control-glass text-white" @bind-Value="currentGoal.Status">
-                                    <option value="@GoalStatus.InProgress">En Progreso</option>
-                                    <option value="@GoalStatus.Completed">Completada</option>
-                                    <option value="@GoalStatus.Cancelled">Cancelada</option>
-                                </InputSelect>
-                                <ValidationMessage For="@(() => currentGoal.Status)" class="text-danger small" />
+                            <div class="col-md-4 mb-0">
+                                <IconSelector @bind-SelectedIcon="formModel.Icon" />
+                                <ValidationMessage For="() => formModel.Icon" class="text-danger" />
+                                @if (!string.IsNullOrEmpty(iconValidationError))
+                                {
+                                    <div class="text-danger small mt-1">@iconValidationError</div>
+                                }
                             </div>
                         </div>
 
-                        <div class="d-flex gap-2 justify-content-end mt-4">
-                            <button type="button" class="glass-button-secondary text-white" @onclick="CloseModal">
-                                Cancelar
-                            </button>
-                            <button type="submit" class="glass-button-action text-white" disabled="@isSaving">
+                        <div class="mb-1 mt-0">
+                            <label class="form-label text-white">Descripción (Opcional)</label>
+                            <InputTextArea @bind-Value="formModel.Description" class="form-control" rows="2" placeholder="Describe tu meta..." />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-white">Monto Objetivo</label>
+                                <InputNumber @bind-Value="formModel.TargetAmount" class="form-control" placeholder="0.00" />
+                                <ValidationMessage For="() => formModel.TargetAmount" class="text-danger" />
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-white">Fecha Inicio</label>
+                                <InputDate @bind-Value="formModel.StartDate" class="form-control" />
+                                <ValidationMessage For="() => formModel.StartDate" class="text-danger" />
+                            </div>
+
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label text-white">Fecha Meta</label>
+                                <InputDate @bind-Value="formModel.TargetDate" class="form-control" />
+                                <ValidationMessage For="() => formModel.TargetDate" class="text-danger" />
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btnSaveEdit" disabled="@isSaving">
                                 @if (isSaving)
                                 {
                                     <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Guardando...</span>
                                 }
-                                @(isEditMode ? "Actualizar" : "Crear")
+                                else
+                                {
+                                    <span>Guardar Meta</span>
+                                }
                             </button>
+                            <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
                         </div>
                     </EditForm>
                 </div>
@@ -348,71 +297,270 @@
 <!-- Modal Agregar Progreso -->
 @if (showProgressModal)
 {
-    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
-            <div class="glass-card modal-content rounded-4 shadow">
-                <div class="modal-header border-0 pb-0">
-                    <h5 class="modal-title fw-bold text-white">
-                        <span class="fs-2 me-2">@currentGoal.Icon</span>
-                        Agregar Progreso
-                    </h5>
-                    <button type="button" class="btn-close text-white" @onclick="CloseProgressModal"></button>
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">💰 Agregar Progreso</h5>
+                    <button type="button" class="btn-close" @onclick="CloseProgressModal">❌</button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-4">
-                        <h6 class="fw-bold text-white">@currentGoal.Title</h6>
-                        <div class="d-flex justify-content-between text-muted small">
-                            <span class="text-white">Actual: @currentGoal.CurrentAmount.ToString("C2")</span>
-                            <span class="text-white">Meta: @currentGoal.TargetAmount.ToString("C2")</span>
+                    @if (selectedGoal != null)
+                    {
+                        <div class="mb-3">
+                            <h6>@selectedGoal.Icon @selectedGoal.Title</h6>
+                            <p class="text-info mb-0">
+                                Actual: @selectedGoal.CurrentAmount.ToString("C") / @selectedGoal.TargetAmount.ToString("C")
+                            </p>
+                            <p class="text-warning">
+                                Faltante: @selectedGoal.RemainingAmount.ToString("C")
+                            </p>
                         </div>
-                        <div class="progress mt-2" style="height: 10px;">
-                            <div class="progress-bar bg-success"
-                                 style="width: @currentGoal.ProgressPercentage%">
+
+                        <div class="alert alert-info">
+                            <strong>Balance disponible:</strong> @availableBalance.ToString("C")
+                        </div>
+
+                        <EditForm Model="progressModel" OnValidSubmit="AddProgress">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label text-white">Monto a Agregar</label>
+                                <InputNumber @bind-Value="progressModel.Amount" class="form-control" placeholder="0.00" />
+                                <ValidationMessage For="() => progressModel.Amount" class="text-danger" />
+                                <small class="form-text text-danger">
+                                    Máximo: @Math.Min(availableBalance, selectedGoal.RemainingAmount).ToString("C")
+                                </small>
                             </div>
-                        </div>
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-semibold text-white">Monto a Agregar (RD$)</label>
-                        <input type="number" class="form-control form-control-lg"
-                               @bind="progressAmount"
-                               placeholder="0.00"
-                               step="100"
-                               min="0" />
-                        <small class="text-white">
-                            Falta: @currentGoal.RemainingAmount.ToString("C2")
-                        </small>
-                    </div>
-
-                    <div class="d-flex gap-2 justify-content-end">
-                        <button type="button" class="glass-button-secondary" @onclick="CloseProgressModal">
-                            Cancelar
-                        </button>
-                        <button type="button" class="glass-button-action" @onclick="AddProgress" disabled="@isSaving">
-                            @if (isSaving)
-                            {
-                                <span class="spinner-border spinner-border-sm me-2"></span>
-                            }
-                            <i class="bi bi-plus-circle me-2"></i>
-                            Agregar
-                        </button>
-                    </div>
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btnSaveEdit" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Agregando...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Agregar Progreso</span>
+                                    }
+                                </button>
+                                <button type="button" class="btnCancel" @onclick="CloseProgressModal">Cancelar</button>
+                            </div>
+                        </EditForm>
+                    }
                 </div>
             </div>
         </div>
     </div>
 }
+
+<!-- Modal Retirar Progreso -->
+@if (showWithdrawModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">💸 Retirar Dinero de la Meta</h5>
+                    <button type="button" class="btn-close" @onclick="CloseWithdrawModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedGoalForWithdraw != null)
+                    {
+                        <div class="mb-3">
+                            <h6>@selectedGoalForWithdraw.Icon @selectedGoalForWithdraw.Title</h6>
+                            <p class="text-info mb-0">
+                                Actual: @selectedGoalForWithdraw.CurrentAmount.ToString("C") / @selectedGoalForWithdraw.TargetAmount.ToString("C")
+                            </p>
+                        </div>
+
+                        <div class="alert alert-warning">
+                            <strong>⚠️ Nota:</strong> Retirar dinero reducirá el progreso de tu meta.
+                        </div>
+
+                        <EditForm Model="withdrawModel" OnValidSubmit="WithdrawProgress">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label text-white">Monto a Retirar</label>
+                                <InputNumber @bind-Value="withdrawModel.Amount" class="form-control" placeholder="0.00" />
+                                <ValidationMessage For="() => withdrawModel.Amount" class="text-danger" />
+                                <small class="form-text text-warning">
+                                    Máximo disponible: @selectedGoalForWithdraw.CurrentAmount.ToString("C")
+                                </small>
+                            </div>
+
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btnWithdraw" disabled="@isSaving">
+                                    @if (isSaving)
+                                    {
+                                        <span class="spinner-border spinner-border-sm me-2"></span>
+                                        <span>Procesando...</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Retirar Dinero</span>
+                                    }
+                                </button>
+                                <button type="button" class="btnCancel" @onclick="CloseWithdrawModal">Cancelar</button>
+                            </div>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmar Cancelación -->
+@if (showCancelModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">⚠️ Cancelar Meta</h5>
+                    <button type="button" class="btn-close" @onclick="CloseCancelModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas cancelar la meta <strong>@goalToCancel</strong>?</p>
+                    <p class="text-white mb-0">
+                        El progreso actual se mantendrá, pero la meta quedará marcada como cancelada.
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CloseCancelModal">No, mantener activa</button>
+                    <button type="button" class="btnDelete" @onclick="CancelGoal">
+                        Sí, cancelar meta
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmar Reactivación -->
+@if (showReactivateModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">🔄 Reactivar Meta</h5>
+                    <button type="button" class="btn-close" @onclick="CloseReactivateModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas reactivar la meta <strong>@goalToReactivate</strong>?</p>
+                    <p class="text-info mb-0">
+                        La meta volverá a estar "En Progreso" y podrás seguir trabajando en ella.
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CloseReactivateModal">Cancelar</button>
+                    <button type="button" class="btnSaveEdit" @onclick="ReactivateGoal">
+                        <span style="font-size: 13px;">🔄</span> Reactivar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmar Eliminación -->
+@if (showDeleteModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">⚠️ Eliminar Meta</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar la meta <strong>@goalToDelete</strong>?</p>
+                    <p class="text-danger mb-0">
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
+                    <button type="button" class="btnDelete" @onclick="DeleteGoal">
+                        <span style="font-size: 13px;">🗑️</span> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 @code {
     private bool isLoading = true;
-    private bool showModal = false;
-    private bool showProgressModal = false;
-    private bool isEditMode = false;
-    private bool isSaving = false;
-    private string userId = string.Empty;
-    private decimal progressAmount = 0;
+    private string currentUserId = string.Empty;
 
-    private List<FinancialGoalDto> goals = new();
-    private FinancialGoalDto currentGoal = new();
+    // Listas
+    private List<FinancialGoalDto> allGoals = new();
+    private List<FinancialGoalDto> filteredGoals = new();
+
+    // Balance
+    private decimal totalIngresos = 0;
+    private decimal totalGastos = 0;
+    private decimal availableBalance = 0;
+    private decimal totalCommitted = 0;
+
+    // Contadores
+    private int activeCount = 0;
+    private int completedCount = 0;
+    private int cancelledCount = 0;
+
+    // Filtro
+    private GoalStatus? currentFilter = GoalStatus.InProgress;
+
+    // Mensajes
+    private string? successMessage;
+    private string? errorMessage;
+    private string? nameValidationError;
+    private string? iconValidationError;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    // Modal Crear/Editar
+    private bool showModal = false;
+    private bool isSaving = false;
+    private bool isEditing = false;
+    private GoalFormModel formModel = new();
+
+    // Modal Progreso
+    private bool showProgressModal = false;
+    private FinancialGoalDto? selectedGoal;
+    private ProgressModel progressModel = new();
+
+    // Modal Retirar Progreso
+    private bool showWithdrawModal = false;
+    private FinancialGoalDto? selectedGoalForWithdraw;
+    private WithdrawModel withdrawModel = new();
+
+    // Modal Cancelar
+    private bool showCancelModal = false;
+    private int goalIdToCancel;
+    private string? goalToCancel;
+
+    // Modal Reactivar
+    private bool showReactivateModal = false;
+    private int goalIdToReactivate;
+    private string? goalToReactivate;
+
+    // Modal Eliminar
+    private bool showDeleteModal = false;
+    private int goalIdToDelete;
+    private string? goalToDelete;
 
     protected override async Task OnInitializedAsync()
     {
@@ -421,76 +569,95 @@
 
         if (user.Identity?.IsAuthenticated ?? false)
         {
-            userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-            await LoadGoals();
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                await LoadData();
+            }
         }
 
         isLoading = false;
     }
 
-    private async Task LoadGoals()
+    private async Task LoadData()
     {
         try
         {
-            goals = await GoalService.GetAllAsync(userId);
+            isLoading = true;
+
+            // Cargar metas
+            allGoals = await GoalService.GetAllByUserAsync(currentUserId);
+
+            // Calcular balance
+            totalIngresos = await ExpenseIncomeService.GetTotalIngresosByUserAsync(currentUserId);
+            totalGastos = await ExpenseIncomeService.GetTotalGastosByUserAsync(currentUserId);
+
+            // Calcular total comprometido en metas activas
+            totalCommitted = allGoals
+                .Where(g => g.Status == GoalStatus.InProgress)
+                .Sum(g => g.CurrentAmount);
+
+            availableBalance = (totalIngresos - totalGastos) - totalCommitted;
+
+            // Contar por estado
+            activeCount = allGoals.Count(g => g.Status == GoalStatus.InProgress);
+            completedCount = allGoals.Count(g => g.Status == GoalStatus.Completed);
+            cancelledCount = allGoals.Count(g => g.Status == GoalStatus.Cancelled);
+
+            // Aplicar filtro inicial
+            FilterGoals(currentFilter);
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error loading goals: {ex.Message}");
+            ShowErrorMessage($"Error al cargar datos: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void FilterGoals(GoalStatus? status)
+    {
+        currentFilter = status;
+
+        if (status.HasValue)
+        {
+            filteredGoals = allGoals.Where(g => g.Status == status.Value).ToList();
+        }
+        else
+        {
+            filteredGoals = allGoals.ToList();
         }
     }
 
     private void OpenCreateModal()
     {
-        currentGoal = new FinancialGoalDto
+        isEditing = false;
+        formModel = new GoalFormModel
         {
             StartDate = DateTime.Now,
             TargetDate = DateTime.Now.AddMonths(6),
-            Status = GoalStatus.InProgress,
-            Icon = "🎯",
-            CurrentAmount = 0
+            Icon = "🎯"
         };
-        isEditMode = false;
         showModal = true;
     }
 
     private void OpenEditModal(FinancialGoalDto goal)
     {
-        currentGoal = new FinancialGoalDto
+        isEditing = true;
+        formModel = new GoalFormModel
         {
             GoalId = goal.GoalId,
-            Title = goal.Title,
+            Name = goal.Title,
             Description = goal.Description,
+            Icon = goal.Icon ?? "🎯",
             TargetAmount = goal.TargetAmount,
-            CurrentAmount = goal.CurrentAmount,
             StartDate = goal.StartDate,
-            TargetDate = goal.TargetDate,
-            Status = goal.Status,
-            Icon = goal.Icon
+            TargetDate = goal.TargetDate
         };
-        isEditMode = true;
         showModal = true;
-    }
-
-    private void OpenProgressModal(FinancialGoalDto goal)
-    {
-        currentGoal = goal;
-        progressAmount = 0;
-        showProgressModal = true;
-    }
-
-    private void CloseModal()
-    {
-        showModal = false;
-        currentGoal = new();
-        isSaving = false;
-    }
-
-    private void CloseProgressModal()
-    {
-        showProgressModal = false;
-        progressAmount = 0;
-        isSaving = false;
     }
 
     private async Task SaveGoal()
@@ -498,83 +665,463 @@
         try
         {
             isSaving = true;
+            errorMessage = null;
 
-            if (isEditMode)
+            if (string.IsNullOrWhiteSpace(formModel.Name))
             {
-                await GoalService.UpdateAsync(currentGoal, userId);
+                ShowErrorMessage("El nombre de la meta es requerido");
+                return;
+            }
+
+            if (formModel.TargetAmount <= 0)
+            {
+                ShowErrorMessage("El monto objetivo debe ser mayor a cero");
+                return;
+            }
+
+            if (formModel.TargetDate <= formModel.StartDate)
+            {
+                ShowErrorMessage("La fecha meta debe ser posterior a la fecha de inicio");
+                return;
+            }
+
+            // Limpiar errores previos
+            nameValidationError = null;
+            iconValidationError = null;
+
+            // Validar nombre duplicado
+            var nameExists = await GoalService.ExistsGoalWithNameAsync(
+                formModel.Name.Trim(),
+                currentUserId,
+                isEditing ? formModel.GoalId : null
+            );
+
+            if (nameExists)
+            {
+                nameValidationError = "Ya existe una meta con este nombre";
+                return;
+            }
+
+            // Validar icono duplicado
+            var iconExists = await GoalService.ExistsGoalWithIconAsync(
+                formModel.Icon.Trim(),
+                currentUserId,
+                isEditing ? formModel.GoalId : null
+            );
+
+            if (iconExists)
+            {
+                iconValidationError = "Ya existe una meta con este icono";
+                return;
+            }
+
+            var dto = new FinancialGoalDto
+            {
+                GoalId = formModel.GoalId,
+                Title = formModel.Name.Trim(),
+                Description = formModel.Description?.Trim(),
+                Icon = formModel.Icon,
+                TargetAmount = formModel.TargetAmount,
+                StartDate = formModel.StartDate,
+                TargetDate = formModel.TargetDate,
+                Status = GoalStatus.InProgress
+            };
+
+            if (isEditing)
+            {
+                var result = await GoalService.UpdateAsync(formModel.GoalId, dto, currentUserId);
+
+                if (result)
+                {
+                    ShowSuccessMessage("Meta actualizada correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo actualizar la meta");
+                }
             }
             else
             {
-                await GoalService.CreateAsync(currentGoal, userId);
-            }
+                var created = await GoalService.CreateAsync(dto, currentUserId);
 
-            await LoadGoals();
-            CloseModal();
+                if (created.Success && created.Goal != null)
+                {
+                    ShowSuccessMessage("Meta creada correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage(created.Error ?? "No se pudo crear la meta");
+                }
+            }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error saving goal: {ex.Message}");
-            await JSRuntime.InvokeVoidAsync("alert", "Error al guardar la meta");
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
             isSaving = false;
         }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        formModel = new();
+        isEditing = false;
+        nameValidationError = null;
+        iconValidationError = null;
+    }
+
+    private void OpenProgressModal(FinancialGoalDto goal)
+    {
+        selectedGoal = goal;
+        progressModel = new ProgressModel();
+        showProgressModal = true;
     }
 
     private async Task AddProgress()
     {
-        if (progressAmount <= 0)
-        {
-            await JSRuntime.InvokeVoidAsync("alert", "Ingresa un monto mayor a 0");
-            return;
-        }
-
         try
         {
             isSaving = true;
-            await GoalService.AddProgressAsync(currentGoal.GoalId, userId, progressAmount);
-            await LoadGoals();
-            CloseProgressModal();
+            errorMessage = null;
 
-            // Mensaje de éxito
-            var updatedGoal = goals.First(g => g.GoalId == currentGoal.GoalId);
-            if (updatedGoal.IsCompleted)
+            if (selectedGoal == null)
+                return;
+
+            if (progressModel.Amount <= 0)
             {
-                await JSRuntime.InvokeVoidAsync("alert", "🎉 ¡Felicidades! Has completado tu meta.");
+                ShowErrorMessage("El monto debe ser mayor a cero");
+                return;
+            }
+
+            // Validar que no exceda el balance disponible
+            if (progressModel.Amount > availableBalance)
+            {
+                ShowErrorMessage($"No tienes suficiente balance disponible. Balance: {availableBalance:C}");
+                return;
+            }
+
+            // Validar que no exceda el monto restante de la meta
+            if (progressModel.Amount > selectedGoal.RemainingAmount)
+            {
+                ShowErrorMessage($"El monto excede lo que falta para la meta. Faltante: {selectedGoal.RemainingAmount:C}");
+                return;
+            }
+
+            var result = await GoalService.AddProgressAsync(selectedGoal.GoalId, progressModel.Amount, currentUserId);
+
+            if (result.Success)
+            {
+                ShowSuccessMessage($"Progreso agregado correctamente. ¡Sigue así!");
+                CloseProgressModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage(result.Error ?? "No se pudo agregar el progreso");
             }
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Error adding progress: {ex.Message}");
-            await JSRuntime.InvokeVoidAsync("alert", "Error al agregar progreso");
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
             isSaving = false;
         }
     }
 
-    private async Task DeleteGoal(int goalId)
+    private void CloseProgressModal()
     {
-        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
-            "¿Estás seguro de eliminar esta meta? Esta acción no se puede deshacer.");
+        showProgressModal = false;
+        selectedGoal = null;
+        progressModel = new();
+    }
 
-        if (confirmed)
+    private void OpenWithdrawModal(FinancialGoalDto goal)
+    {
+        selectedGoalForWithdraw = goal;
+        withdrawModel = new WithdrawModel();
+        showWithdrawModal = true;
+    }
+
+    private async Task WithdrawProgress()
+    {
+        try
         {
-            try
+            isSaving = true;
+            errorMessage = null;
+
+            if (selectedGoalForWithdraw == null)
+                return;
+
+            if (withdrawModel.Amount <= 0)
             {
-                await GoalService.DeleteAsync(goalId, userId);
-                await LoadGoals();
+                ShowErrorMessage("El monto debe ser mayor a cero");
+                return;
             }
-            catch (Exception ex)
+
+            // Validar que no exceda el monto actual de la meta
+            if (withdrawModel.Amount > selectedGoalForWithdraw.CurrentAmount)
             {
-                Console.WriteLine($"Error deleting goal: {ex.Message}");
-                await JSRuntime.InvokeVoidAsync("alert", "Error al eliminar la meta");
+                ShowErrorMessage($"No puedes retirar más de lo que hay en la meta. Disponible: {selectedGoalForWithdraw.CurrentAmount:C}");
+                return;
             }
+
+            var result = await GoalService.WithdrawAmountAsync(selectedGoalForWithdraw.GoalId, withdrawModel.Amount, currentUserId);
+
+            if (result.Success)
+            {
+                ShowSuccessMessage($"Se retiraron {withdrawModel.Amount:C} de la meta '{selectedGoalForWithdraw.Title}'");
+                CloseWithdrawModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage(result.Error ?? "No se pudo retirar el dinero");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
         }
     }
 
-    private string GetProgressBarColor(FinancialGoalDto goal)
+    private void CloseWithdrawModal()
     {
-        if (goal.IsCompleted) return "bg-success";
-        if (goal.ProgressPercentage >= 75) return "bg-info";
-        if (goal.ProgressPercentage >= 50) return "bg-primary";
-        if (goal.ProgressPercentage >= 25) return "bg-warning";
-        return "bg-danger";
+        showWithdrawModal = false;
+        selectedGoalForWithdraw = null;
+        withdrawModel = new();
+    }
+
+    private void ConfirmCancel(int goalId, string name)
+    {
+        goalIdToCancel = goalId;
+        goalToCancel = name;
+        showCancelModal = true;
+    }
+
+    private async Task CancelGoal()
+    {
+        try
+        {
+            var result = await GoalService.CancelGoalAsync(goalIdToCancel, currentUserId);
+
+            if (result)
+            {
+                ShowSuccessMessage($"Meta '{goalToCancel}' cancelada");
+                CloseCancelModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo cancelar la meta");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private void CloseCancelModal()
+    {
+        showCancelModal = false;
+        goalIdToCancel = 0;
+        goalToCancel = null;
+    }
+
+    private void ConfirmDelete(int goalId, string name)
+    {
+        goalIdToDelete = goalId;
+        goalToDelete = name;
+        showDeleteModal = true;
+    }
+
+    private async Task DeleteGoal()
+    {
+        try
+        {
+            var result = await GoalService.DeleteAsync(goalIdToDelete, currentUserId);
+
+            if (result)
+            {
+                ShowSuccessMessage($"Meta '{goalToDelete}' eliminada correctamente");
+                CloseDeleteModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo eliminar la meta");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        goalIdToDelete = 0;
+        goalToDelete = null;
+    }
+
+    private void ConfirmReactivate(int goalId, string name)
+    {
+        goalIdToReactivate = goalId;
+        goalToReactivate = name;
+        showReactivateModal = true;
+    }
+
+    private async Task ReactivateGoal()
+    {
+        try
+        {
+            var result = await GoalService.ReactivateGoalAsync(goalIdToReactivate, currentUserId);
+
+            if (result)
+            {
+                ShowSuccessMessage($"Meta '{goalToReactivate}' reactivada correctamente");
+                CloseReactivateModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo reactivar la meta");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private void CloseReactivateModal()
+    {
+        showReactivateModal = false;
+        goalIdToReactivate = 0;
+        goalToReactivate = null;
+    }
+
+    // Helpers para estilos
+    private string GetGoalStatusClass(GoalStatus status) => status switch
+    {
+        GoalStatus.Completed => "completed",
+        GoalStatus.Cancelled => "cancelled",
+        _ => ""
+    };
+
+    private string GetStatusBadgeColor(GoalStatus status) => status switch
+    {
+        GoalStatus.InProgress => "bg-success-custom",
+        GoalStatus.Completed => "bg-info-custom",
+        GoalStatus.Cancelled => "bg-danger-custom",
+        _ => "secondary"
+    };
+
+    private string GetProgressBarClass(decimal percentage) => percentage switch
+    {
+        >= 100 => "bg-success",
+        >= 75 => "bg-info",
+        >= 50 => "bg-primary",
+        >= 25 => "bg-warning",
+        _ => "bg-danger"
+    };
+
+    // Modelos de formulario
+    private class GoalFormModel
+    {
+        public int GoalId { get; set; }
+
+        [Required(ErrorMessage = "El nombre es requerido")]
+        [StringLength(200, ErrorMessage = "El nombre no puede exceder 200 caracteres")]
+        public string Name { get; set; } = string.Empty;
+
+        public string? Description { get; set; }
+
+        [Required(ErrorMessage = "El icono es requerido")]
+        public string Icon { get; set; } = "🎯";
+
+        [Required(ErrorMessage = "El monto objetivo es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero")]
+        public decimal TargetAmount { get; set; }
+
+        [Required(ErrorMessage = "La fecha de inicio es requerida")]
+        public DateTime StartDate { get; set; } = DateTime.Now;
+
+        [Required(ErrorMessage = "La fecha meta es requerida")]
+        public DateTime TargetDate { get; set; }
+    }
+
+    private class ProgressModel
+    {
+        [Required(ErrorMessage = "El monto es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero")]
+        public decimal Amount { get; set; }
+    }
+
+    private class WithdrawModel
+    {
+        [Required(ErrorMessage = "El monto es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero")]
+        public decimal Amount { get; set; }
+    }
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
     }
 }

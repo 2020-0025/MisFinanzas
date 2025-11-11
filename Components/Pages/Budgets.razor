@@ -1,0 +1,670 @@
+﻿@page "/budgets"
+@using Microsoft.JSInterop
+@using MisFinanzas.Infrastructure.Interfaces
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Domain.Enums
+@using System.ComponentModel.DataAnnotations
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@inject IBudgetService BudgetService
+@inject ICategoryService CategoryService
+@inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+
+<PageTitle>Presupuestos - MisFinanzas</PageTitle>
+
+<div class="budgets-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="d-flex justify-content-between align-items-center flex-wrap">
+            <div class="mb-3 mb-md-0">
+                <h1>💰 Presupuestos</h1>
+                <p class="mb-0 text-white">Controla tus gastos por categoría</p>
+            </div>
+            <button class="btnAddBudgets" @onclick="OpenCreateModal">
+                <span style="font-size: 17px;">➕</span> Nuevo Presupuesto
+            </button>
+        </div>
+    </div>
+
+    <!-- Selector de Mes/Año -->
+    <div class="period-selector-card">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <label class="form-label text-white">Mes</label>
+                <select class="form-select glass-card" @bind="selectedMonth" @bind:after="LoadData">
+                    <option value="1">Enero</option>
+                    <option value="2">Febrero</option>
+                    <option value="3">Marzo</option>
+                    <option value="4">Abril</option>
+                    <option value="5">Mayo</option>
+                    <option value="6">Junio</option>
+                    <option value="7">Julio</option>
+                    <option value="8">Agosto</option>
+                    <option value="9">Septiembre</option>
+                    <option value="10">Octubre</option>
+                    <option value="11">Noviembre</option>
+                    <option value="12">Diciembre</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label text-white">Año</label>
+                <select class="form-select glass-card" @bind="selectedYear" @bind:after="LoadData">
+                    @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 1; year++)
+                    {
+                        <option value="@year">@year</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button class="btnCurrectMonth w-100" @onclick="SetCurrentMonth">
+                    <i class="bi bi-calendar-today"></i> Mes Actual
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Resumen General -->
+    <div class="summary-card">
+        <h4>📊 Resumen del Periodo</h4>
+        <div class="row">
+            <div class="col-md-4">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Presupuesto Total</span>
+                    <h3 class="text-primary">@totalBudget.ToString("C")</h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Gastado Total</span>
+                    <h3 class="@(totalSpent > totalBudget ? "text-danger" : "text-warning")">
+                        @totalSpent.ToString("C")
+                    </h3>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Disponible</span>
+                    <h3 class="@(totalAvailable >= 0 ? "text-success" : "text-danger")">
+                        @totalAvailable.ToString("C")
+                    </h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress mt-3" style="height: 30px; background-color:rgba(255, 255, 255, 0.05);">
+            <div class="progress-bar @GetProgressBarClass(totalPercentage)"
+                 role="progressbar"
+                 style="color:white; height:15px; width: @Math.Min(totalPercentage, 100)%"
+                 aria-valuenow="@totalPercentage"
+                 aria-valuemin="0"
+                 aria-valuemax="100">
+                <strong>@totalPercentage.ToString("F1")%</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mensajes -->
+    @if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="custom-alert error @(showErrorMessage ? "show" : "")">
+            <span class="alert-icon">✕</span>
+            <span class="alert-text">@errorMessage</span>
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="custom-alert success @(showSuccessMessage ? "show" : "")">
+            <span class="alert-icon">✓</span>
+            <span class="alert-text">@successMessage</span>
+        </div>
+    }
+
+    <!-- Lista de Presupuestos -->
+    <div class="budgets-list-card">
+        <div class="card-header">
+            <h4>📋 Presupuestos por Categoría</h4>
+        </div>
+        <div class="card-body">
+            @if (isLoading)
+            {
+                <div class="text-center py-5">
+                    <div class="spinner-border text-light" role="status"></div>
+                    <p class="text-white mt-3">Cargando presupuestos...</p>
+                </div>
+            }
+            else if (!budgets.Any())
+            {
+                <div class="text-center py-5">
+                    <p class="text-white">No hay presupuestos configurados para este periodo</p>
+                    <button class="btnAddBudgets mt-3" @onclick="OpenCreateModal">
+                        <span style="font-size: 17px;">➕</span> Crear Primer Presupuesto
+                    </button>
+                </div>
+            }
+            else
+            {
+                <div class="row">
+                    @foreach (var budget in budgets)
+                    {
+                        <div class="col-lg-6 col-md-12 mb-3">
+                            <div class="budget-item @(budget.IsOverBudget ? "over-budget" : budget.IsNearLimit ? "near-limit" : "")">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="category-icon">@budget.CategoryIcon</span>
+                                        <div>
+                                            <h5 class="mb-0">@budget.CategoryTitle</h5>
+                                            <small class="text-white">@budget.Name</small>
+                                        </div>
+                                    </div>
+                                    <div class="budget-actions">
+                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditBudget(budget)">
+                                            <span style="font-size: 13px;">📝</span>
+                                        </button>
+                                        <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(budget.Id, budget.CategoryTitle)">
+                                            <span style="font-size: 13px;">🗑️</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="budget-amounts">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="text-white">Gastado: <strong>@budget.SpentAmount.ToString("C")</strong></span>
+                                        <span class="text-white">Presupuesto: <strong>@budget.AssignedAmount.ToString("C")</strong></span>
+                                    </div>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar @GetProgressBarClass(budget.UsedPercentage)"
+                                             role="progressbar"
+                                             style="color:white; height:13px; width: @Math.Min(budget.UsedPercentage, 100)%"
+                                             aria-valuenow="@budget.UsedPercentage"
+                                             aria-valuemin="0"
+                                             aria-valuemax="100">
+                                            @budget.UsedPercentage.ToString("F1")%
+                                        </div>
+                                    </div>
+                                    <div class="mt-2 text-end">
+                                        <small class="@(budget.IsOverBudget ? "text-white" : "text-white")">
+                                            @(budget.IsOverBudget ? "Excedido por " : "Disponible: ")
+                                            <strong>@budget.AvailableAmount.ToString("C")</strong>
+                                        </small>
+                                    </div>
+                                </div>
+
+                                <div class="budget-status mt-2">
+                                    <span class=" text-white badge @GetStatusBadgeClass(budget)">
+                                        @budget.StatusDisplay
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal Crear/Editar Presupuesto -->
+@if (showModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">
+                        @(isEditing ? "✏️ Editar Presupuesto" : "➕ Nuevo Presupuesto")
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="formModel" OnValidSubmit="SaveBudget">
+                        <DataAnnotationsValidator />
+
+                        <div class="mb-3">
+                            <label class="form-label">Categoría: </label>
+                            <select class="form-select" @bind="formModel.CategoryId" disabled="@isEditing">
+                                <option value="0">Selecciona una categoría</option>
+                                @foreach (var category in expenseCategories)
+                                {
+                                    <option value="@category.CategoryId">@category.Icon @category.Title</option>
+                                }
+                            </select>
+                            <ValidationMessage For="() => formModel.CategoryId" class="text-danger" />
+                            @if (isEditing)
+                            {
+                                <small class="form-text text-warning">No se puede cambiar la categoría</small>
+                            }
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Nombre del Presupuesto</label>
+                            <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Presupuesto Alimentación" />
+                            <ValidationMessage For="() => formModel.Name" class="text-danger" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Monto Asignado</label>
+                            <InputNumber @bind-Value="formModel.AssignedAmount" class="form-control" placeholder="0.00" />
+                            <ValidationMessage For="() => formModel.AssignedAmount" class="text-danger" />
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Mes: </label>
+                                <select class="form-select" @bind="formModel.Month" disabled="@isEditing">
+                                    <option value="1">Enero</option>
+                                    <option value="2">Febrero</option>
+                                    <option value="3">Marzo</option>
+                                    <option value="4">Abril</option>
+                                    <option value="5">Mayo</option>
+                                    <option value="6">Junio</option>
+                                    <option value="7">Julio</option>
+                                    <option value="8">Agosto</option>
+                                    <option value="9">Septiembre</option>
+                                    <option value="10">Octubre</option>
+                                    <option value="11">Noviembre</option>
+                                    <option value="12">Diciembre</option>
+                                </select>
+                                @if (isEditing)
+                                {
+                                    <small class="form-text text-warning">No se puede cambiar el mes</small>
+                                }
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Año: </label>
+                                <select class="form-select" @bind="formModel.Year" disabled="@isEditing">
+                                    @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 2; year++)
+                                    {
+                                        <option value="@year">@year</option>
+                                    }
+                                </select>
+                                @if (isEditing)
+                                {
+                                    <small class="form-text text-warning">No se puede cambiar el año</small>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btnSaveEdit" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Guardando...</span>
+                                }
+                                else
+                                {
+                                    <span>Guardar Presupuesto</span>
+                                }
+                            </button>
+                            <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Modal Confirmar Eliminación -->
+@if (showDeleteModal)
+{
+    <div class="modal-backdrop show"></div>
+    <div class="modal show d-block" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content text-white">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">⚠️ Eliminar Presupuesto</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDeleteModal">❌</button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Estás seguro de que deseas eliminar el presupuesto de <strong>@budgetToDelete</strong>?</p>
+                    <p class="text-danger mb-0">
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
+                    <button type="button" class="btnDelete" @onclick="DeleteBudget">
+                        <span style="font-size: 13px;">🗑️</span> Eliminar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private string currentUserId = string.Empty;
+
+    // Selector de periodo
+    private int selectedMonth = DateTime.Now.Month;
+    private int selectedYear = DateTime.Now.Year;
+
+    // Listas
+    private List<BudgetDto> budgets = new();
+    private List<CategoryDto> expenseCategories = new();
+
+    // Resumen
+    private decimal totalBudget = 0;
+    private decimal totalSpent = 0;
+    private decimal totalAvailable = 0;
+    private decimal totalPercentage = 0;
+
+    // Mensajes
+    private string? successMessage;
+    private string? errorMessage;
+    private bool showSuccessMessage = false;
+    private bool showErrorMessage = false;
+    private System.Threading.Timer? successTimer;
+    private System.Threading.Timer? errorTimer;
+
+    // Modal Crear/Editar
+    private bool showModal = false;
+    private bool isSaving = false;
+    private bool isEditing = false;
+    private BudgetFormModel formModel = new();
+
+    // Modal Eliminar
+    private bool showDeleteModal = false;
+    private int budgetIdToDelete;
+    private string? budgetToDelete;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated ?? false)
+        {
+            currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+            await LoadData();
+        }
+
+        isLoading = false;
+    }
+
+    private async Task LoadData()
+    {
+        try
+        {
+            isLoading = true;
+
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            // Cargar presupuestos del periodo seleccionado
+            budgets = await BudgetService.GetByUserAndPeriodAsync(currentUserId, selectedMonth, selectedYear);
+
+            // Cargar categorías de gastos (para el formulario)
+            var allCategories = await CategoryService.GetAllByUserAsync(currentUserId);
+            expenseCategories = allCategories
+                .Where(c => c.Type == TransactionType.Expense)
+                .ToList();
+
+            // Calcular resumen
+            totalBudget = await BudgetService.GetTotalBudgetForMonthAsync(currentUserId, selectedMonth, selectedYear);
+            totalSpent = await BudgetService.GetTotalSpentForMonthAsync(currentUserId, selectedMonth, selectedYear);
+            totalAvailable = totalBudget - totalSpent;
+            totalPercentage = totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0;
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error al cargar datos: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void SetCurrentMonth()
+    {
+        selectedMonth = DateTime.Now.Month;
+        selectedYear = DateTime.Now.Year;
+        _ = LoadData();
+    }
+
+    private void OpenCreateModal()
+    {
+        isEditing = false;
+        formModel = new BudgetFormModel
+        {
+            Month = selectedMonth,
+            Year = selectedYear
+        };
+        showModal = true;
+    }
+
+    private void EditBudget(BudgetDto budget)
+    {
+        isEditing = true;
+        formModel = new BudgetFormModel
+        {
+            Id = budget.Id,
+            CategoryId = budget.CategoryId,
+            Name = budget.Name,
+            AssignedAmount = budget.AssignedAmount,
+            Month = budget.Month,
+            Year = budget.Year
+        };
+        showModal = true;
+    }
+
+    private async Task SaveBudget()
+    {
+        try
+        {
+            isSaving = true;
+            errorMessage = null;
+
+            if (formModel.CategoryId == 0)
+            {
+                ShowErrorMessage("Debes seleccionar una categoría");
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(formModel.Name))
+            {
+                ShowErrorMessage("El nombre del presupuesto es requerido");
+                return;
+            }
+
+            if (formModel.AssignedAmount <= 0)
+            {
+                ShowErrorMessage("El monto debe ser mayor a cero");
+                return;
+            }
+
+            var dto = new BudgetDto
+            {
+                Id = formModel.Id,
+                CategoryId = formModel.CategoryId,
+                Name = formModel.Name.Trim(),
+                AssignedAmount = formModel.AssignedAmount,
+                Month = formModel.Month,
+                Year = formModel.Year,
+                IsActive = true
+            };
+
+            if (isEditing)
+            {
+                var result = await BudgetService.UpdateAsync(formModel.Id, dto, currentUserId);
+
+                if (result)
+                {
+                    ShowSuccessMessage("Presupuesto actualizado correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage("No se pudo actualizar el presupuesto");
+                }
+            }
+            else
+            {
+                var created = await BudgetService.CreateAsync(dto, currentUserId);
+
+                if (created.Success && created.Budget != null)
+                {
+                    ShowSuccessMessage("Presupuesto creado correctamente");
+                    CloseModal();
+                    await LoadData();
+                }
+                else
+                {
+                    ShowErrorMessage(created.Error ?? "No se pudo crear el presupuesto");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isSaving = false;
+        }
+    }
+
+    private void CloseModal()
+    {
+        showModal = false;
+        formModel = new();
+        isEditing = false;
+    }
+
+    private void ConfirmDelete(int id, string categoryTitle)
+    {
+        budgetIdToDelete = id;
+        budgetToDelete = categoryTitle;
+        showDeleteModal = true;
+    }
+
+    private async Task DeleteBudget()
+    {
+        try
+        {
+            var result = await BudgetService.DeleteAsync(budgetIdToDelete, currentUserId);
+
+            if (result)
+            {
+                ShowSuccessMessage($"Presupuesto de '{budgetToDelete}' eliminado correctamente");
+                CloseDeleteModal();
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage("No se pudo eliminar el presupuesto");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+    private void CloseDeleteModal()
+    {
+        showDeleteModal = false;
+        budgetIdToDelete = 0;
+        budgetToDelete = null;
+    }
+
+    // Helpers para estilos
+    private string GetProgressBarClass(decimal percentage) => percentage switch
+    {
+        >= 100 => "bg-danger-custom",
+        >= 80 => "bg-warning-custom",
+        >= 50 => "bg-info-custom",
+        _ => "bg-success-custom"
+    };
+
+    private string GetStatusBadgeClass(BudgetDto budget)
+    {
+        if (budget.IsOverBudget) return "bg-danger-custom";
+        if (budget.IsNearLimit) return "bg-warning-custom";
+        return "bg-success-custom";
+    }
+
+    // Modelo de formulario
+    private class BudgetFormModel
+    {
+        public int Id { get; set; }
+
+        [Required(ErrorMessage = "La categoría es requerida")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una categoría")]
+        public int CategoryId { get; set; }
+
+        [Required(ErrorMessage = "El nombre es requerido")]
+        [StringLength(200, ErrorMessage = "El nombre no puede exceder 200 caracteres")]
+        public string Name { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El monto es requerido")]
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a cero")]
+        public decimal AssignedAmount { get; set; }
+
+        [Required]
+        [Range(1, 12)]
+        public int Month { get; set; }
+
+        [Required]
+        [Range(2020, 2100)]
+        public int Year { get; set; }
+    }
+
+    private void ShowSuccessMessage(string message)
+    {
+        successMessage = message;
+        showSuccessMessage = true;
+        StateHasChanged();
+
+        successTimer?.Dispose();
+        successTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showSuccessMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                successMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite);
+    }
+
+    private void ShowErrorMessage(string message)
+    {
+        errorMessage = message;
+        showErrorMessage = true;
+        StateHasChanged();
+
+        errorTimer?.Dispose();
+        errorTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showErrorMessage = false;
+                StateHasChanged();
+                System.Threading.Thread.Sleep(300);
+                errorMessage = string.Empty;
+                StateHasChanged();
+            });
+        }, null, 5000, System.Threading.Timeout.Infinite);
+    }
+
+    public void Dispose()
+    {
+        successTimer?.Dispose();
+        errorTimer?.Dispose();
+    }
+}

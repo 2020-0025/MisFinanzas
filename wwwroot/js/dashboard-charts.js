@@ -283,4 +283,4 @@ window.chartHelpers = {
     }
 };
 
-console.log('✅ Dashboard charts helpers loaded');
+console.log('Dashboard charts helpers loaded');

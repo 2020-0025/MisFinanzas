@@ -291,7 +291,7 @@ namespace MisFinanzas.Infrastructure.Services
         public async Task<(decimal Ingresos, decimal Gastos)> GetTotalsByMonthAsync(string userId, int month, int year)
         {
             var firstDay = new DateTime(year, month, 1);
-            var lastDay = firstDay.AddMonons(1).AddDays(-1);
+            var lastDay = firstDay.AddMonths(1).AddDays(-1);
 
             var items = await _context.ExpensesIncomes
                 .Where(e => e.UserId == userId &&

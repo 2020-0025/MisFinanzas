@@ -1,10 +1,27 @@
 ﻿@inherits LayoutComponentBase
+@inject NavigationManager Navigation
 
 <div class="page-wrapper">
     <NavMenu />
-    
+
     <main class="main-content">
-        @Body
+        <ErrorBoundary>
+            <ChildContent>
+                @Body
+            </ChildContent>
+            <ErrorContent Context="ex">
+                <div class="error-container">
+                    <div class="error-card">
+                        <div class="error-icon">⚠️</div>
+                        <h3>Oops! Algo salió mal</h3>
+                        <p class="error-message">@ex.Message</p>
+                        <button class="btn-reload" @onclick="ReloadPage">
+                            🔄 Recargar página
+                        </button>
+                    </div>
+                </div>
+            </ErrorContent>
+        </ErrorBoundary>
     </main>
 </div>
 
@@ -13,6 +30,13 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private void ReloadPage()
+    {
+        Navigation.NavigateTo(Navigation.Uri, forceLoad: true);
+    }
+}
 
 <style>
     .page-wrapper {
@@ -26,5 +50,136 @@
         margin-top: 70px;
         position: relative;
         z-index: 1;
+    }
+
+    /* Error Boundary Styles */
+    .error-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: calc(100vh - 70px);
+        padding: 2rem;
+        background: rgba(0, 0, 0, 0.3);
+    }
+
+    .error-card {
+        background: rgba(244, 67, 54, 0.15);
+        border: 2px solid rgba(244, 67, 54, 0.4);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        max-width: 500px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(10px);
+    }
+
+    .error-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+        animation: shake 0.5s ease-in-out;
+    }
+
+    @@keyframes shake {
+        0%, 100% {
+            transform: translateX(0);
+        }
+
+        25% {
+            transform: translateX(-10px);
+        }
+
+        75% {
+            transform: translateX(10px);
+        }
+    }
+
+    .error-card h3 {
+        color: white;
+        font-size: 1.75rem;
+        margin-bottom: 1rem;
+        font-weight: 700;
+    }
+
+    .error-message {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1rem;
+        margin-bottom: 2rem;
+        line-height: 1.6;
+        word-wrap: break-word;
+    }
+
+    .btn-reload {
+        background: rgba(76, 175, 80, 0.2);
+        border: 1px solid rgba(76, 175, 80, 0.4);
+        color: #4CAF50;
+        padding: 0.75rem 2rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+        .btn-reload:hover {
+            background: rgba(76, 175, 80, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+        }
+
+    /* Blazor Error UI (global) */
+    #blazor-error-ui {
+        background: rgba(244, 67, 54, 0.95);
+        color: white;
+        padding: 1rem;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 10001;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.5);
+    }
+
+        #blazor-error-ui .reload,
+        #blazor-error-ui .dismiss {
+            color: white;
+            text-decoration: none;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            margin-left: 1rem;
+            transition: all 0.3s ease;
+        }
+
+            #blazor-error-ui .reload:hover,
+            #blazor-error-ui .dismiss:hover {
+                background: rgba(255, 255, 255, 0.3);
+            }
+
+    /* Mobile responsiveness */
+    @@media (max-width: 768px) {
+        .main-content {
+            margin-top: 70px;
+            margin-bottom: 80px; /* Espacio para footer móvil */
+        }
+
+        .error-card {
+            padding: 2rem 1.5rem;
+        }
+
+        .error-icon {
+            font-size: 3rem;
+        }
+
+        .error-card h3 {
+            font-size: 1.5rem;
+        }
+
+        .error-message {
+            font-size: 0.9rem;
+        }
     }
 </style>

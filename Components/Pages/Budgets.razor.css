@@ -1,4 +1,4 @@
-﻿.goals-container {
+﻿.budgets-container {
     min-height: 100vh;
     padding: 30px;
 }
@@ -24,7 +24,7 @@
         color: rgba(255, 255, 255, 0.8);
     }
 
-.btnAddGoals {
+.btnAddBudgets {
     background: rgba(76, 175, 80, 0.25);
     border-color: rgba(76, 175, 80, 0.5);
     color: white;
@@ -34,10 +34,8 @@
     padding: 0.5rem 1rem;
 }
 
-
-
-/* Balance Info Card */
-.balance-info-card {
+/* Selector de Periodo */
+.period-selector-card {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
@@ -48,122 +46,69 @@
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
-    .balance-info-card h5 {
-        color: rgba(255, 255, 255, 0.8);
-        font-size: 0.9rem;
-        margin-bottom: 10px;
+    .period-selector-card .form-select {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: white;
     }
 
-    .balance-info-card h3 {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-
-    .balance-info-card small {
-        color: rgba(255, 255, 255, 0.6);
-    }
-
-    .balance-info-card p {
-        color: rgba(255, 255, 255, 0.9);
-        margin-bottom: 5px;
-    }
-
-/* Filters Card */
-.filters-card {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border-radius: 16px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 20px;
-    margin-bottom: 30px;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-}
-
-    .filters-card .btn-group {
-        width: 100%;
-    }
-
-        .filters-card .btn-group:hover {
+        .period-selector-card .form-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.5);
+            color: white;
+            box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
         }
 
-    .filters-card .btn {
-        flex: 1;
-    }
+        .period-selector-card .form-select option {
+            background: #212529;
+            color: white;
+        }
 
-/* Goal Card */
-.goal-card {
+.btnCurrectMonth {
+    background: rgba(33, 150, 243, 0.15);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
+    border-radius: 20px;
+    padding: 0.5rem 0.5rem;
+    margin-top: 1.9rem;
+}
+
+/* Resumen General */
+.summary-card {
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    padding: 25px;
+    padding: 30px;
+    margin-bottom: 30px;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
-    transition: all 0.3s ease;
-    border-left: 4px solid #17a2b8;
 }
 
-    .goal-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.5);
+    .summary-card h4 {
+        color: white;
+        margin-bottom: 25px;
+        font-weight: 600;
     }
 
-    .goal-card.completed {
-        border-left-color: #28a745;
-    }
-
-    .goal-card.cancelled {
-        border-left-color: #6c757d;
-    }
-
-.goal-header {
-    margin-bottom: 20px;
+.summary-item {
+    text-align: center;
 }
 
-.goal-icon {
-    font-size: 3rem;
-}
-
-.goal-header h4 {
-    color: white;
+.summary-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    display: block;
     margin-bottom: 10px;
-    font-weight: 600;
 }
 
-.goal-actions {
-    display: flex;
-    gap: 5px;
+.summary-item h3 {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 0;
 }
-
-.goal-description {
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 20px;
-    font-size: 0.95rem;
-}
-
-/* Goal Progress */
-.goal-progress {
-    margin-bottom: 20px;
-}
-
-    .goal-progress span {
-        color: rgba(255, 255, 255, 0.9);
-        font-size: 0.9rem;
-    }
-
-    .goal-progress .progress {
-        height: 25px;
-        background: rgba(0, 0, 0, 0.3);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .goal-progress .progress-bar {
-        font-weight: bold;
-        transition: width 0.6s ease;
-    }
 
 .bg-success-custom {
     background-color: rgba(76, 175, 80, 0.50) !important;
@@ -181,40 +126,99 @@
     background-color: rgba(244, 67, 54, 0.50) !important;
 }
 
-/* Goal Dates */
-.goal-dates {
-    padding: 15px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 10px;
-    margin-bottom: 15px;
+
+/* Lista de Presupuestos */
+.budgets-list-card {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
-    .goal-dates small {
-        color: rgba(255, 255, 255, 0.6);
-        display: block;
-        margin-bottom: 5px;
+    .budgets-list-card .card-header {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        padding: 20px 30px;
     }
 
-    .goal-dates p {
-        color: white;
-        font-weight: 500;
-        margin-bottom: 0;
+        .budgets-list-card .card-header h4 {
+            color: white;
+            margin-bottom: 0;
+            font-weight: 600;
+        }
+
+    .budgets-list-card .card-body {
+        padding: 30px;
     }
 
-/* Goal Completed */
-.goal-completed {
-    background: rgba(40, 167, 69, 0.2);
-    border: 1px solid rgba(40, 167, 69, 0.5);
-    border-radius: 10px;
-    padding: 10px 15px;
-    color: #28a745;
-    font-weight: 500;
-    text-align: center;
+/* Item de Presupuesto */
+.budget-item {
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s ease;
+    border-left: 4px solid #28a745;
 }
 
-    .goal-completed i {
-        margin-right: 8px;
+    .budget-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
     }
+
+    .budget-item.near-limit {
+        border-left-color: #ffc107;
+        background: rgba(255, 193, 7, 0.05);
+    }
+
+    .budget-item.over-budget {
+        border-left-color: #dc3545;
+        background: rgba(220, 53, 69, 0.05);
+    }
+
+.category-icon {
+    font-size: 2rem;
+}
+
+.budget-item h5 {
+    color: white;
+    margin-bottom: 3px;
+    font-size: 1.1rem;
+}
+
+.budget-item small {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.budget-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.budget-amounts {
+    margin-top: 15px;
+}
+
+    .budget-amounts span {
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 0.9rem;
+    }
+
+    .budget-amounts .progress {
+        background: rgba(0, 0, 0, 0.3);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .budget-amounts .progress-bar {
+        font-weight: bold;
+        transition: width 0.6s ease;
+    }
+
+.budget-status {
+    text-align: right;
+}
 
 /* Alertas */
 .alert {
@@ -233,11 +237,6 @@
     border-left: 4px solid #dc3545;
 }
 
-.alert-info {
-    border-left: 4px solid #17a2b8;
-    background: rgba(23, 162, 184, 0.1);
-}
-
 /* Modal */
 .modal-backdrop.show {
     opacity: 0.7;
@@ -248,9 +247,9 @@
     backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
-    margin-top: 40px;
+    margin-top: 20px;
     /* 1. Define un límite de altura */
-    max-height: 600px;
+    max-height: 475px;
     /* 2. Muestra el scroll vertical SI es necesario */
     overflow-y: auto;
 }
@@ -274,14 +273,30 @@
             color: rgba(255, 255, 255, 0.5);
         }
 
+        .modal-content .form-control:disabled,
+        .modal-content .form-select:disabled {
+            background: rgba(255, 255, 255, 0.05);
+            opacity: 0.6;
+        }
+
     .modal-content .form-label {
         color: rgba(255, 255, 255, 0.9);
         font-weight: 500;
     }
 
+    .modal-content .form-select option {
+        background: #212529;
+        color: white;
+    }
+
 .form-text {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.875rem;
+}
+
+.period-selector-card .form-select option {
+    background: #212529;
+    color: white;
 }
 
 .btnSaveEdit {
@@ -295,20 +310,6 @@
 }
 
     .btnSaveEdit:hover {
-        transform: translateY(-2px);
-    }
-
-.btnWithdraw {
-    background: rgba(255, 193, 7, 0.25);
-    border-color: rgba(255, 193, 7, 0.5);
-    color: white;
-    font-weight: 600;
-    box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-}
-
-    .btnWithdraw:hover {
         transform: translateY(-2px);
     }
 
@@ -348,7 +349,7 @@
 
 /* Responsive */
 @media (max-width: 768px) {
-    .goals-container {
+    .budgets-container {
         padding: 15px;
     }
 
@@ -367,50 +368,32 @@
                 margin-bottom: 10px;
             }
 
-    .balance-info-card h3 {
-        font-size: 1.5rem;
-    }
-
-    .balance-info-card .text-end {
-        text-align: left !important;
-        margin-top: 15px;
-    }
-
-    .filters-card .btn-group {
-        flex-direction: column;
-    }
-
-    .filters-card .btn {
-        width: 100%;
-        margin-bottom: 5px;
-    }
-
-    .goal-card {
+    .period-selector-card {
         padding: 20px;
     }
 
-    .goal-icon {
-        font-size: 2.5rem;
+    .summary-card {
+        padding: 20px;
     }
 
-    .goal-header h4 {
-        font-size: 1.2rem;
+    .summary-item h3 {
+        font-size: 1.5rem;
     }
 
-    .goal-actions {
-        flex-wrap: wrap;
+    .budgets-list-card .card-body {
+        padding: 20px;
     }
 
-        .goal-actions .btn {
-            flex: 1;
-            min-width: 45px;
-        }
+    .budget-item {
+        padding: 15px;
+    }
 
-    .modal-content {
-        /* 1. Define un límite de altura */
-        max-height: 300px;
-        /* 2. Muestra el scroll vertical SI es necesario */
-        overflow-y: auto;
+    .category-icon {
+        font-size: 1.5rem;
+    }
+
+    .budget-item h5 {
+        font-size: 1rem;
     }
 }
 

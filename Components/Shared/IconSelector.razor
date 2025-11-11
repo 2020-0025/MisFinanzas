@@ -2,7 +2,7 @@
 
 <div class="icon-selector-container">
     <label class="form-label-glass">@Label</label>
-    
+
     <!-- Display del ícono seleccionado (Dropdown style) -->
     <div class="icon-selector-display @(showPicker ? "open" : "")" @onclick="ToggleIconPicker">
         @if (!string.IsNullOrEmpty(SelectedIcon))
@@ -185,6 +185,7 @@
         new("🖥️", "Monitor"),
         new("⌨️", "Teclado"),
         new("🖱️", "Mouse"),
+        new("🌐", "Internet"),
 
         // Servicios
         new("📞", "Teléfono"),
