@@ -522,9 +522,9 @@
             }
             else
             {
-                var created = await ExpenseIncomeService.CreateAsync(dto, currentUserId);
+                var result = await ExpenseIncomeService.CreateAsync(dto, currentUserId!);
 
-                if (created != null)
+                if (result.Success)
                 {
                     ShowSuccessMessage($"{(formModel.Type == TransactionType.Income ? "Ingreso" : "Gasto")} agregado correctamente");
                     CloseModal();
@@ -532,7 +532,7 @@
                 }
                 else
                 {
-                    ShowErrorMessage("No se pudo crear la transacción");
+                    ShowErrorMessage(result.Error ?? "No se pudo crear la transacción");
                 }
             }
         }
