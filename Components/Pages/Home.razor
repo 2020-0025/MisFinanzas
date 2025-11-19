@@ -5,6 +5,10 @@
 @using Microsoft.AspNetCore.Components.Web
 @inject NavigationManager Navigation
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@rendermode InteractiveServer
+@inject IJSRuntime JSRuntime
+
+
 
 <PageTitle>Mis Finanzas - Gestión Financiera Inteligente</PageTitle>
 
@@ -31,115 +35,427 @@
                 </div>
             </nav>
 
-            <!-- Hero Section Personalizado -->
-            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 60px 40px; text-align: center; margin-bottom: 40px;">
-                <h1 style="color: white; font-size: 3rem; margin-bottom: 20px; font-weight: 700;">
-                    ¡Bienvenido de vuelta! 🎉
+            <!-- Hero Section -->
+            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 20px 20px; text-align: center; margin-bottom: 20px; display:grid;">
+                <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px; margin-top:0px; font-weight: 600;">
+                    Mis Finanzas
                 </h1>
-                <p class="text-white" style="font-size: 1.2rem; max-width: 600px; margin: 0 auto 30px;">
-                    Continúa gestionando tus finanzas de manera inteligente
+                <p class="text-white" style="font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
+                    Toma el control de tu dinero con inteligencia y simplicidad
                 </p>
-                <a href="/dashboard" class="glass-button" style="font-size: 1.2rem; padding: 16px 40px; display: inline-block;">
-                    <span style="font-size: 20px;">📊</span>Ir al Dashboard
-                </a>
             </div>
 
             <div style="display: flex; justify-content: center; align-items: center; width: 100%;">
 
-                <!-- Features Grid con botones de acceso -->
+                <!-- Features Grid -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; width: 100%; max-width: 900px; padding: 0 20px;">
 
+                    <!-- FILA 1: Categorías + Presupuestos -->
                     <!-- Categories Card -->
                     <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                            <span style="font-size: 32px;">📁</span>
+                            <span style="font-size: 32px;">🏷️</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
                         </div>
-                        <p class="text-white" style=" margin-bottom: 20px;">
-                            Gestiona tus categorías personalizadas
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Organiza tus finanzas por categorías personalizadas
                         </p>
 
+                        <!-- Demo Categories -->
                         <div class="demo-category">
-                            <span style="font-size: 24px;">📋</span>
+                            <span style="font-size: 24px;">🍔</span>
                             <div style="flex: 1; color: white;">
-                                <div style="font-weight: 600;">Tus Categorías</div>
-                                <div class="text-white" style="font-size: 0.9rem;">Organiza tus gastos</div>
+                                <div style="font-weight: 600;">Alimentación</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$450 gastados</div>
                             </div>
                         </div>
-
-                        <a href="/categories" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
-                            Gestionar Categorías
-                        </a>
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">🚗</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Transporte</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$320 gastados</div>
+                            </div>
+                        </div>
+                        <div class="demo-category">
+                            <span style="font-size: 24px;">🎮</span>
+                            <div style="flex: 1; color: white;">
+                                <div style="font-weight: 600;">Entretenimiento</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$180 gastados</div>
+                            </div>
+                        </div>
                     </div>
 
+                    <!-- Budgets Card -->
+                    <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">💰</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Presupuestos</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Controla tus gastos mensuales por categoría
+                        </p>
+
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🍔 Alimentación</span>
+                                <span style="color: white; font-weight: 600;">85%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$425 de RD$500</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%; background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🚗 Transporte</span>
+                                <span style="color: white; font-weight: 600;">60%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$180 de RD$300</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🎮 Entretenimiento</span>
+                                <span style="color: white; font-weight: 600;">30%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$90 de RD$300</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 30%; background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 2: Gastos e Ingresos + Recordatorios -->
                     <!-- Transactions Card -->
                     <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                             <span style="font-size: 32px;">💳</span>
-                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Gastos e Ingresos</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
-                            Registra y visualiza tus movimientos
+                            Registra y visualiza cada movimiento de dinero
                         </p>
 
+                        <!-- Demo Transactions -->
                         <div class="demo-transaction">
                             <div style="color: white;">
-                                <div style="font-weight: 600;">Tus Transacciones</div>
-                                <div class="text-white" style="font-size: 0.85rem;">Historial completo</div>
+                                <div style="font-weight: 600;">Supermercado</div>
+                                <div class="text-white" style="font-size: 0.85rem;">Hoy • Alimentación</div>
                             </div>
-                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">💰</div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-RD$850</div>
                         </div>
-
-                        <a href="/transactions" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
-                            Ver Transacciones
-                        </a>
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Salario</div>
+                                <div class="text-white" style="font-size: 0.85rem;">15 Oct • Ingreso</div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">+RD$2,500.00</div>
+                        </div>
+                        <div class="demo-transaction">
+                            <div style="color: white;">
+                                <div style="font-weight: 600;">Netflix</div>
+                                <div class="text-white" style="font-size: 0.85rem;">10 Oct • Suscripciones</div>
+                            </div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-RD$750</div>
+                        </div>
                     </div>
 
-                    <!-- Financial Goals Card -->
+                    <!-- Reminders/Notifications Card (NUEVO) -->
                     <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🔔</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Recordatorios</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Notificaciones de gastos fijos y pagos pendientes
+                        </p>
+
+                        <!-- Demo Notifications -->
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">🏠</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Pago de Alquiler</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence mañana</div>
+                                </div>
+                            </div>
+                            <div style="color: #FFC107; font-weight: 600;">RD$5,000</div>
+                        </div>
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">💡</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Electricidad</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence en 2 días</div>
+                                </div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 600;">RD$1,200</div>
+                        </div>
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">📱</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Internet</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence hoy</div>
+                                </div>
+                            </div>
+                            <div style="color: #F44336; font-weight: 600;">RD$800</div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 3: Metas Financieras + Préstamos -->
+                    <!-- Financial Goals Card -->
+                    <div class="glass-card animate-slide-up animate-delay-5" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                             <span style="font-size: 32px;">🎯</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
-                            Alcanza tus objetivos financieros
+                            Define objetivos y alcanza tus sueños
                         </p>
 
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: white; font-weight: 600;">🎯 Tus Metas</span>
-                                <span style="color: rgba(255, 255, 255, 0.8); font-weight: 600;">💪</span>
+                                <span style="color: white; font-weight: 600;">🏖️ Vacaciones</span>
+                                <span style="color: white; font-weight: 600;">75%</span>
                             </div>
-                            <div class="text-white" style="font-size: 0.9rem;">Define y alcanza tus objetivos</div>
+                            <div style="color: white; font-size: 0.9rem;">RD$3,750 de RD$5,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 75%;"></div>
+                            </div>
                         </div>
-
-                        <a href="/goals" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
-                            Ver Mis Metas
-                        </a>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">💻 Nueva Laptop</span>
+                                <span style="color: white; font-weight: 600;">40%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$800 de RD$2,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 40%;"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🚗 Carro Nuevo</span>
+                                <span style="color: white; font-weight: 600;">15%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$3,000 de RD$20,000</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 15%;"></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Dashboard Card -->
-                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                    <!-- Loans Card (NUEVO) -->
+                    <div class="glass-card animate-slide-up animate-delay-5" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                            <span style="font-size: 32px;">📊</span>
-                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
+                            <span style="font-size: 32px;">🏦</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Préstamos</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
-                            Visualiza tu situación financiera completa
+                            Gestiona tus préstamos y cuotas mensuales
                         </p>
 
-                        <div class="demo-stat">
-                            <div class="text-white" style="font-size: 0.9rem;">Tu balance actual</div>
-                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">Cargando...</div>
+                        <!-- Demo Loan -->
+                        <div class="demo-loan">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">💳 Préstamo Personal</span>
+                                <span class="badge" style="background: #4CAF50; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem;">Activo</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: rgba(255,255,255,0.8); font-size: 0.85rem;">
+                                <span>Cuota mensual:</span>
+                                <span style="color: white; font-weight: 600;">RD$1,500</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Progreso: 8/24 cuotas</span>
+                                <span style="color: white; font-weight: 600; font-size: 0.85rem;">33%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 33%; background: linear-gradient(90deg, #2196F3 0%, #03A9F4 100%);"></div>
+                            </div>
                         </div>
 
-                        <a href="/dashboard" class="glass-button" style="width: 100%; text-align: center; margin-top: 20px; display: block;">
-                            Ver Dashboard Completo
-                        </a>
+                        <!-- Summary Stats -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.8rem;">Total Prestado</div>
+                                <div style="color: #2196F3; font-weight: 600;">RD$30,000</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.8rem;">Deuda Restante</div>
+                                <div style="color: #FFC107; font-weight: 600;">RD$24,000</div>
+                            </div>
+                        </div>
                     </div>
 
                 </div>
+            </div>
 
+            <!-- FILA 4: Panel de Control (ancho completo) -->
+            <div style="display: flex; justify-content: center; margin-top: 30px;">
+                <div style="width: 100%; max-width: 900px; padding: 0 20px;">
+                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📊</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Panel de Control</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Visualiza tu situación financiera de un vistazo
+                        </p>
+
+                        <!-- Balance Total -->
+                        <div class="demo-stat" style="margin-bottom: 15px;">
+                            <div style="color: white; font-size: 0.9rem;">Balance Total</div>
+                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">RD$12,450.00</div>
+                        </div>
+
+                        <!-- Ingresos y Gastos -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <div class="demo-stat" style="flex: 1;">
+                                <div style="color: white; font-size: 0.8rem;">Ingresos</div>
+                                <div style="color: #4CAF50; font-size: 1.2rem; font-weight: 600;">RD$8,200</div>
+                            </div>
+                            <div class="demo-stat" style="flex: 1; background: rgba(244, 67, 54, 0.2); border-color: rgba(244, 67, 54, 0.3);">
+                                <div style="color: white; font-size: 0.8rem;">Gastos</div>
+                                <div style="color: #F44336; font-size: 1.2rem; font-weight: 600;">RD$3,750</div>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor de ambos gráficos -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+
+                            <!-- Gráfico de barras -->
+                            <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <h3 style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin-bottom: 12px; font-weight: 600;">
+                                    📊 Gastos vs Ingresos
+                                </h3>
+                                <div style="position: relative; height: 180px; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                                    <svg style="width: 100%; height: 100%;">
+                                        <!-- Líneas de guía -->
+                                        <line x1="0" y1="20%" x2="100%" y2="20%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="40%" x2="100%" y2="40%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="60%" x2="100%" y2="60%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="80%" x2="100%" y2="80%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+                                        <!-- Barras de Ingresos (verdes) -->
+                                        <rect x="8%" y="50%" width="6%" height="40%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="22%" y="45%" width="6%" height="45%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="36%" y="35%" width="6%" height="55%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="50%" y="30%" width="6%" height="60%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="64%" y="40%" width="6%" height="50%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="78%" y="25%" width="6%" height="65%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+
+                                        <!-- Barras de Gastos (rojas) -->
+                                        <rect x="14%" y="60%" width="6%" height="30%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="28%" y="55%" width="6%" height="35%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="42%" y="45%" width="6%" height="45%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="56%" y="55%" width="6%" height="35%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="70%" y="50%" width="6%" height="40%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="84%" y="40%" width="6%" height="50%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                    </svg>
+                                </div>
+
+                                <!-- Leyenda -->
+                                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: #4CAF50; border-radius: 2px;"></div>
+                                        <small style="color: white; font-size: 0.8rem;">Ingresos</small>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: #F44336; border-radius: 2px;"></div>
+                                        <small style="color: white; font-size: 0.8rem;">Gastos</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico de dona (NUEVO) -->
+                            <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <h3 style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin-bottom: 12px; font-weight: 600;">
+                                    🍩 Gastos por categorías
+                                </h3>
+                                <div style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                                    <!-- SVG Donut Chart -->
+                                    <svg width="200" height="200" viewBox="0 0 200 200" style="margin-bottom: 15px;">
+                                        <!-- Círculo de fondo -->
+                                        <circle cx="100" cy="100" r="90" fill="rgba(255,255,255,0.05)" />
+
+                                        <!-- Segmentos del donut (cutout más grande = 70%) -->
+                                        <!-- Alimentación (40%) - Verde brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#10B981" stroke-width="50"
+                                                stroke-dasharray="138 345" transform="rotate(-90 100 100)" />
+
+                                        <!-- Transporte (30%) - Azul brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#3B82F6" stroke-width="50"
+                                                stroke-dasharray="104 379" transform="rotate(54 100 100)" />
+
+                                        <!-- Entretenimiento (20%) - Naranja brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#F59E0B" stroke-width="50"
+                                                stroke-dasharray="69 414" transform="rotate(162 100 100)" />
+
+                                        <!-- Otros (10%) - Rosa brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#EC4899" stroke-width="50"
+                                                stroke-dasharray="35 448" transform="rotate(234 100 100)" />
+
+                                        <!-- Círculo interno para efecto de dona (70% cutout) -->
+                                        <circle cx="100" cy="100" r="70" fill="rgba(17, 25, 40, 0.95)" />
+
+                                        <!-- Texto central -->
+                                        <text x="100" y="95" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="14" font-weight="400">Total</text>
+                                        <text x="100" y="115" text-anchor="middle" fill="white" font-size="18" font-weight="700">RD$3,750</text>
+                                    </svg>
+
+                                    <!-- Leyenda debajo del gráfico (como en Dashboard) -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 250px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Alimentación</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #3B82F6; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Transporte</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Entretenimiento</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #EC4899; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Otros</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Estadísticas adicionales -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                            <div style="background: rgba(33, 150, 243, 0.2); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                <div style="color: white; font-size: 0.75rem;">Registros</div>
+                                <div style="color: #2196F3; font-size: 1.3rem; font-weight: 600;">45</div>
+                            </div>
+                            <div style="background: rgba(156, 39, 176, 0.2); border: 1px solid rgba(156, 39, 176, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                <div style="color: white; font-size: 0.75rem;">Categorías</div>
+                                <div style="color: #9C27B0; font-size: 1.3rem; font-weight: 600;">8</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action - Manual de Usuario -->
+            <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center; margin-top: 60px; margin-bottom: 40px;">
+                <h2 style="color: white; font-size: 2rem; margin-bottom: 15px;">¿Deseas una guía detallada de cómo usar la app?</h2>
+                <p style="color: white; font-size: 1.1rem; margin-bottom: 30px;">
+                    Aprende como administrar tus finanzas
+                </p>
+                <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
+                    <button class="btnLogin" style="font-size: 1.1rem; padding: 14px 32px;" @onclick="DownloadUserManual">
+                        📥 Descargar Manual de Usuario
+                    </button>
+                </div>
             </div>
         </div>
     </Authorized>
@@ -157,15 +473,12 @@
                 <div style="display: flex; gap: 15px; flex-wrap: wrap;">
                     <a href="/Account/Register" class="glass-button">Registrar</a>
                     <a href="/Account/Login" class="glass-button">Iniciar Sesión</a>
-
-                    <!-- Para cuando se agregue la version Demo -->
-                    @* <button class="glass-button" style="cursor: pointer; border: none;">Probar Demo</button> *@
                 </div>
             </nav>
 
             <!-- Hero Section -->
-            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 60px 40px; text-align: center; margin-bottom: 40px;">
-                <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px; font-weight: 700;">
+            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 20px 20px; text-align: center; margin-bottom: 20px; display:grid;">
+                <h1 style="color: white; font-size: 3.5rem; margin-bottom: 20px; margin-top:0px; font-weight: 600;">
                     Mis Finanzas
                 </h1>
                 <p class="text-white" style="font-size: 1.3rem; max-width: 600px; margin: 0 auto;">
@@ -178,10 +491,11 @@
                 <!-- Features Grid -->
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 40px; width: 100%; max-width: 900px; padding: 0 20px;">
 
+                    <!-- FILA 1: Categorías + Presupuestos -->
                     <!-- Categories Card -->
                     <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                            <span style="font-size: 32px;">📁</span>
+                            <span style="font-size: 32px;">🏷️</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Categorías</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
@@ -193,30 +507,73 @@
                             <span style="font-size: 24px;">🍔</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Alimentación</div>
-                                <div class="text-white" style="font-size: 0.9rem;">$450 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$450 gastados</div>
                             </div>
                         </div>
                         <div class="demo-category">
                             <span style="font-size: 24px;">🚗</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Transporte</div>
-                                <div class="text-white" style="font-size: 0.9rem;">$320 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$320 gastados</div>
                             </div>
                         </div>
                         <div class="demo-category">
                             <span style="font-size: 24px;">🎮</span>
                             <div style="flex: 1; color: white;">
                                 <div style="font-weight: 600;">Entretenimiento</div>
-                                <div class="text-white" style="font-size: 0.9rem;">$180 gastados</div>
+                                <div class="text-white" style="font-size: 0.9rem;">RD$180 gastados</div>
                             </div>
                         </div>
                     </div>
 
+                    <!-- Budgets Card -->
+                    <div class="glass-card animate-slide-up animate-delay-3" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">💰</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Presupuestos</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Controla tus gastos mensuales por categoría
+                        </p>
+
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🍔 Alimentación</span>
+                                <span style="color: white; font-weight: 600;">85%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$425 de RD$500</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 85%; background: linear-gradient(90deg, #ffc107 0%, #ff9800 100%);"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🚗 Transporte</span>
+                                <span style="color: white; font-weight: 600;">60%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$180 de RD$300</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 60%;"></div>
+                            </div>
+                        </div>
+                        <div class="demo-goal">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">🎮 Entretenimiento</span>
+                                <span style="color: white; font-weight: 600;">30%</span>
+                            </div>
+                            <div style="color: white; font-size: 0.9rem;">RD$90 de RD$300</div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 30%; background: linear-gradient(90deg, #4CAF50 0%, #8BC34A 100%);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 2: Gastos e Ingresos + Recordatorios -->
                     <!-- Transactions Card -->
                     <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                             <span style="font-size: 32px;">💳</span>
-                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Transacciones</h2>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Gastos e Ingresos</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
                             Registra y visualiza cada movimiento de dinero
@@ -228,41 +585,84 @@
                                 <div style="font-weight: 600;">Supermercado</div>
                                 <div class="text-white" style="font-size: 0.85rem;">Hoy • Alimentación</div>
                             </div>
-                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$85.50</div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-RD$850</div>
                         </div>
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Salario</div>
                                 <div class="text-white" style="font-size: 0.85rem;">15 Oct • Ingreso</div>
                             </div>
-                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">+$2,500.00</div>
+                            <div style="color: #4CAF50; font-weight: 600; font-size: 1.1rem;">+RD$2,500.00</div>
                         </div>
                         <div class="demo-transaction">
                             <div style="color: white;">
                                 <div style="font-weight: 600;">Netflix</div>
                                 <div class="text-white" style="font-size: 0.85rem;">10 Oct • Suscripciones</div>
                             </div>
-                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-$15.99</div>
+                            <div style="color: #F44336; font-weight: 600; font-size: 1.1rem;">-RD$750</div>
                         </div>
                     </div>
 
-                    <!-- Financial Goals Card -->
+                    <!-- Reminders/Notifications Card (NUEVO) -->
                     <div class="glass-card animate-slide-up animate-delay-4" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">🔔</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Recordatorios</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Notificaciones de gastos fijos y pagos pendientes
+                        </p>
+
+                        <!-- Demo Notifications -->
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">🏠</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Pago de Alquiler</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence mañana</div>
+                                </div>
+                            </div>
+                            <div style="color: #FFC107; font-weight: 600;">RD$5,000</div>
+                        </div>
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">💡</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Electricidad</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence en 2 días</div>
+                                </div>
+                            </div>
+                            <div style="color: #4CAF50; font-weight: 600;">RD$1,200</div>
+                        </div>
+                        <div class="demo-notification">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <span style="font-size: 24px;">📱</span>
+                                <div style="flex: 1; color: white;">
+                                    <div style="font-weight: 600;">Internet</div>
+                                    <div class="text-white" style="font-size: 0.85rem;">Vence hoy</div>
+                                </div>
+                            </div>
+                            <div style="color: #F44336; font-weight: 600;">RD$800</div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 3: Metas Financieras + Préstamos -->
+                    <!-- Financial Goals Card -->
+                    <div class="glass-card animate-slide-up animate-delay-5" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
                             <span style="font-size: 32px;">🎯</span>
                             <h2 style="color: white; margin: 0; font-size: 1.5rem;">Metas Financieras</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
-                            Define objetivos y alcanza tus sueños financieros
+                            Define objetivos y alcanza tus sueños
                         </p>
 
-                        <!-- Demo Goals -->
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                                 <span style="color: white; font-weight: 600;">🏖️ Vacaciones</span>
                                 <span style="color: white; font-weight: 600;">75%</span>
                             </div>
-                            <div style="color: white; font-size: 0.9rem;">$3,750 de $5,000</div>
+                            <div style="color: white; font-size: 0.9rem;">RD$3,750 de RD$5,000</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: 75%;"></div>
                             </div>
@@ -272,65 +672,230 @@
                                 <span style="color: white; font-weight: 600;">💻 Nueva Laptop</span>
                                 <span style="color: white; font-weight: 600;">40%</span>
                             </div>
-                            <div style="color: white; font-size: 0.9rem;">$800 de $2,000</div>
+                            <div style="color: white; font-size: 0.9rem;">RD$800 de RD$2,000</div>
                             <div class="progress-bar">
                                 <div class="progress-fill" style="width: 40%;"></div>
                             </div>
                         </div>
                         <div class="demo-goal">
                             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-                                <span style="color: white; font-weight: 600;">🏠 Fondo Emergencia</span>
-                                <span style="color: white; font-weight: 600;">20%</span>
+                                <span style="color: white; font-weight: 600;">🚗 Carro Nuevo</span>
+                                <span style="color: white; font-weight: 600;">15%</span>
                             </div>
-                            <div style="color: white; font-size: 0.9rem;">$1,000 de $5,000</div>
+                            <div style="color: white; font-size: 0.9rem;">RD$3,000 de RD$20,000</div>
                             <div class="progress-bar">
-                                <div class="progress-fill" style="width: 20%;"></div>
+                                <div class="progress-fill" style="width: 15%;"></div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Dashboard Card -->
-                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                    <!-- Loans Card (NUEVO) -->
+                    <div class="glass-card animate-slide-up animate-delay-5" style="padding: 30px;">
                         <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
-                            <span style="font-size: 32px;">📊</span>
-                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Dashboard</h2>
+                            <span style="font-size: 32px;">🏦</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Préstamos</h2>
                         </div>
                         <p class="text-white" style="margin-bottom: 20px;">
-                            Visualiza tu situación financiera de un vistazo
+                            Gestiona tus préstamos y cuotas mensuales
                         </p>
 
-                        <!-- Demo Dashboard Content -->
-                        <div class="demo-stat">
-                            <div style="color: white; font-size: 0.9rem;">Balance Total</div>
-                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">$12,450.00</div>
-                        </div>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <div class="demo-stat" style="flex: 1;">
-                                <div style="color: white; font-size: 0.8rem;">Ingresos</div>
-                                <div style="color: #4CAF50; font-size: 1.2rem; font-weight: 600;">$8,200</div>
+                        <!-- Demo Loan -->
+                        <div class="demo-loan">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                                <span style="color: white; font-weight: 600;">💳 Préstamo Personal</span>
+                                <span class="badge" style="background: #4CAF50; color: white; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem;">Activo</span>
                             </div>
-                            <div class="demo-stat" style="flex: 1; background: rgba(244, 67, 54, 0.2); border-color: rgba(244, 67, 54, 0.3);">
-                                <div style="color: white; font-size: 0.8rem;">Gastos</div>
-                                <div style="color: #F44336; font-size: 1.2rem; font-weight: 600;">$3,750</div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: rgba(255,255,255,0.8); font-size: 0.85rem;">
+                                <span>Cuota mensual:</span>
+                                <span style="color: white; font-weight: 600;">RD$1,500</span>
+                            </div>
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
+                                <span style="color: rgba(255,255,255,0.7); font-size: 0.85rem;">Progreso: 8/24 cuotas</span>
+                                <span style="color: white; font-weight: 600; font-size: 0.85rem;">33%</span>
+                            </div>
+                            <div class="progress-bar">
+                                <div class="progress-fill" style="width: 33%; background: linear-gradient(90deg, #2196F3 0%, #03A9F4 100%);"></div>
+                            </div>
+                        </div>
+
+                        <!-- Summary Stats -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.2);">
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.8rem;">Total Prestado</div>
+                                <div style="color: #2196F3; font-weight: 600;">RD$30,000</div>
+                            </div>
+                            <div style="text-align: center;">
+                                <div style="color: rgba(255,255,255,0.7); font-size: 0.8rem;">Deuda Restante</div>
+                                <div style="color: #FFC107; font-weight: 600;">RD$24,000</div>
                             </div>
                         </div>
                     </div>
 
                 </div>
+            </div>
 
-           </div>
+            <!-- FILA 4: Panel de Control (ancho completo) -->
+            <div style="display: flex; justify-content: center; margin-top: 30px;">
+                <div style="width: 100%; max-width: 900px; padding: 0 20px;">
+                    <div class="glass-card animate-slide-up animate-delay-2" style="padding: 30px;">
+                        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 20px;">
+                            <span style="font-size: 32px;">📊</span>
+                            <h2 style="color: white; margin: 0; font-size: 1.5rem;">Panel de Control</h2>
+                        </div>
+                        <p class="text-white" style="margin-bottom: 20px;">
+                            Visualiza tu situación financiera de un vistazo
+                        </p>
 
-            <!-- Call to Action -->
+                        <!-- Balance Total -->
+                        <div class="demo-stat" style="margin-bottom: 15px;">
+                            <div style="color: white; font-size: 0.9rem;">Balance Total</div>
+                            <div style="color: #4CAF50; font-size: 1.8rem; font-weight: 600;">RD$12,450.00</div>
+                        </div>
+
+                        <!-- Ingresos y Gastos -->
+                        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                            <div class="demo-stat" style="flex: 1;">
+                                <div style="color: white; font-size: 0.8rem;">Ingresos</div>
+                                <div style="color: #4CAF50; font-size: 1.2rem; font-weight: 600;">RD$8,200</div>
+                            </div>
+                            <div class="demo-stat" style="flex: 1; background: rgba(244, 67, 54, 0.2); border-color: rgba(244, 67, 54, 0.3);">
+                                <div style="color: white; font-size: 0.8rem;">Gastos</div>
+                                <div style="color: #F44336; font-size: 1.2rem; font-weight: 600;">RD$3,750</div>
+                            </div>
+                        </div>
+
+                        <!-- Contenedor de ambos gráficos -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 20px;">
+
+                            <!-- Gráfico de barras -->
+                            <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <h3 style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin-bottom: 12px; font-weight: 600;">
+                                    📊 Gastos vs Ingresos
+                                </h3>
+                                <div style="position: relative; height: 180px; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                                    <svg style="width: 100%; height: 100%;">
+                                        <!-- Líneas de guía -->
+                                        <line x1="0" y1="20%" x2="100%" y2="20%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="40%" x2="100%" y2="40%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="60%" x2="100%" y2="60%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                                        <line x1="0" y1="80%" x2="100%" y2="80%" stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+
+                                        <!-- Barras de Ingresos (verdes) -->
+                                        <rect x="8%" y="50%" width="6%" height="40%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="22%" y="45%" width="6%" height="45%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="36%" y="35%" width="6%" height="55%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="50%" y="30%" width="6%" height="60%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="64%" y="40%" width="6%" height="50%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+                                        <rect x="78%" y="25%" width="6%" height="65%" fill="#4CAF50" rx="2" style="filter: drop-shadow(0 0 3px rgba(76, 175, 80, 0.6))" />
+
+                                        <!-- Barras de Gastos (rojas) -->
+                                        <rect x="14%" y="60%" width="6%" height="30%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="28%" y="55%" width="6%" height="35%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="42%" y="45%" width="6%" height="45%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="56%" y="55%" width="6%" height="35%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="70%" y="50%" width="6%" height="40%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                        <rect x="84%" y="40%" width="6%" height="50%" fill="#F44336" rx="2" style="filter: drop-shadow(0 0 3px rgba(244, 67, 54, 0.6))" />
+                                    </svg>
+                                </div>
+
+                                <!-- Leyenda -->
+                                <div style="display: flex; justify-content: center; gap: 20px; margin-top: 10px;">
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: #4CAF50; border-radius: 2px;"></div>
+                                        <small style="color: white; font-size: 0.8rem;">Ingresos</small>
+                                    </div>
+                                    <div style="display: flex; align-items: center; gap: 6px;">
+                                        <div style="width: 12px; height: 12px; background: #F44336; border-radius: 2px;"></div>
+                                        <small style="color: white; font-size: 0.8rem;">Gastos</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Gráfico de dona (NUEVO) -->
+                            <div style="padding-top: 20px; border-top: 1px solid rgba(255, 255, 255, 0.2);">
+                                <h3 style="color: rgba(255, 255, 255, 0.9); font-size: 1rem; margin-bottom: 12px; font-weight: 600;">
+                                    🍩 Gastos por categorías
+                                </h3>
+                                <div style="display: flex; flex-direction: column; align-items: center; padding: 10px; background: rgba(0, 0, 0, 0.2); border-radius: 8px;">
+                                    <!-- SVG Donut Chart -->
+                                    <svg width="200" height="200" viewBox="0 0 200 200" style="margin-bottom: 15px;">
+                                        <!-- Círculo de fondo -->
+                                        <circle cx="100" cy="100" r="90" fill="rgba(255,255,255,0.05)" />
+
+                                        <!-- Segmentos del donut (cutout más grande = 70%) -->
+                                        <!-- Alimentación (40%) - Verde brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#10B981" stroke-width="50"
+                                                stroke-dasharray="138 345" transform="rotate(-90 100 100)" />
+
+                                        <!-- Transporte (30%) - Azul brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#3B82F6" stroke-width="50"
+                                                stroke-dasharray="104 379" transform="rotate(54 100 100)" />
+
+                                        <!-- Entretenimiento (20%) - Naranja brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#F59E0B" stroke-width="50"
+                                                stroke-dasharray="69 414" transform="rotate(162 100 100)" />
+
+                                        <!-- Otros (10%) - Rosa brillante -->
+                                        <circle cx="100" cy="100" r="55" fill="none" stroke="#EC4899" stroke-width="50"
+                                                stroke-dasharray="35 448" transform="rotate(234 100 100)" />
+
+                                        <!-- Círculo interno para efecto de dona (70% cutout) -->
+                                        <circle cx="100" cy="100" r="70" fill="rgba(17, 25, 40, 0.95)" />
+
+                                        <!-- Texto central -->
+                                        <text x="100" y="95" text-anchor="middle" fill="rgba(255,255,255,0.7)" font-size="14" font-weight="400">Total</text>
+                                        <text x="100" y="115" text-anchor="middle" fill="white" font-size="18" font-weight="700">RD$3,750</text>
+                                    </svg>
+
+                                    <!-- Leyenda debajo del gráfico (como en Dashboard) -->
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; max-width: 250px;">
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #10B981; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Alimentación</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #3B82F6; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Transporte</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #F59E0B; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Entretenimiento</span>
+                                        </div>
+                                        <div style="display: flex; align-items: center; gap: 8px;">
+                                            <span style="width: 12px; height: 12px; border-radius: 50%; background: #EC4899; display: inline-block;"></span>
+                                            <span style="color: rgba(255,255,255,0.9); font-size: 0.85rem;">Otros</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+
+                        <!-- Estadísticas adicionales -->
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                            <div style="background: rgba(33, 150, 243, 0.2); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                <div style="color: white; font-size: 0.75rem;">Registros</div>
+                                <div style="color: #2196F3; font-size: 1.3rem; font-weight: 600;">45</div>
+                            </div>
+                            <div style="background: rgba(156, 39, 176, 0.2); border: 1px solid rgba(156, 39, 176, 0.3); border-radius: 8px; padding: 10px; text-align: center;">
+                                <div style="color: white; font-size: 0.75rem;">Categorías</div>
+                                <div style="color: #9C27B0; font-size: 1.3rem; font-weight: 600;">8</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Call to Action - Manual de Usuario -->
             <div class="glass-card animate-slide-up" style="padding: 50px 40px; text-align: center; margin-top: 60px; margin-bottom: 40px;">
-                <h2 style="color: white; font-size: 2rem; margin-bottom: 15px;">¿Listo para transformar tus finanzas?</h2>
+                <h2 style="color: white; font-size: 2rem; margin-bottom: 15px;">¿Deseas una guía detallada de cómo usar la app?</h2>
                 <p style="color: white; font-size: 1.1rem; margin-bottom: 30px;">
-                    Comienza desde hoy a tomar el control de tu dinero
+                    Aprende como administrar tus finanzas
                 </p>
                 <div style="display: flex; gap: 15px; justify-content: center; flex-wrap: wrap;">
-                    <a href="/Account/Register" class="glass-button" style="font-size: 1.1rem; padding: 14px 32px;">Comenzar</a>
-
-                    <!-- Para cuando se agregue la version Demo -->
-                    @* <button class="glass-button" style="cursor: pointer; border: none; font-size: 1.1rem; padding: 14px 32px;">Ver Demo</button> *@
+                    <button class="btnLogin" style="font-size: 1.1rem; padding: 14px 32px;" @onclick="DownloadUserManual">
+                        📥 Descargar Manual de Usuario
+                    </button>
                 </div>
             </div>
 
@@ -358,6 +923,20 @@
     public void Dispose()
     {
         Navigation.LocationChanged -= OnLocationChanged;
+    }
+
+    private async Task DownloadUserManual()
+    {
+        try
+        {
+            // Por ahora, usar un PDF de prueba
+            // Cuando tengas el manual real, reemplaza la ruta
+            await JSRuntime.InvokeVoidAsync("downloadFile", "manual-usuario.pdf", "Manual de Usuario - Mis Finanzas.pdf");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al descargar manual: {ex.Message}");
+        }
     }
 }
     

@@ -88,6 +88,11 @@ body {
     opacity: 0;
 }
 
+.animate-delay-5 {
+    animation-delay: 0.5s;
+    opacity: 0;
+}
+
 /* ===================================
    BOTONES GLASS
    =================================== */
@@ -212,6 +217,25 @@ input[type="checkbox"] {
     border-radius: 8px;
     padding: 10px;
     margin: 6px 0;
+}
+
+.demo-notification {
+    background: rgba(255, 193, 7, 0.2);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    border-radius: 8px;
+    padding: 10px;
+    margin: 6px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.demo-loan {
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid rgba(33, 150, 243, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
 }
 
 .progress-bar {
