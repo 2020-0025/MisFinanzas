@@ -102,26 +102,51 @@ namespace MisFinanzas.Infrastructure.Services
             };
         }
 
-        public async Task<ExpenseIncomeDto> CreateAsync(ExpenseIncomeDto dto, string userId)
+        public async Task<(bool Success, string? Error, ExpenseIncomeDto? Data)> CreateAsync(ExpenseIncomeDto dto, string userId)
         {
-            var ExpenseIncome = new ExpenseIncome
+            try
             {
-                UserId = userId,
-                CategoryId = dto.CategoryId,
-                Amount = dto.Amount,
-                Date = dto.Date,
-                Description = dto.Description,
-                Type = dto.Type,
-                CreatedAt = DateTime.UtcNow
-            };
+                // VALIDACIÓN: Si es un GASTO, verificar que haya balance suficiente
+                if (dto.Type == TransactionType.Expense)
+                {
+                    var currentBalance = await GetBalanceByUserAsync(userId);
 
-            _context.ExpensesIncomes.Add(ExpenseIncome);
-            await _context.SaveChangesAsync();
+                    if (currentBalance <= 0)
+                    {
+                        return (false, "No tienes saldo disponible para registrar gastos.", null);
+                    }
 
-            dto.Id = ExpenseIncome.Id;
-            dto.UserId = userId;
+                    if (dto.Amount > currentBalance)
+                    {
+                        return (false, $"Saldo insuficiente. Tu balance actual es {currentBalance:C} y el gasto es {dto.Amount:C}.", null);
+                    }
+                }
 
-            return dto;
+                var ExpenseIncome = new ExpenseIncome
+                {
+                    UserId = userId,
+                    CategoryId = dto.CategoryId,
+                    Amount = dto.Amount,
+                    Date = dto.Date,
+                    Description = dto.Description,
+                    Type = dto.Type,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.ExpensesIncomes.Add(ExpenseIncome);
+                await _context.SaveChangesAsync();
+
+                dto.Id = ExpenseIncome.Id;
+                dto.UserId = userId;
+
+                Console.WriteLine($"✅ {(dto.Type == TransactionType.Income ? "Ingreso" : "Gasto")} registrado: {dto.Amount:C}");
+                return (true, null, dto);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al crear transacción: {ex.Message}");
+                return (false, "Error al registrar la transacción.", null);
+            }
         }
 
         public async Task<bool> UpdateAsync(int id, ExpenseIncomeDto dto, string userId)

@@ -143,7 +143,25 @@ namespace MisFinanzas.Infrastructure.Services
                 _context.Loans.Add(loan);
                 await _context.SaveChangesAsync();
 
-                // 3. Las notificaciones se generarán automáticamente por el background service
+                // 3. Registrar el monto del préstamo como INGRESO
+                var loanIncome = new ExpenseIncome
+                {
+                    UserId = userId,
+                    CategoryId = category.CategoryId,
+                    Type = TransactionType.Income,
+                    Amount = loan.PrincipalAmount,
+                    Description = $"💰 Préstamo recibido - {loan.Title}",
+                    Date = loan.StartDate,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                _context.ExpensesIncomes.Add(loanIncome);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Préstamo registrado como ingreso: {loan.PrincipalAmount:C} en {loan.StartDate:dd/MM/yyyy}");
+
+                // 4. Las notificaciones se generarán automáticamente por el background service
+                // No generamos notificación inmediata para evitar conflictos de DbContext
                 if (createReminder)
                 {
                     Console.WriteLine($"✅ Recordatorio configurado para préstamo {loan.LoanId}. El background service generará las notificaciones.");
