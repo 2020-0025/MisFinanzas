@@ -139,6 +139,35 @@ window.chartHelpers = {
             ctx.chart.destroy();
         }
 
+        // Calcular el total
+        const total = data.reduce((a, b) => a + b, 0);
+
+        // Plugin para mostrar texto en el centro
+        const centerTextPlugin = {
+            id: 'centerText',
+            afterDatasetsDraw(chart) {
+                const { ctx, chartArea: { width, height } } = chart;
+                ctx.save();
+
+                const centerX = width / 2;
+                const centerY = height / 2;
+
+                // Texto "Total"
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('Total', centerX, centerY - 12);
+
+                // Valor total
+                ctx.font = 'bold 18px sans-serif';
+                ctx.fillStyle = 'white';
+                ctx.fillText('RD$' + total.toLocaleString('es-DO'), centerX, centerY + 12);
+
+                ctx.restore();
+            }
+        };
+
         const chart = new Chart(ctx, {
             type: 'doughnut',
             data: {
@@ -201,7 +230,8 @@ window.chartHelpers = {
                     duration: 1500,
                     easing: 'easeInOutQuart'
                 }
-            }
+            },
+            plugins: [centerTextPlugin]  //  AGREGAR EL PLUGIN AQUÍ
         });
 
         ctx.chart = chart;
