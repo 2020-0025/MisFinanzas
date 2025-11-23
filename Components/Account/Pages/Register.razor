@@ -3,6 +3,7 @@
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
+@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MisFinanzas.Domain.Entities
@@ -23,131 +24,168 @@
 
 <PageTitle>Registrarse - Mis Finanzas</PageTitle>
 
-<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+<div class="auth-container-split">
+    <div class="auth-grid animate-slide-up">
 
-    <div style="width: 100%; max-width: 1200px;">
+        <!-- COLUMNA IZQUIERDA: Registro Tradicional -->
+        <div class="auth-card-column">
 
-        <!-- Hero Title -->
-        <div class="glass-card animate-slide-up" style="padding: 40px; text-align: center; margin-bottom: 40px;">
-            <h1 style="color: white; font-size: 2.5rem; margin-bottom: 15px; font-weight: 700;">
-                ¡Únete a "Mis Finanzas"! 🚀
-            </h1>
-            <p style="color: white; font-size: 1.1rem;">
-                Crea tu cuenta y comienza a tomar el control de tus finanzas
-            </p>
-        </div>
-
-        <!-- Register Cards Container -->
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 30px;">
-
-            <!-- Local Register Card -->
-            <div class="glass-card animate-slide-up animate-delay-1" style="padding: 40px;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
-                    <span style="font-size: 28px;">📝</span>
-                    <h2 style="color: white; margin: 0; font-size: 1.5rem;">Crear Cuenta</h2>
-                </div>
-
-                <section>
-                    <StatusMessage Message="@Message" />
-                    <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
-                        <DataAnnotationsValidator />
-                        <ValidationSummary class="text-danger" role="alert" />
-
-                        <div style="margin-bottom: 20px;">
-                            <label for="email" style="color: white; display: block; margin-bottom: 8px; font-weight: 500;">
-                                Email
-                            </label>
-                            <InputText @bind-Value="Input.Email"
-                                       class="form-control"
-                                       autocomplete="username"
-                                       aria-required="true"
-                                       placeholder="tu@email.com"
-                                       style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
-                            <ValidationMessage For="() => Input.Email" class="text-danger" />
-                        </div>
-
-                        <div style="margin-bottom: 20px;">
-                            <label for="password" style="color: white; display: block; margin-bottom: 8px; font-weight: 500;">
-                                Contraseña
-                            </label>
-                            <InputText type="password"
-                                       @bind-Value="Input.Password"
-                                       class="form-control"
-                                       autocomplete="new-password"
-                                       aria-required="true"
-                                       placeholder="••••••••"
-                                       style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
-                            <ValidationMessage For="() => Input.Password" class="text-danger" />
-                        </div>
-
-                        <div style="margin-bottom: 25px;">
-                            <label for="confirm-password" style="color: white; display: block; margin-bottom: 8px; font-weight: 500;">
-                                Confirmar Contraseña
-                            </label>
-                            <InputText type="password"
-                                       @bind-Value="Input.ConfirmPassword"
-                                       class="form-control"
-                                       autocomplete="new-password"
-                                       aria-required="true"
-                                       placeholder="••••••••"
-                                       style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white; padding: 12px; border-radius: 8px;" />
-                            <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-                        </div>
-
-                        <div>
-                            <button type="submit" class="glass-button" style="width: 100%; padding: 14px; font-size: 1.1rem; font-weight: 600; border: none; cursor: pointer;">
-                                Crear Cuenta
-                            </button>
-                        </div>
-                    </EditForm>
-                </section>
-
-                <div style="margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
-                    <p style="color: white; margin: 0;">
-                        ¿Ya tienes cuenta?
-                        <a href="/Account/Login" style="color: #4CAF50; text-decoration: none; font-weight: 600;">
-                            Inicia sesión aquí
-                        </a>
-                    </p>
-                </div>
+            <div class="auth-header">
+                <h2>📝 Crear cuenta</h2>
+                <p class="text-white">Regístrate en MisFinanzas</p>
             </div>
 
-            <!-- External Register Card -->
-            <div class="glass-card animate-slide-up animate-delay-2" style="padding: 40px;">
-                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
-                    <span style="font-size: 28px;">🌐</span>
-                    <h2 style="color: white; margin: 0; font-size: 1.5rem;">Servicios Externos</h2>
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger" role="alert">
+                    @errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success" role="alert">
+                    @successMessage
+                </div>
+            }
+
+            <EditForm Model="Input" OnValidSubmit="RegisterUser" FormName="register">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Email</label>
+                    <InputText @bind-Value="Input.Email"
+                               type="email"
+                               class="form-control"
+                               id="email"
+                               autocomplete="username"
+                               placeholder="tu@email.com" />
+                    <ValidationMessage For="() => Input.Email" class="text-danger" />
                 </div>
 
-                <section>
-                    <h3 style="color: white; font-size: 1rem; margin-bottom: 20px;">
-                        Registrarse con otro servicio
-                    </h3>
-                    <div style="background: rgba(33, 150, 243, 0.1); border: 1px solid rgba(33, 150, 243, 0.3); border-radius: 8px; padding: 20px; margin-bottom: 20px;">
-                        <span style="font-size: 48px; display: block; margin-bottom: 15px; text-align: center;">✨</span>
-                        <p style="color: white; margin: 0; text-align: center; line-height: 1.6;">
-                            Puedes registrarte usando tu email o a través de un servicio externo de autenticación.
+                <div class="mb-3">
+                    <label for="password" class="form-label">Contraseña</label>
+                    <InputText @bind-Value="Input.Password"
+                               type="password"
+                               class="form-control"
+                               id="password"
+                               autocomplete="new-password"
+                               placeholder="Mínimo 6 caracteres" />
+                    <ValidationMessage For="() => Input.Password" class="text-danger" />
+                    <small class="form-text text-warning">
+                        Debe contener mayúsculas, minúsculas y números
+                    </small>
+                </div>
+
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirmar contraseña</label>
+                    <InputText @bind-Value="Input.ConfirmPassword"
+                               type="password"
+                               class="form-control"
+                               id="confirmPassword"
+                               autocomplete="new-password"
+                               placeholder="Repite tu contraseña" />
+                    <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+                </div>
+
+                <div class="login-footer-custom">
+                    <button type="submit" class="btnLogin" disabled="@isLoading">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Creando cuenta...</span>
+                        }
+                        else
+                        {
+                            <span>Crear cuenta</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="auth-footer">
+                <p>
+                    ¿Ya tienes cuenta? <a class="text-info" href="@(NavigationManager.GetUriWithQueryParameters("Account/Login", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Inicia sesión aquí</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- SEPARADOR VERTICAL -->
+        <div class="auth-divider">
+            <div class="divider-line"></div>
+            <span class="divider-text">O</span>
+            <div class="divider-line"></div>
+        </div>
+
+        <!-- COLUMNA DERECHA: Proveedores Externos -->
+        <div class="auth-card-column">
+            <div class="auth-header">
+                <h2>🌐 Registro rápido</h2>
+                <p class="text-white">Regístrate con tu cuenta externa</p>
+            </div>
+
+            <div class="external-providers">
+                <p class="text-white text-center mb-3" style="font-size: 0.9rem;">
+                    Crea tu cuenta con:
+                </p>
+
+                @if ((externalLogins?.Count ?? 0) == 0)
+                {
+                    <div style="background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3); border-radius: 8px; padding: 20px; text-align: center;">
+                        <span style="font-size: 48px; display: block; margin-bottom: 15px;">🔌</span>
+                        <p style="color: rgba(255, 255, 255, 0.8); margin: 0;">
+                            No hay servicios de autenticación externa configurados.
                         </p>
                     </div>
-                    <ExternalLoginPicker />
-                </section>
+                }
+                else
+                {
+                    <form class="form-horizontal" action="Account/PerformExternalLogin" method="post">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@ReturnUrl" />
+
+                        @foreach (var provider in externalLogins!)
+                        {
+                            @if (provider.Name == "Google")
+                            {
+                                <button type="submit" name="provider" value="@provider.Name" class="btnExternal btnGoogle" disabled="@isLoading">
+                                    <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+                                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4" />
+                                        <path d="M9.003 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.96v2.332C2.44 15.983 5.485 18 9.003 18z" fill="#34A853" />
+                                        <path d="M3.964 10.707c-.18-.54-.282-1.117-.282-1.707 0-.593.102-1.17.282-1.709V4.958H.957C.347 6.173 0 7.548 0 9c0 1.452.348 2.827.957 4.042l3.007-2.335z" fill="#FBBC05" />
+                                        <path d="M9.003 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.464.891 11.426 0 9.003 0 5.485 0 2.44 2.017.96 4.958L3.967 7.29c.708-2.127 2.692-3.71 5.036-3.71z" fill="#EA4335" />
+                                    </svg>
+                                    <span>Continuar con Google</span>
+                                </button>
+                            }
+                            else if (provider.Name == "Microsoft")
+                            {
+                                <button type="submit" name="provider" value="@provider.Name" class="btnExternal btnMicrosoft" disabled="@isLoading">
+                                    <svg width="18" height="18" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                        <rect width="10" height="10" fill="#F25022" />
+                                        <rect x="11" width="10" height="10" fill="#7FBA00" />
+                                        <rect y="11" width="10" height="10" fill="#00A4EF" />
+                                        <rect x="11" y="11" width="10" height="10" fill="#FFB900" />
+                                    </svg>
+                                    <span>Continuar con Microsoft</span>
+                                </button>
+                            }
+                        }
+                    </form>
+                }
             </div>
-
-        </div>
-
-        <!-- Back to Home Link -->
-        <div style="text-align: center; margin-top: 30px;">
-            <a href="/" class="glass-button" style="display: inline-block; padding: 12px 30px;">
-                ← Volver al Inicio
-            </a>
         </div>
 
     </div>
-
 </div>
 
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="90" />
+
 @code {
-    private IEnumerable<IdentityError>? identityErrors;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isLoading = false;
+    private IList<AuthenticationScheme>? externalLogins;
 
     [SupplyParameterFromForm]
     private InputModel Input { get; set; } = new();
@@ -155,10 +193,22 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    protected override async Task OnInitializedAsync()
+    {
+        externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+    }
+
+    private void GotoHome()
+    {
+        NavigationManager.NavigateTo("/");
+    }
 
     public async Task RegisterUser(EditContext editContext)
     {
+        isLoading = true;
+        errorMessage = null;
+        successMessage = null;
+
         var user = CreateUser();
 
         await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
@@ -168,7 +218,8 @@
 
         if (!result.Succeeded)
         {
-            identityErrors = result.Errors;
+            errorMessage = $"Error: {string.Join(", ", result.Errors.Select(e => e.Description))}";
+            isLoading = false;
             return;
         }
 
@@ -218,20 +269,20 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
         [Display(Name = "Email")]
         public string Email { get; set; } = "";
 
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        [StringLength(100, ErrorMessage = "La {0} debe tener al menos {2} y máximo {1} caracteres.", MinimumLength = 6)]
         [DataType(DataType.Password)]
         [Display(Name = "Password")]
         public string Password { get; set; } = "";
 
         [DataType(DataType.Password)]
         [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
+        [Compare("Password", ErrorMessage = "Las contraseñas no coinciden.")]
         public string ConfirmPassword { get; set; } = "";
     }
 }
