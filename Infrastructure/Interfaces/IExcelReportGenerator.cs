@@ -8,6 +8,6 @@ namespace MisFinanzas.Infrastructure.Interfaces
         /// Genera un archivo Excel a partir de los datos del reporte
         /// </summary>
         /// <returns>Bytes del archivo Excel generado</returns>
-        byte[] GenerateExcel(ReportDataDto reportData);
+        byte[] GenerateExcel(ReportDataDto reportData, string logoPath);
     }
 }

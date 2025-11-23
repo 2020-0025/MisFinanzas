@@ -8,26 +8,95 @@ namespace MisFinanzas.Infrastructure.Services
 {
     public class PdfReportGenerator : IPdfReportGenerator
     {
-        public byte[] GeneratePdf(ReportDataDto reportData)
+        public byte[] GeneratePdf(ReportDataDto reportData, string logoPath)
         {
             var document = new PdfDocument();
             var page = document.AddPage();
             var gfx = XGraphics.FromPdfPage(page);
 
-            var fontTitle = new XFont("Times New Roman", 20, XFontStyle.Bold);
-            var fontSubtitle = new XFont("Times New Roman", 12, XFontStyle.Regular);
-            var fontHeader = new XFont("Times New Roman", 14, XFontStyle.Bold);
-            var fontNormal = new XFont("Times New Roman", 10, XFontStyle.Regular);
-            var fontSmall = new XFont("Times New Roman", 8, XFontStyle.Regular);
-            var fontBold = new XFont("Times New Roman", 10, XFontStyle.Bold);
+            // Cargar fuentes desde archivos embebidos - con múltiples rutas posibles
+            var basePath = AppDomain.CurrentDomain.BaseDirectory;
+            var possiblePaths = new[]
+            {
+                Path.Combine(basePath, "wwwroot", "fonts"),
+                Path.Combine(basePath, "..", "wwwroot", "fonts"),
+                Path.Combine("/app", "wwwroot", "fonts"),
+                Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "fonts")
+            };
+
+            string? fontPath = null;
+            foreach (var path in possiblePaths)
+            {
+                Console.WriteLine($"Intentando ruta de fuentes: {path}");
+                if (Directory.Exists(path))
+                {
+                    var files = Directory.GetFiles(path, "*.ttf");
+                    Console.WriteLine($"  ✓ Directorio existe. Archivos encontrados: {files.Length}");
+                    if (files.Length > 0)
+                    {
+                        fontPath = path;
+                        Console.WriteLine($"  ✓ Usando ruta: {fontPath}");
+                        break;
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"  ✗ Directorio no existe");
+                }
+            }
+
+            if (fontPath == null)
+            {
+                throw new DirectoryNotFoundException(
+                    $"No se encontró el directorio de fuentes. Intentado en: {string.Join(", ", possiblePaths)}");
+            }
+
+            var regularFontPath = Path.Combine(fontPath, "LiberationSans-Regular.ttf");
+            var boldFontPath = Path.Combine(fontPath, "LiberationSans-Bold.ttf");
+
+            // Verificar que las fuentes existan
+            if (!File.Exists(regularFontPath))
+            {
+                throw new FileNotFoundException($"Font file not found: {regularFontPath}");
+            }
+
+            Console.WriteLine($"Cargando fuentes desde: {fontPath}");
+            Console.WriteLine($"  - Regular: {regularFontPath} (existe: {File.Exists(regularFontPath)})");
+            Console.WriteLine($"  - Bold: {boldFontPath} (existe: {File.Exists(boldFontPath)})");
+
+            var fontOptions = new XPdfFontOptions(PdfFontEncoding.Unicode);
+            var fontTitle = new XFont("Liberation Sans", 20, XFontStyle.Bold, fontOptions);
+            var fontSubtitle = new XFont("Liberation Sans", 12, XFontStyle.Regular, fontOptions);
+            var fontHeader = new XFont("Liberation Sans", 14, XFontStyle.Bold, fontOptions);
+            var fontNormal = new XFont("Liberation Sans", 10, XFontStyle.Regular, fontOptions);
+            var fontSmall = new XFont("Liberation Sans", 8, XFontStyle.Regular, fontOptions);
+            var fontBold = new XFont("Liberation Sans", 10, XFontStyle.Bold, fontOptions);
 
             double yPosition = 40;
 
-            // Encabezado
-            gfx.DrawString("MIS FINANZAS", fontTitle, XBrushes.Blue, new XPoint(40, yPosition));
-            yPosition += 25;
-            gfx.DrawString("Reporte Financiero", fontSubtitle, XBrushes.Gray, new XPoint(40, yPosition));
-            yPosition += 30;
+            // LOGO - Mejor alineación con el título
+            try
+            {
+                if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
+                {
+                    using var logoImage = XImage.FromFile(logoPath);
+                    // Logo más arriba para alinearse con el centro del título
+                    gfx.DrawImage(logoImage, 40, yPosition - 7, 80, 80); //  Cambio: yPosition + 5
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading logo: {ex.Message}");
+            }
+
+            // Ajustar posición del texto para que quede al lado del logo
+            double textStartX = 130;
+
+            // Encabezado - centrado verticalmente con el logo
+            gfx.DrawString("MIS FINANZAS", fontTitle, XBrushes.Blue, new XPoint(textStartX, yPosition + 28)); // 🔥 Ajustado
+            gfx.DrawString("Reporte Financiero", fontSubtitle, XBrushes.Gray, new XPoint(textStartX, yPosition + 48)); // 🔥 Ajustado
+
+            yPosition += 80; // Mantener igual
 
             // Información del período
             gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 60);
@@ -82,7 +151,7 @@ namespace MisFinanzas.Infrastructure.Services
                 yPosition = CheckNewPage(document, ref page, ref gfx, yPosition, fontTitle, fontSubtitle, fontHeader, fontNormal, fontSmall, fontBold);
 
                 gfx.DrawString("GASTOS POR CATEGORÍA", fontHeader, XBrushes.Blue, new XPoint(40, yPosition));
-                yPosition += 20;
+                yPosition += 15; //  AUMENTADO de 20 a 25
 
                 // Encabezados de tabla
                 gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 18);
@@ -102,7 +171,7 @@ namespace MisFinanzas.Infrastructure.Services
                     gfx.DrawString(category.TransactionCount.ToString(), fontNormal, XBrushes.Black, new XPoint(480, yPosition + 10));
                     yPosition += 18;
                 }
-                yPosition += 10;
+                yPosition += 20; //  AUMENTADO de 10 a 15 (espacio después de la sección)
             }
 
             // Ingresos por categoría
@@ -111,7 +180,7 @@ namespace MisFinanzas.Infrastructure.Services
                 yPosition = CheckNewPage(document, ref page, ref gfx, yPosition, fontTitle, fontSubtitle, fontHeader, fontNormal, fontSmall, fontBold);
 
                 gfx.DrawString("INGRESOS POR CATEGORÍA", fontHeader, XBrushes.Blue, new XPoint(40, yPosition));
-                yPosition += 20;
+                yPosition += 15; //  AUMENTADO de 20 a 25
 
                 // Encabezados de tabla
                 gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 18);
@@ -131,7 +200,7 @@ namespace MisFinanzas.Infrastructure.Services
                     gfx.DrawString(category.TransactionCount.ToString(), fontNormal, XBrushes.Black, new XPoint(480, yPosition + 10));
                     yPosition += 18;
                 }
-                yPosition += 10;
+                yPosition += 20; //  AUMENTADO de 10 a 15 (espacio después de la sección)
             }
 
             // Detalle de transacciones (primeras 30)
@@ -140,7 +209,7 @@ namespace MisFinanzas.Infrastructure.Services
                 yPosition = CheckNewPage(document, ref page, ref gfx, yPosition, fontTitle, fontSubtitle, fontHeader, fontNormal, fontSmall, fontBold);
 
                 gfx.DrawString("DETALLE DE TRANSACCIONES", fontHeader, XBrushes.Blue, new XPoint(40, yPosition));
-                yPosition += 20;
+                yPosition += 15; // AUMENTADO de 20 a 25
 
                 // Encabezados de tabla
                 gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 18);
@@ -195,9 +264,9 @@ namespace MisFinanzas.Infrastructure.Services
             return yPosition;
         }
 
-        private string TruncateString(string? text, int maxLength)
+        private string TruncateString(string text, int maxLength)
         {
-            if (string.IsNullOrEmpty(text)) return string.Empty;
+            if (string.IsNullOrEmpty(text)) return text;
             return text.Length <= maxLength ? text : text.Substring(0, maxLength - 3) + "...";
         }
     }

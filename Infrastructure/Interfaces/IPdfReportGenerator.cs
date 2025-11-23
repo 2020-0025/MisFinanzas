@@ -8,6 +8,6 @@ namespace MisFinanzas.Infrastructure.Interfaces
         /// Genera un archivo PDF a partir de los datos del reporte
         /// </summary>
         /// <returns>Bytes del archivo PDF generado</returns>
-        byte[] GeneratePdf(ReportDataDto reportData);
+        byte[] GeneratePdf(ReportDataDto reportData, string logoPath);
     }
 }

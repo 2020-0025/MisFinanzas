@@ -8,192 +8,187 @@ namespace MisFinanzas.Infrastructure.Services
     public class ExcelReportGenerator : IExcelReportGenerator
     {
         /// Genera un archivo Excel del reporte y lo devuelve como array de bytes
-        public byte[] GenerateExcel(ReportDataDto reportData)
+        public byte[] GenerateExcel(ReportDataDto reportData, string logoPath)
         {
             using (var workbook = new XLWorkbook())
-
             {
-
                 // Crear hojas
-
-                CreateSummarySheet(workbook, reportData);
-
+                CreateSummarySheet(workbook, reportData, logoPath);
                 CreateExpensesByCategorySheet(workbook, reportData);
-
                 CreateIncomesByCategorySheet(workbook, reportData);
-
                 CreateTransactionsDetailSheet(workbook, reportData);
 
                 // Convertir a bytes
-
                 using (var stream = new MemoryStream())
-
                 {
-
                     workbook.SaveAs(stream);
-
                     stream.Position = 0;
-
                     return stream.ToArray();
-
                 }
-
             }
         }
 
         #region Summary Sheet
 
-        private void CreateSummarySheet(XLWorkbook workbook, ReportDataDto reportData)
+        private void CreateSummarySheet(XLWorkbook workbook, ReportDataDto reportData, string logoPath)
         {
             var worksheet = workbook.Worksheets.Add("Resumen");
 
-            int row = 1;
+            //  CONFIGURAR ANCHOS DE COLUMNA PRIMERO
+            worksheet.Column(1).Width = 30.09; // Columna A - Logo
+            worksheet.Column(2).Width = 20.09; // Columna B - Labels
+            worksheet.Column(3).Width = 29.09; // Columna C - Valores
+            worksheet.Column(4).Width = 3;     // Columna D - Espacio
+            worksheet.Column(5).Width = 22.55; // Columna E - Comparación Labels
+            worksheet.Column(6).Width = 23.09; // Columna F - Comparación Valores
 
-            // Título
-            var titleRange = worksheet.Range(row, 1, row, 2);
+            //  CONFIGURAR ALTURAS DE FILA
+            worksheet.Row(1).Height = 60;   // Fila 1 - Logo y Título
+            worksheet.Row(8).Height = 19;   // Fila 8 - Título Resumen
+
+            //  COMBINAR CELDAS A1:A6 PARA EL LOGO
+            worksheet.Range("A1:A6").Merge();
+
+            //  LOGO EN A1:A6
+            try
+            {
+                if (!string.IsNullOrEmpty(logoPath) && File.Exists(logoPath))
+                {
+                    var picture = worksheet.AddPicture(logoPath);
+                    picture.MoveTo(worksheet.Cell(1, 1)); // A1
+                    picture.Scale(0.23); // Escala exacta
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error loading logo in Excel: {ex.Message}");
+            }
+
+            //  TÍTULO EN B1:L1
+            var titleRange = worksheet.Range("B1:L1");
             titleRange.Merge();
-            worksheet.Cell(row, 1).Value = "REPORTE DE MIS FINANZAS";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 1).Style.Font.FontSize = 16;
-            worksheet.Cell(row, 1).Style.Font.FontColor = XLColor.White;
-            worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(1, 2).Value = "REPORTE DE MIS FINANZAS";
+            worksheet.Cell(1, 2).Style.Font.Bold = true;
+            worksheet.Cell(1, 2).Style.Font.FontSize = 16;
+            worksheet.Cell(1, 2).Style.Font.FontColor = XLColor.White;
+            worksheet.Cell(1, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            worksheet.Cell(1, 2).Style.Alignment.Vertical = XLAlignmentVerticalValues.Center;
             titleRange.Style.Fill.BackgroundColor = XLColor.DarkBlue;
             titleRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-            row += 2;
 
-            // Información del reporte
-            int infoStartRow = row;
-            worksheet.Cell(row, 1).Value = "Usuario:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.UserName;
-            row++;
+            //  INFORMACIÓN DEL REPORTE (B2:C6)
+            worksheet.Cell(2, 2).Value = "Usuario:";
+            worksheet.Cell(2, 2).Style.Font.Bold = true;
+            worksheet.Cell(2, 3).Value = reportData.UserName;
 
-            worksheet.Cell(row, 1).Value = "Período:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.PeriodDescription;
-            row++;
+            worksheet.Cell(3, 2).Value = "Período:";
+            worksheet.Cell(3, 2).Style.Font.Bold = true;
+            worksheet.Cell(3, 3).Value = reportData.PeriodDescription;
 
-            worksheet.Cell(row, 1).Value = "Desde:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.StartDate.ToString("dd/MM/yyyy");
-            row++;
+            worksheet.Cell(4, 2).Value = "Desde:";
+            worksheet.Cell(4, 2).Style.Font.Bold = true;
+            worksheet.Cell(4, 3).Value = reportData.StartDate.ToString("dd/MM/yyyy");
 
-            worksheet.Cell(row, 1).Value = "Hasta:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.EndDate.ToString("dd/MM/yyyy");
-            row++;
+            worksheet.Cell(5, 2).Value = "Hasta:";
+            worksheet.Cell(5, 2).Style.Font.Bold = true;
+            worksheet.Cell(5, 3).Value = reportData.EndDate.ToString("dd/MM/yyyy");
 
-            worksheet.Cell(row, 1).Value = "Generado:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.GeneratedAt.ToString("dd/MM/yyyy HH:mm");
+            worksheet.Cell(6, 2).Value = "Generado:";
+            worksheet.Cell(6, 2).Style.Font.Bold = true;
+            worksheet.Cell(6, 3).Value = reportData.GeneratedAt.ToString("dd/MM/yyyy HH:mm");
 
-            // Bordes para la información del reporte
-            var infoRange = worksheet.Range(infoStartRow, 1, row, 2);
+            // Bordes para información del reporte
+            var infoRange = worksheet.Range("B2:C6");
             infoRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
             infoRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
             infoRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#F9F9F9");
-            row += 2;
 
-            // Resumen general
-            worksheet.Cell(row, 1).Value = "RESUMEN GENERAL";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 1).Style.Font.FontSize = 14;
-            worksheet.Cell(row, 1).Style.Font.FontColor = XLColor.White;
-            worksheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.DarkBlue;
-            worksheet.Range(row, 1, row, 2).Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-            row++;
-
-            int summaryStartRow = row;
-
-            // Total Ingresos
-            worksheet.Cell(row, 1).Value = "Total Ingresos:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.Summary.TotalIncome;
-            worksheet.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(row, 2).Style.Font.FontColor = XLColor.DarkGreen;
-            worksheet.Cell(row, 2).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            row++;
-
-            // Total Gastos
-            worksheet.Cell(row, 1).Value = "Total Gastos:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.Summary.TotalExpense;
-            worksheet.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(row, 2).Style.Font.FontColor = XLColor.DarkRed;
-            worksheet.Cell(row, 2).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            row++;
-
-            // Balance
-            worksheet.Cell(row, 1).Value = "Balance:";
-            worksheet.Cell(row, 1).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Value = reportData.Summary.Balance;
-            worksheet.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(row, 2).Style.Font.FontColor = reportData.Summary.Balance >= 0
-                ? XLColor.DarkBlue
-                : XLColor.DarkRed;
-            worksheet.Cell(row, 2).Style.Font.Bold = true;
-            worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            row++;
-
-            // Promedio diario
-            worksheet.Cell(row, 1).Value = "Promedio diario de gastos:";
-            worksheet.Cell(row, 2).Value = reportData.Summary.AverageDailyExpense;
-            worksheet.Cell(row, 2).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-            row++;
-
-            // Total transacciones
-            worksheet.Cell(row, 1).Value = "Total de transacciones:";
-            worksheet.Cell(row, 2).Value = reportData.Summary.TotalTransactions;
-            worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
-
-            // Bordes para el resumen general
-            var summaryRange = worksheet.Range(summaryStartRow, 1, row, 2);
-            summaryRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-            summaryRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-            row += 2;
-
-            // Comparativa (si existe)
+            //  COMPARACIÓN CON PERÍODO ANTERIOR (E3:F6) - Al lado de la info
             if (reportData.Comparison != null)
             {
-                worksheet.Cell(row, 1).Value = "COMPARACIÓN CON PERÍODO ANTERIOR";
-                worksheet.Cell(row, 1).Style.Font.Bold = true;
-                worksheet.Cell(row, 1).Style.Font.FontSize = 12;
-                worksheet.Cell(row, 1).Style.Font.FontColor = XLColor.White;
-                worksheet.Range(row, 1, row, 2).Style.Fill.BackgroundColor = XLColor.FromHtml("#4682B4");
-                worksheet.Range(row, 1, row, 2).Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
-                row++;
+                // Título de comparación (E2:F2)
+                var compTitleRange = worksheet.Range("E2:F2");
+                compTitleRange.Merge();
+                worksheet.Cell(2, 5).Value = "COMPARACIÓN CON PERÍODO ANTERIOR";
+                worksheet.Cell(2, 5).Style.Font.Bold = true;
+                worksheet.Cell(2, 5).Style.Font.FontSize = 11;
+                worksheet.Cell(2, 5).Style.Font.FontColor = XLColor.White;
+                worksheet.Cell(2, 5).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+                compTitleRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#4682B4");
+                compTitleRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
 
-                int compStartRow = row;
+                // Datos de comparación
+                worksheet.Cell(3, 5).Value = "Cambio en Ingresos:";
+                worksheet.Cell(3, 5).Style.Font.Bold = true;
+                worksheet.Cell(3, 6).Value = reportData.Comparison.IncomeChangeDisplay;
 
-                worksheet.Cell(row, 1).Value = "Cambio en Ingresos:";
-                worksheet.Cell(row, 1).Style.Font.Bold = true;
-                worksheet.Cell(row, 2).Value = reportData.Comparison.IncomeChangeDisplay;
-                row++;
+                worksheet.Cell(4, 5).Value = "Cambio en Gastos:";
+                worksheet.Cell(4, 5).Style.Font.Bold = true;
+                worksheet.Cell(4, 6).Value = reportData.Comparison.ExpenseChangeDisplay;
 
-                worksheet.Cell(row, 1).Value = "Cambio en Gastos:";
-                worksheet.Cell(row, 1).Style.Font.Bold = true;
-                worksheet.Cell(row, 2).Value = reportData.Comparison.ExpenseChangeDisplay;
-                row++;
+                worksheet.Cell(5, 5).Value = "Cambio en Balance:";
+                worksheet.Cell(5, 5).Style.Font.Bold = true;
+                worksheet.Cell(5, 6).Value = reportData.Comparison.BalanceChangeDisplay;
 
-                worksheet.Cell(row, 1).Value = "Cambio en Balance:";
-                worksheet.Cell(row, 1).Style.Font.Bold = true;
-                worksheet.Cell(row, 2).Value = reportData.Comparison.BalanceChangeDisplay;
-
-                // Bordes para la comparación
-                var compRange = worksheet.Range(compStartRow, 1, row, 2);
+                // Bordes para comparación
+                var compRange = worksheet.Range("E3:F5");
                 compRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
                 compRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
                 compRange.Style.Fill.BackgroundColor = XLColor.FromHtml("#E6F2FF");
-
-                row++;
             }
 
-            // Ajustar anchos de columna
-            worksheet.Column(1).Width = 30;
-            worksheet.Column(2).Width = 20;
+            //  RESUMEN GENERAL (B8:C13)
+            // Título
+            var summaryTitleRange = worksheet.Range("B8:C8");
+            summaryTitleRange.Merge();
+            worksheet.Cell(8, 2).Value = "RESUMEN GENERAL";
+            worksheet.Cell(8, 2).Style.Font.Bold = true;
+            worksheet.Cell(8, 2).Style.Font.FontSize = 14;
+            worksheet.Cell(8, 2).Style.Font.FontColor = XLColor.White;
+            worksheet.Cell(8, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
+            summaryTitleRange.Style.Fill.BackgroundColor = XLColor.DarkBlue;
+            summaryTitleRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+
+            // Datos del resumen
+            worksheet.Cell(9, 2).Value = "Total Ingresos:";
+            worksheet.Cell(9, 2).Style.Font.Bold = true;
+            worksheet.Cell(9, 3).Value = reportData.Summary.TotalIncome;
+            worksheet.Cell(9, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(9, 3).Style.Font.FontColor = XLColor.DarkGreen;
+            worksheet.Cell(9, 3).Style.Font.Bold = true;
+            worksheet.Cell(9, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            worksheet.Cell(10, 2).Value = "Total Gastos:";
+            worksheet.Cell(10, 2).Style.Font.Bold = true;
+            worksheet.Cell(10, 3).Value = reportData.Summary.TotalExpense;
+            worksheet.Cell(10, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(10, 3).Style.Font.FontColor = XLColor.DarkRed;
+            worksheet.Cell(10, 3).Style.Font.Bold = true;
+            worksheet.Cell(10, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            worksheet.Cell(11, 2).Value = "Balance:";
+            worksheet.Cell(11, 2).Style.Font.Bold = true;
+            worksheet.Cell(11, 3).Value = reportData.Summary.Balance;
+            worksheet.Cell(11, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(11, 3).Style.Font.FontColor = reportData.Summary.Balance >= 0
+                ? XLColor.DarkBlue
+                : XLColor.DarkRed;
+            worksheet.Cell(11, 3).Style.Font.Bold = true;
+            worksheet.Cell(11, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            worksheet.Cell(12, 2).Value = "Promedio diario de gastos:";
+            worksheet.Cell(12, 3).Value = reportData.Summary.AverageDailyExpense;
+            worksheet.Cell(12, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(12, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            worksheet.Cell(13, 2).Value = "Total de transacciones:";
+            worksheet.Cell(13, 3).Value = reportData.Summary.TotalTransactions;
+            worksheet.Cell(13, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+            // Bordes para el resumen
+            var summaryRange = worksheet.Range("B9:C13");
+            summaryRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
+            summaryRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
         }
 
         #endregion

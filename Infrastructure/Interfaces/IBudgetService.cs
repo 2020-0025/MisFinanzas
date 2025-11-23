@@ -29,5 +29,8 @@ namespace MisFinanzas.Infrastructure.Interfaces
         // Para Dashboard
         Task<List<BudgetDto>> GetBudgetsForChartAsync(string userId, int month, int year);
         Task<List<BudgetDto>> GetExceededBudgetsAsync(string userId, int month, int year);
+
+        // Copiar presupuestos del mes anterior
+        Task<(bool Success, string? Error, int CopiedCount)> CopyBudgetsFromPreviousMonthAsync(string userId, int targetMonth, int targetYear);
     }
 }

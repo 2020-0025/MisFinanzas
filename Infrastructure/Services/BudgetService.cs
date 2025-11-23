@@ -206,14 +206,26 @@ namespace MisFinanzas.Infrastructure.Services
 
         public async Task<decimal> GetTotalSpentForMonthAsync(string userId, int month, int year)
         {
+            // CAMBIO PRINCIPAL: Solo contar gastos de categorías con presupuesto asignado
             var firstDay = new DateTime(year, month, 1);
             var lastDay = firstDay.AddMonths(1).AddDays(-1);
 
+            // Obtener IDs de categorías que tienen presupuesto activo en este periodo
+            var categoriesWithBudget = await _context.Budgets
+                .Where(b => b.UserId == userId &&
+                            b.Month == month &&
+                            b.Year == year &&
+                            b.IsActive)
+                .Select(b => b.CategoryId)
+                .ToListAsync();
+
+            // Solo sumar gastos de esas categorías
             var expenses = await _context.ExpensesIncomes
                 .Where(e => e.UserId == userId &&
                             e.Type == Domain.Enums.TransactionType.Expense &&
                             e.Date >= firstDay &&
-                            e.Date <= lastDay)
+                            e.Date <= lastDay &&
+                            categoriesWithBudget.Contains(e.CategoryId)) // FILTRO CLAVE
                 .ToListAsync();
 
             return expenses.Sum(e => e.Amount);
@@ -273,6 +285,70 @@ namespace MisFinanzas.Infrastructure.Services
                 IsActive = budget.IsActive,
                 CreatedAt = budget.CreatedAt
             };
+        }
+
+        public async Task<(bool Success, string? Error, int CopiedCount)> CopyBudgetsFromPreviousMonthAsync(string userId, int targetMonth, int targetYear)
+        {
+            try
+            {
+                // Calcular mes anterior
+                var previousMonth = targetMonth - 1;
+                var previousYear = targetYear;
+
+                if (previousMonth == 0)
+                {
+                    previousMonth = 12;
+                    previousYear = targetYear - 1;
+                }
+
+                // Obtener presupuestos del mes anterior
+                var previousBudgets = await _context.Budgets
+                    .Include(b => b.Category)
+                    .Where(b => b.UserId == userId &&
+                               b.Month == previousMonth &&
+                               b.Year == previousYear &&
+                               b.IsActive)
+                    .ToListAsync();
+
+                if (!previousBudgets.Any())
+                {
+                    return (false, "No hay presupuestos en el mes anterior para copiar", 0);
+                }
+
+                // Verificar si ya existen presupuestos en el mes objetivo
+                var existingBudgets = await _context.Budgets
+                    .AnyAsync(b => b.UserId == userId &&
+                                  b.Month == targetMonth &&
+                                  b.Year == targetYear);
+
+                if (existingBudgets)
+                {
+                    return (false, "Ya existen presupuestos en este mes. Elimina los existentes primero.", 0);
+                }
+
+                // Crear nuevos presupuestos para el mes objetivo
+                var newBudgets = previousBudgets.Select(pb => new Budget
+                {
+                    UserId = userId,
+                    Name = pb.Name,
+                    AssignedAmount = pb.AssignedAmount,
+                    SpentAmount = 0,
+                    Month = targetMonth,
+                    Year = targetYear,
+                    CategoryId = pb.CategoryId,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                }).ToList();
+
+                _context.Budgets.AddRange(newBudgets);
+                await _context.SaveChangesAsync();
+
+                return (true, null, newBudgets.Count);
+            }
+            catch (Exception ex)
+            {
+                return (false, $"Error al copiar presupuestos: {ex.Message}", 0);
+            }
         }
     }
 }
