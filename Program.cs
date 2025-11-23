@@ -50,7 +50,7 @@ builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 //  CONFIGURAR IDENTITY CON ApplicationUser
 builder.Services.AddIdentityCore<MisFinanzas.Domain.Entities.ApplicationUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = false;  //Debo ponerlo en true cuando implemente el envio de email
+    options.SignIn.RequireConfirmedAccount = true;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
@@ -82,7 +82,8 @@ builder.Services.AddSingleton<ITemporaryFileCache, TemporaryFileCache>();
 // Servicio en background para notificaciones
 builder.Services.AddHostedService<NotificationBackgroundService>();
 
-builder.Services.AddSingleton<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Components.Account.IdentityNoOpEmailSender>();
+//Servicio para correo
+builder.Services.AddScoped<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Infrastructure.Services.EmailSender>();
 
 var app = builder.Build();
 
