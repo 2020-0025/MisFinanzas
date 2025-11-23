@@ -1,0 +1,46 @@
+﻿/* Archivo: Shared/FloatingHelpButton.razor.css */
+
+.fab-help {
+    /* 1. Posicionamiento Flotante */
+    position: fixed;
+    right: 6px;
+    z-index: 1000;
+    /* 2. Estilo FAB (Circular y tamaño ajustado) */
+    width: 45px; /* Ancho estándar de FAB */
+    height: 45px; /* Alto estándar de FAB */
+    border-radius: 50%; /* Totalmente redondo */
+    /* 3. Tus Estilos (¡Mantenidos!) */
+    background: rgba(255, 193, 7, 0.15);
+    border: 1px solid rgba(255, 193, 7, 0.3);
+    color: red; /* Color para el '?' */
+    transition: all 0.3s ease;
+    /* 4. Estilo del contenido '?' (Centrado y grande) */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem; /* Tamaño del '?' (ajusta si lo ves muy grande o pequeño) */
+    font-weight: 700; /* Negrita */
+    line-height: 1; /* Ayuda a centrar verticalmente el '?' */
+    /* 5. Sombra y cursor */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    font-size: 1.5rem;
+}
+
+    /* 6. Tu efecto Hover (¡Mantenido y adaptado!) */
+    .fab-help:hover {
+        background: rgba(255, 193, 7, 0.25);
+        color: #FFF176;
+        transform: translateY(-2px); /* Tu efecto de subir */
+        box-shadow: 0 5px 15px rgba(255, 193, 7, 0.3); /* Tu sombra más pronunciada */
+    }
+
+/* Responsive */
+
+@media(max-width:1114px) {
+
+    .fab-help {
+        width: 35px;
+        height: 35px;
+    }
+}

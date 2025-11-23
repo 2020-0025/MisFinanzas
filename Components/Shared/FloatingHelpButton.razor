@@ -1,0 +1,22 @@
+﻿@using Microsoft.AspNetCore.Components
+@* Archivo: Shared/FloatingHelpButton.razor *@
+
+<button class="fab-help" @onclick="OnClick" style="bottom: @(Bottom)px;" title="@Titulo">
+    @Icono
+</button>
+
+@code {
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    // Nuevo parámetro: Permite cambiar el ícono (por defecto es el de interrogación)
+    [Parameter]
+    public string Icono { get; set; } = "?";
+
+    // Nuevo parámetro: Permite cambiar la altura (por defecto 25px)
+    [Parameter]
+    public int Bottom { get; set; } = 25;
+
+    [Parameter]
+    public string? Titulo { get; set; }
+}
