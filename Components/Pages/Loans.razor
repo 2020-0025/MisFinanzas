@@ -1,4 +1,6 @@
 ﻿@page "/loans"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using Microsoft.JSInterop
 @using MisFinanzas.Infrastructure.Interfaces
 @using MisFinanzas.Domain.DTOs
@@ -10,8 +12,6 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
-@attribute [Authorize]
-@rendermode InteractiveServer
 @implements IDisposable
 
 <PageTitle>Préstamos - MisFinanzas</PageTitle>
@@ -24,14 +24,14 @@
                 <h1>🏦 Préstamos</h1>
                 <p class="mb-0 text-white">Gestiona tus préstamos y cuotas</p>
             </div>
-            <button class="btnAddLoans" @onclick="OpenCreateModal">
+            <button class="btnAddLoans" id="loans-add-button" @onclick="OpenCreateModal">
                 <span style="font-size: 17px;">➕</span> Nuevo Préstamo
             </button>
         </div>
     </div>
 
     <!-- Resumen General -->
-    <div class="summary-card">
+    <div class="summary-card" id="loans-summary-card">
         <h4>📊 Resumen General</h4>
         <div class="row">
             <div class="col-md-3 col-6">
@@ -76,7 +76,7 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filters-card">
+    <div class="filters-card" id="loans-filters">
         <div class="btn-group" role="group">
             <button class="text-white btn @(showActiveOnly ? "btn-primary" : "btn-outline-primary")"
                     @onclick="() => ToggleFilter(true)">
@@ -107,7 +107,7 @@
     }
 
     <!-- Lista de Préstamos -->
-    <div class="row">
+    <div class="row" id="loans-list">
         @if (isLoading)
         {
             <div class="col-12">
@@ -152,27 +152,41 @@
                                 <div class="loan-actions">
                                     @if (loan.IsActive && !loan.IsCompleted)
                                     {
-                                        <button class="btn btn-sm btn-success" @onclick="() => RegisterPayment(loan.LoanId)" title="Registrar Pago">
+                                        <button class="btn btn-sm btn-success"
+                                                id="@(filteredLoans.First() == loan ? "loans-register-payment-button" : "")"
+                                                style="background-color:rgba(76, 175, 80, 0.25);"
+                                                @onclick="() => RegisterPayment(loan.LoanId)" title="Registrar Pago">
                                             <span style="font-size: 13px;">💵</span>
                                         </button>
                                         @if (loan.InstallmentsPaid > 0)
                                         {
-                                            <button class="btn btn-sm btn-info" @onclick="() => UndoLastPayment(loan.LoanId)" title="Deshacer Último Pago">
+                                            <button class="btn btn-sm btn-info"
+                                                    id="@(filteredLoans.First() == loan ? "loans-undo-payment-button" : "")"
+                                                    style="background-color: rgba(33, 150, 243, 0.25);"
+                                                    @onclick="() => UndoLastPayment(loan.LoanId)" title="Deshacer Último Pago">
                                                 <span style="font-size: 13px;">↩️</span>
                                             </button>
                                         }
-                                        <button class="btn btn-sm btn-warning" @onclick="() => OpenEditModal(loan)" title="Editar">
+                                        <button class="btn btn-sm btn-warning"
+                                                id="@(filteredLoans.First() == loan ? "loans-edit-button" : "")"
+                                                style="background-color:rgba(255, 193, 7, 0.25);"
+                                                @onclick="() => OpenEditModal(loan)" title="Editar">
                                             <span style="font-size: 13px;">📝</span>
                                         </button>
                                     }
                                     else if (!loan.IsActive && !loan.IsCompleted)
                                     {
                                         <!-- Préstamo cancelado - mostrar botón reactivar -->
-                                        <button class="btn btn-sm btn-primary" @onclick="() => ReactivateLoan(loan.LoanId)" title="Reactivar Préstamo">
+                                        <button class="btn btn-sm btn-primary"
+                                                id="@(filteredLoans.First() == loan ? "loans-reactivate-button" : "")"
+                                                style="background-color:rgba(76, 175, 80, 0.25);"
+                                                @onclick="() => ReactivateLoan(loan.LoanId)" title="Reactivar Préstamo">
                                             <span style="font-size: 13px;">🔄</span> Reactivar
                                         </button>
                                     }
                                     <button class="btn btn-sm btn-danger"
+                                            id="@(filteredLoans.First() == loan ? "loans-delete-button" : "")"
+                                            style="background-color:rgba(244, 67, 54, 0.25);"
                                             @onclick="() => HandleDeleteLoan(loan)"
                                             title="@(loan.IsActive ? "Eliminar" : "Eliminar del historial")">
                                         <span style="font-size: 13px;">🗑️</span>
@@ -256,7 +270,7 @@
     <div class="modal-overlay">
         <div class="modal-content-custom" @onclick:stopPropagation="true">
             <div class="modal-header-custom border-secondary">
-                <h5>@(isEditMode ? "✏️ Editar Préstamo" : "➕ Nuevo Préstamo")</h5>
+                <h5>@(isEditMode ? "✏️ Editar préstamo" : "➕ Nuevo préstamo")</h5>
                 <button class="btn-close-custom" @onclick="CloseModal">✕</button>
             </div>
             <div class="modal-body-custom">
@@ -264,7 +278,10 @@
                     <DataAnnotationsValidator />
 
                     <div class="mb-3">
-                        <label class="form-label text-white">Título *</label>
+                        <div style="display:flex; gap:0.4rem;">
+                            <label class="form-label text-white">Título</label>
+                            <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                        </div>
                         <InputText class="form-control glass-input" @bind-Value="currentLoan.Title" placeholder="Ej: Préstamo Personal Banco Popular" />
                         <ValidationMessage For="@(() => currentLoan.Title)" />
                     </div>
@@ -277,12 +294,18 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-white">Monto del Préstamo *</label>
+                            <div style="display:flex; gap:0.4rem;">
+                                <label class="form-label text-white">Monto del préstamo</label>
+                                <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                            </div>
                             <InputNumber class="form-control glass-input" @bind-Value="currentLoan.PrincipalAmount" @bind-Value:after="CalculatePreview" placeholder="10000" ParsingErrorMessage="Este campo es requerido" />
                             <ValidationMessage For="@(() => currentLoan.PrincipalAmount)" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-white">Cuota Mensual *</label>
+                            <div style="display:flex; gap:0.4rem;">
+                                <label class="form-label text-white">Cuota mensual</label>
+                                <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                            </div>
                             <InputNumber class="form-control glass-input" @bind-Value="currentLoan.InstallmentAmount" @bind-Value:after="CalculatePreview" placeholder="500" ParsingErrorMessage="Este campo es requerido" />
                             <ValidationMessage For="@(() => currentLoan.InstallmentAmount)" />
                         </div>
@@ -290,19 +313,28 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-white">Cantidad de Cuotas *</label>
+                            <div style="display:flex; gap:0.4rem;">
+                                <label class="form-label text-white">Cantidad de Cuotas</label>
+                                <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                            </div>
                             <InputNumber class="form-control glass-input" @bind-Value="currentLoan.NumberOfInstallments" @bind-Value:after="CalculatePreview" placeholder="12" ParsingErrorMessage="Este campo es requerido" />
                             <ValidationMessage For="@(() => currentLoan.NumberOfInstallments)" />
                         </div>
                         <div class="col-md-6 mb-3">
-                            <label class="form-label text-white">Día de Pago (1-31) *</label>
+                            <div style="display:flex; gap:0.4rem;">
+                                <label class="form-label text-white">Día de Pago (1-31)</label>
+                                <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                            </div>
                             <InputNumber class="form-control glass-input" @bind-Value="currentLoan.DueDay" placeholder="15" ParsingErrorMessage="Este campo es requerido" />
                             <ValidationMessage For="@(() => currentLoan.DueDay)" />
                         </div>
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label text-white">Fecha de Inicio *</label>
+                        <div style="display:flex; gap:0.4rem;">
+                            <label class="form-label text-white">Fecha de Inicio</label>
+                            <label class="text-danger" style="font-size:1.1rem;"> *</label>
+                        </div>
                         <InputDate class="form-control glass-input" @bind-Value="currentLoan.StartDate" />
                         <ValidationMessage For="@(() => currentLoan.StartDate)" />
                     </div>
@@ -327,20 +359,20 @@
                     @if (previewTotalToPay > 0)
                     {
                         <div class="preview-card">
-                            <h6 class="text-white">💡 Vista Previa</h6>
+                            <h6 class="text-white">💡 Vista previa</h6>
                             <div class="preview-info">
                                 <div class="d-flex justify-content-between">
-                                    <span>Total a Pagar:</span>
+                                    <span>Total a pagar:</span>
                                     <strong>@previewTotalToPay.ToString("C")</strong>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span>Interés Total:</span>
+                                    <span>Interés total:</span>
                                     <strong class="@GetInterestColorClass(previewInterestCategory)">
                                         @previewInterest.ToString("C")
                                     </strong>
                                 </div>
                                 <div class="d-flex justify-content-between">
-                                    <span>Tasa Aproximada:</span>
+                                    <span>Tasa aproximada:</span>
                                     <strong class="@GetInterestColorClass(previewInterestCategory)">
                                         @previewInterestRate.ToString("F2")%
                                     </strong>
@@ -355,10 +387,11 @@
                     }
 
                     <div class="modal-footer-custom">
-                        <button type="button" class="btn btn-secondary" @onclick="CloseModal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">
+                        <button type="submit" class=" btn btnSaveEdit">
                             @(isEditMode ? "Actualizar" : "Crear")
                         </button>
+                        <button type="button" class="btn btnCancel" @onclick="CloseModal">Cancelar</button>
+
                     </div>
                 </EditForm>
             </div>
@@ -372,7 +405,7 @@
     <div class="modal-overlay">
         <div class="modal-content-custom modal-delete" @onclick:stopPropagation="true">
             <div class="modal-header-custom">
-                <h5>🗑️ Eliminar Préstamo</h5>
+                <h5>🗑️ Eliminar préstamo</h5>
                 <button class="btn-close-custom" @onclick="CloseDeleteModal">✕</button>
             </div>
             <div class="modal-body-custom">
@@ -402,13 +435,17 @@
                     </div>
                 }
             </div>
-            <div class="modal-footer-custom">
-                <button class="btn btn-secondary" @onclick="CloseDeleteModal">Cancelar</button>
-                <button class="btn btn-danger" @onclick="ConfirmDelete">Eliminar</button>
+            <div class="modal-footer-custom mb-4" style="margin-right:20px;">
+                <button class="btn btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
+                <button class="btn btnDelete" @onclick="ConfirmDelete">Eliminar</button>
             </div>
         </div>
     </div>
 }
+
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private string currentUserId = string.Empty;
@@ -450,6 +487,9 @@
     private System.Threading.Timer? successTimer;
     private System.Threading.Timer? errorTimer;
 
+    //Tour automático
+    private bool _tourLaunched = false;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -463,6 +503,28 @@
         }
 
         isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "loans");
+        }
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startLoansTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        NavigationManager.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task LoadLoans()

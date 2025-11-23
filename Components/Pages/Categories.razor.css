@@ -1,10 +1,13 @@
 ﻿.categories-container {
     min-height: 100vh;
     padding: 30px;
+    background: transparent;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
 
 .page-header {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 15px;
@@ -24,15 +27,28 @@
         color: rgba(255, 255, 255, 0.8);
     }
 
+    .page-header .btn-help {
+        width: 5.5rem;
+        height: 2.7rem;
+        margin: 0 auto;
+    }
+
 .btnAddCategory {
     background: rgba(76, 175, 80, 0.25);
-    border-color: rgba(76, 175, 80, 0.5);
+    border: 1px solid rgba(76, 175, 80, 0.5);
     color: white;
     font-weight: 600;
-    box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
-    border-radius: 20px;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+    border-radius: 10px;
     padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
 }
+
+    .btnAddCategory:hover {
+        background: rgba(76, 175, 80, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+    }
 
 /* Secciones de Categorías */
 .categories-section {
@@ -49,7 +65,7 @@
 
 /* Tarjetas de Categoría */
 .category-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border-radius: 15px;
@@ -131,8 +147,30 @@
 }
 
 /* Modal */
-.modal-backdrop.show {
-    opacity: 0.7;
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+    padding: 20px;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }
 
 .modal-content {
@@ -141,45 +179,75 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 15px;
     margin-top: 28px;
+    width: 100%;
+    max-width: 700px;
     /* 1. Define un límite de altura */
     max-height: 475px;
     /* 2. Muestra el scroll vertical SI es necesario */
     overflow-y: auto;
+    animation: slideUp 0.3s ease;
 }
 
-    .modal-content .form-control,
-    .modal-content .form-select {
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid rgba(255, 255, 255, 0.3);
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+
+.modal-content .form-control,
+.modal-content .form-select {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+
+    .modal-content .form-control:focus,
+    .modal-content .form-select:focus {
+        background: rgba(255, 255, 255, 0.15);
+        border-color: rgba(255, 255, 255, 0.5);
         color: white;
+        box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
     }
 
-        .modal-content .form-control:focus,
-        .modal-content .form-select:focus {
-            background: rgba(255, 255, 255, 0.15);
-            border-color: rgba(255, 255, 255, 0.5);
-            color: white;
-            box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.1);
-        }
-
-        .modal-content .form-control::placeholder {
-            color: rgba(255, 255, 255, 0.5);
-        }
-
-    .modal-content .form-label {
-        color: rgba(255, 255, 255, 0.9);
-        font-weight: 500;
+    .modal-content .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5);
     }
 
-    .modal-content .form-select option {
-        background: #212529;
-        color: white;
-    }
+.modal-content .form-label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 500;
+}
+
+.modal-content .form-select option {
+    background: #212529;
+    color: white;
+}
 
 .form-text {
     color: rgba(255, 255, 255, 0.7);
     font-size: 0.875rem;
 }
+
+.modal-footer-custom {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+    .modal-footer-custom .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
 
 .btnSaveEdit {
     background: rgba(76, 175, 80, 0.25);
@@ -229,6 +297,25 @@
         transform: translateY(-2px);
     }
 
+
+.btn-close-custom {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.4);
+    color: #F44336;
+    width: 35px;
+    height: 35px;
+    border-radius: 8px;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+    .btn-close-custom:hover {
+        background: rgba(244, 67, 54, 0.3);
+        transform: scale(1.1);
+    }
+
 /* Responsive */
 @media (max-width: 768px) {
     .categories-container {
@@ -241,13 +328,16 @@
 
         .page-header .d-flex {
             flex-direction: column;
-            align-items: flex-start !important;
+            text-align: center;
         }
 
-            .page-header .d-flex > div,
-            .page-header .d-flex > button {
-                width: 100%;
+            .page-header .d-flex > div {
+                width: 80%;
                 margin-bottom: 10px;
+            }
+
+            .page-header .d-flex > button {
+                width: 55%;
             }
 
     .category-card {
@@ -260,6 +350,13 @@
 
     .category-info h5 {
         font-size: 1rem;
+    }
+}
+
+@media (max-width: 412px) {
+    .page-header .d-flex > button {
+        width: 70%;
+        font-size: 80%;
     }
 }
 

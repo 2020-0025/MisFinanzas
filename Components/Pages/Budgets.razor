@@ -1,4 +1,6 @@
 ﻿@page "/budgets"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using Microsoft.JSInterop
 @using MisFinanzas.Infrastructure.Interfaces
 @using MisFinanzas.Domain.DTOs
@@ -11,8 +13,6 @@
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
-@attribute [Authorize]
-@rendermode InteractiveServer
 @implements IDisposable
 
 <PageTitle>Presupuestos - MisFinanzas</PageTitle>
@@ -25,14 +25,14 @@
                 <h1>💰 Presupuestos</h1>
                 <p class="mb-0 text-white">Controla tus gastos por categoría</p>
             </div>
-            <button class="btnAddBudgets" @onclick="OpenCreateModal">
+            <button class="btnAddBudgets" id="budgets-add-button" @onclick="OpenCreateModal">
                 <span style="font-size: 17px;">➕</span> Nuevo Presupuesto
             </button>
         </div>
     </div>
 
     <!-- Selector de Mes/Año -->
-    <div class="period-selector-card">
+    <div class="period-selector-card" id="budgets-period-selector">
         <div class="row align-items-center">
             <div class="col-md-4">
                 <label class="form-label text-white">Mes</label>
@@ -69,7 +69,7 @@
     </div>
 
     <!-- Resumen General -->
-    <div class="summary-card">
+    <div class="summary-card" id="budgets-summary">
         <h4>📊 Resumen del Periodo</h4>
         <div class="row">
             <div class="col-md-4">
@@ -126,9 +126,22 @@
     }
 
     <!-- Lista de Presupuestos -->
-    <div class="budgets-list-card">
+    <div class="budgets-list-card" id="budgets-list">
         <div class="card-header">
             <h4>📋 Presupuestos por Categoría</h4>
+            @if (!budgets.Any() && !isLoading)
+            {
+                <button class="copy-button" id="budgets-copy-previous" @onclick="CopyFromPreviousMonth" disabled="@isCopying">
+                    @if (isCopying)
+                    {
+                        <span>⏳ Copiando...</span>
+                    }
+                    else
+                    {
+                        <span>📋 Copiar Mes Anterior</span>
+                    }
+                </button>
+            }
         </div>
         <div class="card-body">
             @if (isLoading)
@@ -142,7 +155,7 @@
             {
                 <div class="text-center py-5">
                     <p class="text-white">No hay presupuestos configurados para este periodo</p>
-                    <button class="btnAddBudgets mt-3" @onclick="OpenCreateModal">
+                    <button class="btnAddBudgets mt-3" id="budgets-create-first" @onclick="OpenCreateModal">
                         <span style="font-size: 17px;">➕</span> Crear Primer Presupuesto
                     </button>
                 </div>
@@ -163,10 +176,16 @@
                                         </div>
                                     </div>
                                     <div class="budget-actions">
-                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditBudget(budget)">
+                                        <button class="btn btn-sm btn-warning"
+                                                id="@(budgets.First() == budget ? "budgets-edit-button" : "")"
+                                                style="background-color:rgba(255, 193, 7, 0.25);"
+                                                @onclick="() => EditBudget(budget)">
                                             <span style="font-size: 13px;">📝</span>
                                         </button>
-                                        <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(budget.Id, budget.CategoryTitle)">
+                                        <button class="btn btn-sm btn-danger"
+                                                id="@(budgets.First() == budget ? "budgets-delete-button" : "")"
+                                                style="background-color:rgba(244, 67, 54, 0.25);"
+                                                @onclick="() => ConfirmDelete(budget.Id, budget.CategoryTitle)">
                                             <span style="font-size: 13px;">🗑️</span>
                                         </button>
                                     </div>
@@ -212,138 +231,146 @@
 <!-- Modal Crear/Editar Presupuesto -->
 @if (showModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">
-                        @(isEditing ? "✏️ Editar Presupuesto" : "➕ Nuevo Presupuesto")
-                    </h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <EditForm Model="formModel" OnValidSubmit="SaveBudget">
-                        <DataAnnotationsValidator />
+    <div class="modal-overlay">
 
-                        <div class="mb-3">
-                            <label class="form-label">Categoría: </label>
-                            <select class="form-select" @bind="formModel.CategoryId" disabled="@isEditing">
-                                <option value="0">Selecciona una categoría</option>
-                                @foreach (var category in expenseCategories)
-                                {
-                                    <option value="@category.CategoryId">@category.Icon @category.Title</option>
-                                }
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    @(isEditing ? "✏️ Editar presupuesto" : "➕ Nuevo presupuesto")
+                </h5>
+                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                <EditForm Model="formModel" OnValidSubmit="SaveBudget">
+                    <DataAnnotationsValidator />
+
+                    <div class="mb-3">
+                        <label class="form-label">Categoría: </label>
+                        <select class="form-select" @bind="formModel.CategoryId" disabled="@isEditing">
+                            <option value="0">Selecciona una categoría</option>
+                            @foreach (var category in expenseCategories)
+                            {
+                                <option value="@category.CategoryId">@category.Icon @category.Title</option>
+                            }
+                        </select>
+                        <ValidationMessage For="() => formModel.CategoryId" class="text-danger" />
+                        @if (isEditing)
+                        {
+                            <small class="form-text text-warning">No se puede cambiar la categoría</small>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Nombre del presupuesto</label>
+                        <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Presupuesto Alimentación" />
+                        <ValidationMessage For="() => formModel.Name" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Monto asignado</label>
+                        <InputNumber @bind-Value="formModel.AssignedAmount" class="form-control" placeholder="0.00" />
+                        <ValidationMessage For="() => formModel.AssignedAmount" class="text-danger" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Mes: </label>
+                            <select class="form-select" @bind="formModel.Month" disabled="@isEditing">
+                                <option value="1">Enero</option>
+                                <option value="2">Febrero</option>
+                                <option value="3">Marzo</option>
+                                <option value="4">Abril</option>
+                                <option value="5">Mayo</option>
+                                <option value="6">Junio</option>
+                                <option value="7">Julio</option>
+                                <option value="8">Agosto</option>
+                                <option value="9">Septiembre</option>
+                                <option value="10">Octubre</option>
+                                <option value="11">Noviembre</option>
+                                <option value="12">Diciembre</option>
                             </select>
-                            <ValidationMessage For="() => formModel.CategoryId" class="text-danger" />
                             @if (isEditing)
                             {
-                                <small class="form-text text-warning">No se puede cambiar la categoría</small>
+                                <small class="form-text text-warning"> No se puede cambiar el mes</small>
                             }
                         </div>
 
-                        <div class="mb-3">
-                            <label class="form-label">Nombre del Presupuesto</label>
-                            <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Presupuesto Alimentación" />
-                            <ValidationMessage For="() => formModel.Name" class="text-danger" />
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Monto Asignado</label>
-                            <InputNumber @bind-Value="formModel.AssignedAmount" class="form-control" placeholder="0.00" />
-                            <ValidationMessage For="() => formModel.AssignedAmount" class="text-danger" />
-                        </div>
-
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Mes: </label>
-                                <select class="form-select" @bind="formModel.Month" disabled="@isEditing">
-                                    <option value="1">Enero</option>
-                                    <option value="2">Febrero</option>
-                                    <option value="3">Marzo</option>
-                                    <option value="4">Abril</option>
-                                    <option value="5">Mayo</option>
-                                    <option value="6">Junio</option>
-                                    <option value="7">Julio</option>
-                                    <option value="8">Agosto</option>
-                                    <option value="9">Septiembre</option>
-                                    <option value="10">Octubre</option>
-                                    <option value="11">Noviembre</option>
-                                    <option value="12">Diciembre</option>
-                                </select>
-                                @if (isEditing)
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Año: </label>
+                            <select class="form-select" @bind="formModel.Year" disabled="@isEditing">
+                                @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 2; year++)
                                 {
-                                    <small class="form-text text-warning">No se puede cambiar el mes</small>
+                                    <option value="@year">@year</option>
                                 }
-                            </div>
-
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">Año: </label>
-                                <select class="form-select" @bind="formModel.Year" disabled="@isEditing">
-                                    @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 2; year++)
-                                    {
-                                        <option value="@year">@year</option>
-                                    }
-                                </select>
-                                @if (isEditing)
-                                {
-                                    <small class="form-text text-warning">No se puede cambiar el año</small>
-                                }
-                            </div>
+                            </select>
+                            @if (isEditing)
+                            {
+                                <small class="form-text text-warning"> No se puede cambiar el año</small>
+                            }
                         </div>
+                    </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btnSaveEdit" disabled="@isSaving">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                    <span>Guardando...</span>
-                                }
-                                else
-                                {
-                                    <span>Guardar Presupuesto</span>
-                                }
-                            </button>
-                            <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
-                        </div>
-                    </EditForm>
-                </div>
+                    <div class="modal-footer-custom gap-2">
+                        <button type="submit" class="btn btnSaveEdit" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span>Guardar</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btnCancel" @onclick="CloseModal">Cancelar</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Confirmar Eliminación -->
 @if (showDeleteModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">⚠️ Eliminar Presupuesto</h5>
-                    <button type="button" class="btn-close" @onclick="CloseDeleteModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Estás seguro de que deseas eliminar el presupuesto de <strong>@budgetToDelete</strong>?</p>
-                    <p class="text-danger mb-0">
-                        <strong>Esta acción no se puede deshacer.</strong>
-                    </p>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
-                    <button type="button" class="btnDelete" @onclick="DeleteBudget">
-                        <span style="font-size: 13px;">🗑️</span> Eliminar
-                    </button>
-                </div>
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">⚠️ Eliminar presupuesto</h5>
+                <button class="btn-close-custom" @onclick="CloseDeleteModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar el presupuesto de <strong>@budgetToDelete</strong>?</p>
+                <p class="text-danger mb-0">
+                    <strong>Esta acción no se puede deshacer.</strong>
+                </p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
+                <button type="button" class="btnDelete" @onclick="DeleteBudget">
+                    <span style="font-size: 13px;">🗑️</span> Eliminar
+                </button>
             </div>
         </div>
+
     </div>
+
 }
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private bool isLoading = true;
     private string currentUserId = string.Empty;
+
+    // Para copiar presupuestos
+    private bool isCopying = false;
 
     // Selector de periodo
     private int selectedMonth = DateTime.Now.Month;
@@ -378,6 +405,9 @@
     private int budgetIdToDelete;
     private string? budgetToDelete;
 
+    //Tour automático
+    private bool _tourLaunched = false;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -390,6 +420,28 @@
         }
 
         isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "budgets");
+        }
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startBudgetsTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        NavigationManager.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task LoadData()
@@ -426,11 +478,11 @@
         }
     }
 
-    private void SetCurrentMonth()
+    private async Task SetCurrentMonth()
     {
         selectedMonth = DateTime.Now.Month;
         selectedYear = DateTime.Now.Year;
-        _ = LoadData();
+        await LoadData();
     }
 
     private void OpenCreateModal()
@@ -666,5 +718,40 @@
     {
         successTimer?.Dispose();
         errorTimer?.Dispose();
+    }
+
+    private async Task CopyFromPreviousMonth()
+    {
+        try
+        {
+            isCopying = true;
+
+            if (string.IsNullOrEmpty(currentUserId))
+                return;
+
+            var result = await BudgetService.CopyBudgetsFromPreviousMonthAsync(
+                currentUserId,
+                selectedMonth,
+                selectedYear
+            );
+
+            if (result.Success)
+            {
+                ShowSuccessMessage($"{result.CopiedCount} presupuesto(s) copiados correctamente");
+                await LoadData();
+            }
+            else
+            {
+                ShowErrorMessage(result.Error ?? "No se pudieron copiar los presupuestos");
+            }
+        }
+        catch (Exception ex)
+        {
+            ShowErrorMessage($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isCopying = false;
+        }
     }
 }

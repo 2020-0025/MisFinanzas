@@ -1,4 +1,5 @@
-﻿@using System.Security.Claims
+﻿@rendermode InteractiveServer
+@using System.Security.Claims
 @using MisFinanzas.Infrastructure.Interfaces
 @using Microsoft.AspNetCore.Components.Authorization
 @using MisFinanzas.Domain.DTOs
@@ -7,7 +8,6 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject INotificationService NotificationService
 @inject IJSRuntime JSRuntime
-@rendermode InteractiveServer
 
 
 <!-- Nav Horizontal -->
@@ -18,6 +18,22 @@
         <div class="navbar-user">
             <AuthorizeView>
                 <Authorized>
+                    <form action="/Account/Logout" method="post" class="logout-form">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="btn-logout text-white" title="Cerrar Sesión">
+                            <span style="font-size: 15px;">❌</span>
+                            Salir
+                        </button>
+                    </form>
+                    <div class="user-info">
+
+                        <a href="/profile">
+                            <span class="user-name">@context.User.Identity?.Name</span>
+
+                        </a>
+                        
+                    </div>
                     <!-- Bell Icon con Badge -->
                     <div class="notification-bell-container">
                         <button @onclick="ToggleNotifications" class="btn-bell" title="Notificaciones">
@@ -27,24 +43,6 @@
                                 <span class="notification-badge">@unreadCount</span>
                             }
                         </button>
-                    </div>
-
-                    <form action="/Account/Logout" method="post" class="logout-form">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="btn-logout text-white" title="Cerrar Sesión">
-                            <span style="font-size: 15px;">🔐</span>
-                            Salir
-                        </button>
-                    </form>
-                    <div class="user-info">
-
-                        <a href="/profile">
-                            <span style="font-size: 17px;">🧑‍💼</span>
-                            <span class="user-name">@context.User.Identity?.Name</span>
-
-                        </a>
-                        
                     </div>
                 </Authorized>
                 <NotAuthorized>
@@ -82,8 +80,8 @@
                     </NavLink>
 
                     <NavLink class="nav-link-horizontal" href="/expenses-incomes">
-                        <span style="font-size: 17px;">💳</span>
-                        <span class="text-white">Transacciones</span>
+                        <span style="font-size: 17px;">💸</span>
+                        <span class="text-white">Gastos/Ingresos</span>
                     </NavLink>
 
                     <NavLink class="nav-link-horizontal" href="/loans">
@@ -100,6 +98,22 @@
         <div class="navbar-mobile">
             <AuthorizeView>
                 <Authorized>
+                    <form action="/Account/Logout" method="post" class="logout-form-mobile-nav">
+                        <AntiforgeryToken />
+                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
+                        <button type="submit" class="btn-logout-mobile text-white" title="Cerrar Sesión">
+                            <span style="font-size: 15px;">❌</span>
+                            Salir
+                        </button>
+                    </form>
+                    <div class="user-info-mobile">
+
+                        <a href="/profile">
+                            <span class="user-name">@context.User.Identity?.Name</span>
+                        </a>
+
+                        
+                    </div>
                     <!-- Bell Icon Mobile -->
                     <div class="notification-bell-container">
                         <button @onclick="ToggleNotifications" class="btn-bell-mobile" title="Notificaciones">
@@ -109,24 +123,6 @@
                                 <span class="notification-badge-mobile">@unreadCount</span>
                             }
                         </button>
-                    </div>
-
-                    <form action="/Account/Logout" method="post" class="logout-form-mobile-nav">
-                        <AntiforgeryToken />
-                        <input type="hidden" name="ReturnUrl" value="@currentUrl" />
-                        <button type="submit" class="btn-logout-mobile text-white" title="Cerrar Sesión">
-                            <span style="font-size: 15px;">🔐</span>
-                            Salir
-                        </button>
-                    </form>
-                    <div class="user-info-mobile">
-
-                        <a href="/profile">
-                            <span style="font-size: 17px;">🧑‍💼</span>
-                            <span class="user-name">@context.User.Identity?.Name</span>
-                        </a>
-
-                        
                     </div>
                 </Authorized>
             </AuthorizeView>
@@ -139,33 +135,33 @@
     <AuthorizeView>
         <Authorized>
             <NavLink href="/dashboard" class="footer-nav-item">
-                <span style="font-size: 17px;">📊</span>
-                <span class="text-white">Control</span>
+                <span style="font-size: 20px;">📊</span>
+                <span class="text-white" style="font-size: 50%;">Control</span>
             </NavLink>
 
             <NavLink href="/categories" class="footer-nav-item">
-                <span style="font-size: 17px;">🏷️</span>
-                <span class="text-white">Categorías</span>
+                <span style="font-size: 20px;">🏷️</span>
+                <span class="text-white" style="font-size: 50%;">Categorías</span>
             </NavLink>
 
             <NavLink href="/budgets" class="footer-nav-item">
-                <span style="font-size: 17px;">💰</span>
-                <span class="text-white">Presupuestos</span>
+                <span style="font-size: 20px;">💰</span>
+                <span class="text-white" style="font-size: 50%;">Presupuestos</span>
             </NavLink>
 
             <NavLink href="/goals" class="footer-nav-item">
-                <span style="font-size: 17px;">🎯</span>
-                <span class="text-white">Metas</span>
+                <span style="font-size: 20px;">🎯</span>
+                <span class="text-white" style="font-size: 50%;">Metas</span>
             </NavLink>
 
             <NavLink href="/expenses-incomes" class="footer-nav-item">
-                <span style="font-size: 17px;">💳</span>
-                <span class="text-white">Transacciones</span>
+                <span style="font-size: 20px;">💸</span>
+                <span class="text-white" style="font-size: 50%;">Gastos/Ingresos</span>
             </NavLink>
 
             <NavLink href="/loans" class="footer-nav-item">
-                <span style="font-size: 17px;">🏦</span>
-                <span class="text-white">Préstamos</span>
+                <span style="font-size: 20px;">🏦</span>
+                <span class="text-white" style="font-size: 50%;">Préstamos</span>
             </NavLink>
         </Authorized>
     </AuthorizeView>
@@ -179,7 +175,7 @@
     <!-- Dropdown Global (responsive desktop/mobile) -->
     <div class="notification-dropdown notification-dropdown-global" @onclick:stopPropagation="true">
         <div class="dropdown-header">
-            <h6>Notificaciones</h6>
+            <h6>🔔 Notificaciones</h6>
             @if (unreadCount > 0)
             {
                 <button @onclick="MarkAllAsRead" class="btn-mark-all">Marcar todas</button>
@@ -373,6 +369,7 @@
 }
 
 <style>
+
     /* ===== NOTIFICACIONES ===== */
 
     /* Contenedor de campana */
@@ -485,8 +482,8 @@
         width: 100vw;
         height: 100vh;
         z-index: 9998;
-        background: rgba(0, 0, 0, 0.4);
-        backdrop-filter: blur(3px);
+        background: rgba(0, 0, 0, 0.7);
+        backdrop-filter: blur(8px);
         cursor: pointer;
         animation: fadeInOverlay 0.2s ease-out;
     }
@@ -501,28 +498,57 @@
         }
     }
 
-    /* Dropdown Global - Adaptativo Desktop/Mobile */
-    .notification-dropdown-global {
+    /* Dropdown Desktop */
+    .notification-dropdown {
         position: fixed;
+        top: 75px;
+        right: 1rem;
+        width: 380px;
+        max-width: calc(100vw - 2rem);
         max-height: 500px;
-        background: rgba(30, 30, 30, 0.98);
+        background: transparent;
         backdrop-filter: blur(20px);
         border: 1px solid rgba(255, 255, 255, 0.2);
         border-radius: 12px;
         box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
         z-index: 10000;
         overflow: hidden;
+        animation: slideDownFadeIn 0.3s ease-out forwards;
+        transform-origin: top right;
     }
 
-    /* Desktop: alineado a la derecha */
+    /* Dropdown Mobile */
+    .notification-dropdown-mobile {
+        position: fixed;
+        top: 75px;
+        left: 5vw;
+        width: 90vw;
+        max-width: 380px;
+        max-height: calc(100vh - 150px);
+        background: transparent;
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        overflow: hidden;
+        animation: slideDownFadeInMobile 0.3s ease-out forwards;
+        transform-origin: top center;
+    }
+
+    /* Dropdown Global - Adaptativo Desktop/Mobile */
+    .notification-dropdown-global {
+        display: block;
+    }
+
+    /* Desktop: alineado a la izquierda */
     @@media (min-width: 993px) {
         .notification-dropdown-global {
             top: 75px;
-            right: 1rem;
-            left: auto;
+            right: auto;
+            left: 1rem;
             width: 380px;
             max-width: calc(100vw - 2rem);
-            animation: slideDownFadeIn 0.3s ease-out forwards;
         }
     }
 
@@ -552,7 +578,7 @@
         }
     }
 
-    /* Animación para mobile */
+    /* Animación para mobile (sin interferir con left) */
     @@keyframes slideDownFadeInMobile {
         0% {
             opacity: 0;
@@ -785,18 +811,19 @@
 
     /* ===== NAVBAR HORIZONTAL ===== */
     .navbar-horizontal {
-        position: fixed;
+        position: relative;
         top: 0;
         left: 0;
         right: 0;
         height: 70px;
-        background: rgba(255, 255, 255, 0.05);
+        z-index: 1000;
+        background: rgba(0, 0, 0, 0.5);
         backdrop-filter: blur(20px);
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        z-index: 1000;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
     }
 
+    /* NAVBAR CONTENT – LAYOUT ARREGLADO */
     .navbar-content {
         height: 100%;
         padding: 0 2rem;
@@ -804,15 +831,17 @@
         align-items: center;
         justify-content: space-between;
         gap: 0.5rem;
+        flex-wrap: wrap; /* permite reorganización en zoom */
+        row-gap: 0.5rem; /* espacio vertical si baja de línea */
     }
 
-    /* ===== LINKS DESKTOP ===== */
+    /* LINKS DESKTOP – FIX DEL PROBLEMA */
     .navbar-links {
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        flex: 1;
-        justify-content: center;
+        justify-content: center; /* mantiene centrado */
+        flex-wrap: wrap; /* permite que NO se mueva a la izquierda */
     }
 
     .nav-link-horizontal {
@@ -845,11 +874,17 @@
             box-shadow: 0 0 12px rgba(76, 175, 80, 0.3);
         }
 
+        .nav-link-horizontal.admin-link.active {
+            background: rgba(255, 152, 0, 0.25);
+            border-color: rgba(255, 152, 0, 0.5);
+            color: #FF9800;
+        }
+
     /* ===== USER SECTION DESKTOP ===== */
     .navbar-user {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.5rem;
     }
 
     .user-info {
@@ -861,7 +896,9 @@
         border: 1px solid rgba(33, 150, 243, 0.3);
         border-radius: 10px;
         color: white;
+        transition: all 0.3s ease;
         height: 40px;
+        max-width: 7rem;
     }
 
         .user-info:hover {
@@ -870,22 +907,13 @@
         }
 
         .user-info a{
-            display:flex;
-            text-decoration:none; 
+            text-decoration: none;
             color:white;
+            font-size: 0.9rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
-
-    .user-name {
-        font-size: 0.9rem;
-        max-width: 150px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .logout-form {
-        margin: 0;
-    }
 
     .btn-logout {
         display: flex;
@@ -912,42 +940,35 @@
     .navbar-mobile {
         display: none;
         width: 100%;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
-        gap: 1rem;
     }
 
     .user-info-mobile {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
         padding: 0.5rem 1rem;
         background: rgba(33, 150, 243, 0.15);
         border: 1px solid rgba(33, 150, 243, 0.3);
         border-radius: 10px;
         color: white;
-        max-width: 200px;
+        max-width: 10rem;
+        text-decoration: none;
+        transition: all 0.3s ease;
+        gap: 0.5rem;
     }
 
         .user-info-mobile:hover {
             background: rgba(33, 150, 243, 0.25);
         }
 
-        .user-info-mobile span {
-            font-size: 0.9rem;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            white-space: nowrap;
-            flex: 1;
-        }
-        .user-info-mobile a{
-            display: flex;
-            text-decoration: none;
-            color: white;
-        }
-
-    .logout-form-mobile-nav {
-        margin: 0;
+    .user-info-mobile a {
+        text-decoration: none;
+        color: white;
+        font-size: 0.9rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .btn-logout-mobile {
@@ -955,7 +976,7 @@
         align-items: center;
         justify-content: center;
         gap: 0.5rem;
-        width: 180px;
+        width: 100px;
         height: 44px;
         background: rgba(244, 67, 54, 0.15);
         border: 1px solid rgba(244, 67, 54, 0.3);
@@ -979,7 +1000,7 @@
         left: 0;
         right: 0;
         height: 70px;
-        background: rgba(255, 255, 255, 0.05);
+        background: transparent;
         backdrop-filter: blur(20px);
         -webkit-backdrop-filter: blur(20px);
         border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -1029,21 +1050,9 @@
 
     /* ===== RESPONSIVE ===== */
 
-    /* Tablet Grande (hasta 1200px) */
+    /* Tablet Grande y menores (hasta 1200px) */
     @@media (max-width: 1200px) {
-        .navbar-links {
-            gap: 0.25rem;
-        }
-
-        .nav-link-horizontal {
-            padding: 0.5rem 0.75rem;
-            font-size: 0.9rem;
-        }
-    }
-
-    /* Tablet (hasta 992px) */
-    @@media (max-width: 992px) {
-        .navbar-links {
+        .navbar-links .nav-link-horizontal {
             display: none;
         }
 
@@ -1056,17 +1065,29 @@
         }
 
         .footer-mobile-nav {
+            display: flex !important;
+        }
+
+        .footer-nav-item {
             display: flex;
         }
 
-        .footer-nav-item span:first-child {
-            font-size: 1.75rem;
-        }
+            .footer-nav-item span:first-child {
+                font-size: 1.75rem;
+            }
 
+            .footer-nav-item span {
+                font-size: 2rem;
+            }
+    }
+
+    @@media (max-width: 840px) {
         .footer-nav-item span {
-            font-size: 0.8rem;
+            font-size: 3rem;
         }
     }
+
+
 
     /* Mobile Grande (hasta 768px) */
     @@media (max-width: 768px) {
@@ -1084,7 +1105,7 @@
             }
 
             .footer-nav-item span {
-                font-size: 0.85rem;
+                font-size: 2rem;
             }
     }
 
@@ -1117,11 +1138,22 @@
     /* Mobile Pequeño (hasta 400px) */
     @@media (max-width: 400px) {
         .footer-nav-item span:first-child {
-            font-size: 2rem;
+            font-size: 3rem;
         }
 
         .footer-nav-item span {
             font-size: 0.65rem;
         }
     }
+
+    /* ===== FIX PARA EMOJIS ===== */
+    ::deep span[style*="font-size"] {
+        display: inline-block;
+    }
+
+    .nav-link-horizontal span:first-child,
+    .footer-nav-item span:first-child {
+        display: inline-block;
+    }
+
 </style>

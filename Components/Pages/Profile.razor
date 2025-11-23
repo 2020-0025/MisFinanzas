@@ -1,4 +1,6 @@
 ﻿@page "/profile"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using MisFinanzas.Domain.Entities
 @using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
@@ -8,20 +10,25 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@attribute [Authorize]
-@rendermode InteractiveServer
 
 <PageTitle>Mi Perfil - Mis Finanzas</PageTitle>
 
 <div class="profile-container">
 
     <!-- Header -->
-    <div class="profile-header">
-        <div class="header-icon">👤</div>
-        <div>
-            <h1>Mi Perfil</h1>
-            <p class="text-white">Gestiona tu información personal</p>
+    <div class="profile-header-container">
+
+        <div class="profile-header">
+            <div class="title-icon-header" style="display:flex;">
+                <div class="header-icon">👤</div>
+                <div>
+                    <h1>Mi perfil</h1>
+                    <p class="text-white">Gestiona tu información personal</p>
+                </div>
+
+            </div>
         </div>
+
     </div>
 
     @if (_isLoading)
@@ -49,7 +56,7 @@
         <div class="cards-container">
 
             <!-- Card: Información Personal -->
-            <div class="profile-card">
+            <div class="profile-card" id="profile-info-card">
                 <div class="card-header">
                     <h2>📋 Información Personal</h2>
                 </div>
@@ -102,7 +109,7 @@
                         </div>
 
                         <div class="card-actions">
-                            <button class="btn btn-primary" @onclick="EnableEditInfo">
+                            <button class="btn btn-primary" id="profile-edit-info-button" @onclick="EnableEditInfo">
                                 ✏️ Editar Información
                             </button>
                         </div>
@@ -111,7 +118,7 @@
             </div>
 
             <!-- Card: Cambiar Contraseña -->
-            <div class="profile-card">
+            <div class="profile-card" id="profile-password-card">
                 <div class="card-header">
                     <h2>🔐 Cambiar Contraseña</h2>
                 </div>
@@ -149,7 +156,7 @@
                         }
 
                         <div class="card-actions">
-                            <button type="submit" class="btn btn-primary" disabled="@_isSaving">
+                            <button type="submit" class="btn btn-primary" id="profile-change-password-button" disabled="@_isSaving">
                                 @if (_isSaving)
                                 {
                                     <span class="spinner-border spinner-border-sm"></span>
@@ -165,7 +172,7 @@
             </div>
 
             <!-- Card: Eliminar Cuenta -->
-            <div class="profile-card danger-card">
+            <div class="profile-card danger-card" id="profile-danger-zone-card">
                 <div class="card-header">
                     <h2>⚠️ Zona de Peligro</h2>
                 </div>
@@ -177,16 +184,65 @@
                     <p class="warning-text"><strong>Esta acción no se puede deshacer.</strong></p>
 
                     <div class="card-actions">
-                        <button class="btn btn-danger" @onclick="ConfirmDeleteAccount">
+                        <button class="btn btn-danger" id="profile-delete-account-button" @onclick="ConfirmDeleteAccount">
                             🗑️ Eliminar Mi Cuenta
                         </button>
                     </div>
                 </div>
             </div>
 
+
+
         </div>
     }
+
+    <!-- Modal de Eliminación de Cuenta -->
+    @if (showDeleteModal)
+    {
+        <div class="modal-overlay">
+            <div class="modal-content text-white" @onclick:stopPropagation="true">
+                <div class="modal-header border-secondary">
+                    <h5 class="modal-title">⚠️ Confirmar eliminación</h5>
+                    <button class="btn-close-custom" @onclick="CancelDeleteAccount">✕</button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger mb-3">
+                        <h6 class="alert-heading text-danger">
+                            <span style="font-size: 20px;">🚫</span> <strong>¡ATENCIÓN!</strong>
+                        </h6>
+                        <p class="mb-2 text-white">
+                            Al eliminar tu cuenta, perderás <strong>permanentemente</strong> todos tus datos:
+                        </p>
+                        <ul class="text-white mb-2">
+                            <li>Categorías de gastos e ingresos</li>
+                            <li>Todas tus transacciones</li>
+                            <li>Metas financieras</li>
+                            <li>Presupuestos</li>
+                            <li>Préstamos</li>
+                        </ul>
+                        <p class="mb-0 text-white">
+                            <strong>Esta acción no se puede deshacer.</strong>
+                        </p>
+                    </div>
+
+                    <p class="text-danger mb-0">
+                        <small>⚠️ ¿Estás seguro de que deseas continuar?</small>
+                    </p>
+                </div>
+                <div class="modal-footer border-secondary">
+                    <button type="button" class="btnCancel" @onclick="CancelDeleteAccount">Cancelar</button>
+                    <button type="button" class="btnDelete" @onclick="DeleteAccount">
+                        <span style="font-size: 13px;">🗑️</span> Eliminar mi cuenta
+                    </button>
+                </div>
+            </div>
+        </div>
+    }
+ 
 </div>
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private bool _isLoading = true;
@@ -201,6 +257,12 @@
     private ApplicationUser? _currentUser;
     private EditInfoModel _editModel = new();
     private PasswordModel _passwordModel = new();
+
+    // Modal de eliminación de cuenta
+    private bool showDeleteModal = false;
+
+    //Tour automático
+    private bool _tourLaunched = false;
 
     protected override async Task OnInitializedAsync()
     {
@@ -252,6 +314,28 @@
         {
             _isLoading = false;
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "profile");
+        }
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startProfileTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        Navigation.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task ReloadData()
@@ -389,39 +473,76 @@
         }
     }
 
-    private async Task ConfirmDeleteAccount()
+    // private async Task ConfirmDeleteAccount()
+    // {
+    //     if (_currentUser == null)
+    //     {
+    //         return;
+    //     }
+
+    //     var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
+    //         "¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y perderás todos tus datos.");
+
+    //     if (confirmed)
+    //     {
+    //         try
+    //         {
+    //             // UserManager.DeleteAsync eliminará el usuario
+    //             // Si tienes cascade delete configurado en EF Core, las entidades relacionadas se eliminarán automáticamente
+    //             var result = await UserManager.DeleteAsync(_currentUser);
+
+    //             if (result.Succeeded)
+    //             {
+    //                 await SignInManager.SignOutAsync();
+    //                 Navigation.NavigateTo("/", forceLoad: true);
+    //             }
+    //             else
+    //             {
+    //                 await JSRuntime.InvokeVoidAsync("alert",
+    //                     $"No se pudo eliminar la cuenta: {string.Join(", ", result.Errors.Select(e => e.Description))}");
+    //             }
+    //         }
+    //         catch (Exception ex)
+    //         {
+    //             await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar cuenta: {ex.Message}");
+    //         }
+    //     }
+    // }
+
+    private void ConfirmDeleteAccount()
     {
         if (_currentUser == null)
         {
-            return;
+           return;
         }
 
-        var confirmed = await JSRuntime.InvokeAsync<bool>("confirm",
-            "¿Estás seguro de que deseas eliminar tu cuenta? Esta acción no se puede deshacer y perderás todos tus datos.");
+        showDeleteModal = true;
+    }
 
-        if (confirmed)
+    private void CancelDeleteAccount()
+    {
+        showDeleteModal = false;
+    }
+
+    private async Task DeleteAccount()
+    {
+        try
         {
-            try
-            {
-                // UserManager.DeleteAsync eliminará el usuario
-                // Si tienes cascade delete configurado en EF Core, las entidades relacionadas se eliminarán automáticamente
-                var result = await UserManager.DeleteAsync(_currentUser);
+            var result = await UserManager.DeleteAsync(_currentUser);
 
-                if (result.Succeeded)
-                {
-                    await SignInManager.SignOutAsync();
-                    Navigation.NavigateTo("/", forceLoad: true);
-                }
-                else
-                {
-                    await JSRuntime.InvokeVoidAsync("alert",
-                        $"No se pudo eliminar la cuenta: {string.Join(", ", result.Errors.Select(e => e.Description))}");
-                }
-            }
-            catch (Exception ex)
+            if (result.Succeeded)
             {
-                await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar cuenta: {ex.Message}");
+                await SignInManager.SignOutAsync();
+                Navigation.NavigateTo("/", forceLoad: true);
             }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "No se pudo eliminar la cuenta");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error al eliminar cuenta: {ex.Message}");
         }
     }
 

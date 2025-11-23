@@ -1,4 +1,6 @@
 ﻿@page "/reminders"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using MisFinanzas.Domain.DTOs
 @using MisFinanzas.Infrastructure.Interfaces
 @using System.Security.Claims
@@ -7,8 +9,6 @@
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
-@attribute [Authorize]
-@rendermode InteractiveServer
 @implements IDisposable
 
 <PageTitle>Recordatorios - MisFinanzas</PageTitle>
@@ -36,7 +36,7 @@
     }
 
     <!-- Filtros y acciones -->
-    <div class="filters-section">
+    <div class="filters-section mb-4" id="reminders-filters">
         <div class="filter-buttons">
             <button class="btn-filter @(currentFilter == "all" ? "active" : "")" @onclick='() => SetFilter("all")'>
                 Todas (@allNotifications.Count)
@@ -50,14 +50,14 @@
         </div>
         @if (allNotifications.Any(n => !n.IsRead))
         {
-            <button class="btn-mark-all-page" @onclick="MarkAllAsRead">
+            <button class="btn-mark-all-page" id="reminders-mark-all-button" @onclick="MarkAllAsRead">
                 ✓ Marcar todas como leídas
             </button>
         }
     </div>
 
     <!-- Lista de notificaciones -->
-    <div class="notifications-list">
+    <div class="notifications-list" id="reminders-list">
         @if (isLoading)
         {
             <div class="loading-state">
@@ -86,7 +86,8 @@
                     <div class="notification-card-content">
                         <div class="notification-card-header">
                             <h6>@notification.CategoryTitle</h6>
-                            <span class="notification-status-badge @(notification.IsOverdue ? "overdue" : "")">
+                            <span class="notification-status-badge @(notification.IsOverdue ? "overdue" : "")"
+                                  id="@(filteredNotifications.First() == notification ? "reminders-status-badge" : "")">
                                 @notification.StatusText
                             </span>
                         </div>
@@ -111,7 +112,9 @@
                     <div class="notification-card-actions">
                         @if (!notification.IsRead)
                         {
-                            <button class="btn-mark-read" @onclick="() => MarkAsRead(notification.NotificationId)" title="Marcar como leída">
+                            <button class="btn-mark-read"
+                                    id="@(filteredNotifications.First() == notification ? "reminders-mark-read-button" : "")"
+                            @onclick="() => MarkAsRead(notification.NotificationId)" title="Marcar como leída">
                                 ✓
                             </button>
                         }
@@ -119,7 +122,9 @@
                         {
                             <span class="read-checkmark" title="Leída">✓</span>
                         }
-                        <button class="btn-delete-notification" @onclick="() => DeleteNotification(notification.NotificationId)" title="Eliminar notificación">
+                        <button class="btn-delete-notification"
+                                id="@(filteredNotifications.First() == notification ? "reminders-delete-button" : "")"
+                        @onclick="() => DeleteNotification(notification.NotificationId)" title="Eliminar notificación">
                             🗑️
                         </button>
                     </div>
@@ -128,6 +133,10 @@
         }
     </div>
 </div>
+
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private string userId = string.Empty;
@@ -142,6 +151,9 @@
     private System.Threading.Timer? successTimer;
     private System.Threading.Timer? errorTimer;
 
+    //Tour automático
+    private bool _tourLaunched = false;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -152,6 +164,28 @@
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
             await LoadNotifications();
         }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "reminders");
+        }
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startRemindersTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        NavigationManager.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task LoadNotifications()

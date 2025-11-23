@@ -1,4 +1,6 @@
 ﻿@page "/expenses-incomes"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using MisFinanzas.Domain.DTOs
 @using MisFinanzas.Domain.Enums
 @using MisFinanzas.Infrastructure.Interfaces
@@ -15,8 +17,7 @@
 @inject IPdfReportGenerator PdfReportGenerator
 @inject IExcelReportGenerator ExcelReportGenerator
 @inject ITemporaryFileCache FileCache
-@attribute [Authorize]
-@rendermode InteractiveServer
+@inject IWebHostEnvironment WebHostEnvironment
 @implements IDisposable
 
 <PageTitle>Gastos e Ingresos - Mis Finanzas</PageTitle>
@@ -26,22 +27,22 @@
     <div class="page-header">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <div class="mb-3 mb-md-0">
-                <h1>💸 Gastos e Ingresos</h1>
+                <h1 class="text-white">💸 Gastos e Ingresos</h1>
                 <p class="mb-0 text-white">Registra tus Gastos e Ingresos</p>
             </div>
-            <div class="d-flex gap-2">
-                <button class="btnDelete" @onclick="() => OpenModal(TransactionType.Expense)">
-                    <span style="font-size: 17px;">➕</span> Agregar Gasto
-                </button>
-                <button class="btnSaveEdit" @onclick="() => OpenModal(TransactionType.Income)">
-                    <span style="font-size: 17px;">➕</span> Agregar Ingreso
-                </button>
-            </div>
+        </div>
+        <div class="btnSaveGroup gap-2">
+            <button class="btnAddExpenses" id="expenses-add-expense-button" @onclick="() => OpenModal(TransactionType.Expense)">
+                ➕ Agregar gasto
+            </button>
+            <button class="btnAddIncomes" id="expenses-add-income-button" @onclick="() => OpenModal(TransactionType.Income)">
+                ➕ Agregar ingreso
+            </button>
         </div>
     </div>
 
     <!-- Balance -->
-    <div class="row mb-4">
+    <div class="row mb-4" id="expenses-balance-cards">
         <div class="col-md-4">
             <div class="balance-card income">
                 <div class="balance-icon">📈</div>
@@ -72,7 +73,7 @@
     </div>
 
     <!-- Panel de Filtros de Reportes -->
-    <div class="glass-card mb-4">
+    <div class="glass-card mb-4" id="expenses-report-panel">
         <div class="card-header">
             <h4 class="text-white">📊 Generar Reporte</h4>
         </div>
@@ -129,15 +130,15 @@
                 <!-- Botones -->
                 <div class="col-12">
                     <div class="d-flex gap-2 justify-content-end">
-                        <button class="btnSaveEdit" @onclick="GeneratePdfReport" disabled="@isGeneratingReport">
-                            @if (isGeneratingReport)
+                        <button class="btnExportPdf" id="expenses-download-pdf" @onclick="GeneratePdfReport" disabled="@isGeneratingPdf">
+                            @if (isGeneratingPdf)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"></span>
                             }
                             📄 Descargar PDF
                         </button>
-                        <button class="btnSaveEdit" @onclick="GenerateExcelReport" disabled="@isGeneratingReport">
-                            @if (isGeneratingReport)
+                        <button class="btnExportExcel" id="expenses-download-excel" @onclick="GenerateExcelReport" disabled="@isGeneratingExcel">
+                            @if (isGeneratingExcel)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"></span>
                             }
@@ -167,7 +168,7 @@
     }
 
     <!-- Tabla de Transacciones -->
-    <div class="transactions-card">
+    <div class="transactions-card" id="expenses-history-table">
         <div class="card-header">
             <h4>📋 Historial</h4>
         </div>
@@ -225,10 +226,16 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button class="btn btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => EditTransaction(item)">
+                                            <button class="btn btn-warning"
+                                                    id="@(GetPagedTransactions().First() == item ? "expenses-edit-button" : "")"
+                                                    style="background-color:rgba(255, 193, 7, 0.25);"
+                                                    @onclick="() => EditTransaction(item)">
                                                 <span style="font-size: 13px;">📝</span>
                                             </button>
-                                            <button class="btn btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(item.Id, item.Description ?? item.CategoryTitle)">
+                                            <button class="btn btn-danger"
+                                                    id="@(GetPagedTransactions().First() == item ? "expenses-delete-button" : "")"
+                                                    style="background-color:rgba(244, 67, 54, 0.25);" 
+                                                    @onclick="() => ConfirmDelete(item.Id, item.Description ?? item.CategoryTitle)">
                                                 <span style="font-size: 13px;">🗑️</span>
                                             </button>
                                         </div>
@@ -237,6 +244,72 @@
                             }
                         </tbody>
                     </table>
+                    <!-- Controles de Paginación -->
+                    <div class="pagination-container mt-3" id="expenses-pagination-container">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+                            <!-- Selector de tamaño de página -->
+                            <div class="d-flex align-items-center gap-2">
+                                <label class="text-white mb-0">Mostrar:</label>
+                                <select class="form-select form-select-sm glass-card text-white border-primary"
+                                        id="expenses-page-size-selector"
+                                        style="width: auto;"
+                                        @onchange="@(e => ChangePageSize(int.Parse(e.Value?.ToString() ?? "10")))">
+                                    <option value="5" selected="@(pageSize == 5)">5</option>
+                                    <option value="10" selected="@(pageSize == 10)">10</option>
+                                    <option value="25" selected="@(pageSize == 25)">25</option>
+                                    <option value="50" selected="@(pageSize == 50)">50</option>
+                                    <option value="100" selected="@(pageSize == 100)">100</option>
+                                </select>
+                                <span class="text-white">registros por página</span>
+                            </div>
+
+                            <!-- Información de registros -->
+                            <div class="text-white">
+                                Mostrando @((currentPage - 1) * pageSize + 1)
+                                a @(Math.Min(currentPage * pageSize, expensesIncomes.Count))
+                                de @expensesIncomes.Count registros
+                            </div>
+
+                            <!-- Botones de navegación -->
+                            <div class="btn-group" role="group">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-light text-white"
+                                        id="expenses-previous-button"
+                                        @onclick="PreviousPage"
+                                        disabled="@(currentPage == 1)">
+                                    ‹ Anterior
+                                </button>
+
+                                @for (int i = 1; i <= totalPages; i++)
+                                {
+                                    var pageNumber = i;
+                                    @if (totalPages <= 7 ||
+                                                                pageNumber == 1 ||
+                                                                pageNumber == totalPages ||
+                                                                (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1))
+                                    {
+                                        <button type="button"
+                                                class="btn btn-sm @(currentPage == pageNumber ? "btn-primary" : "btn-outline-light")"
+                                                @onclick="() => GoToPage(pageNumber)">
+                                            @pageNumber
+                                        </button>
+                                    }
+                                    else if (pageNumber == currentPage - 2 || pageNumber == currentPage + 2)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-outline-light" disabled>...</button>
+                                    }
+                                }
+
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-light text-white"
+                                        id="expenses-next-button"
+                                        @onclick="NextPage"
+                                        disabled="@(currentPage == totalPages)">
+                                    Siguiente ›
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             }
         </div>
@@ -250,7 +323,7 @@
         <div class="modal-content text-white" @onclick:stopPropagation="true">
             <div class="modal-header border-secondary">
                 <h5 class="modal-title">
-                    @(isEditing ? "✏️ Editar" : (currentType == TransactionType.Income ? "📈 Agregar Ingreso" : "📉 Agregar Gasto"))
+                    @(isEditing ? "✏️ Editar" : (currentType == TransactionType.Income ? "📈 Agregar ingreso" : "📉 Agregar gasto"))
                 </h5>
                 <button class="btn-close-custom" @onclick="CloseModal">✕</button>
             </div>
@@ -259,8 +332,9 @@
                     <DataAnnotationsValidator />
 
                     <div class="mb-3">
-                        <label class="form-label">Categoría</label>
-                        <InputSelect @bind-Value="formModel.CategoryId" class="form-select glass-card text-white">
+                        <label class="form-label">Categoría</label> <br />
+                        <label class="form-label text-warning">Debes tener al menos una categoría creada</label>
+                        <InputSelect @bind-Value="formModel.CategoryId" class="form-select glass-card text-white border-primary">
                             <option value="0">Selecciona una categoría</option>
                             @foreach (var category in availableCategories)
                             {
@@ -295,8 +369,8 @@
                         <InputTextArea @bind-Value="formModel.Description" class="form-control" rows="3" placeholder="Ej: Compra en supermercado" />
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <button type="submit" class="btnSaveEdit" disabled="@isSaving">
+                    <div class="modal-footer-custom gap-2">
+                        <button type="submit" class=" btn btnSaveEdit" disabled="@isSaving">
                             @if (isSaving)
                             {
                                 <span class="spinner-border spinner-border-sm me-2"></span>
@@ -307,11 +381,12 @@
                                 <span>Guardar</span>
                             }
                         </button>
-                        <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
+                        <button type="button" class="btn btnCancel" @onclick="CloseModal">Cancelar</button>
                     </div>
                 </EditForm>
             </div>
         </div>
+
     </div>
 }
 
@@ -321,8 +396,8 @@
     <div class="modal-overlay">
         <div class="modal-content text-white" @onclick:stopPropagation="true">
             <div class="modal-header border-secondary">
-                <h5 class="modal-title">⚠️ Confirmar Eliminación</h5>
-                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
+                <h5 class="modal-title">⚠️ Confirmar eliminación</h5>
+                <button class="btn-close-custom" @onclick="CancelDelete">✕</button>
             </div>
             <div class="modal-body">
                 <p>¿Estás seguro de que deseas eliminar este registro?</p>
@@ -338,8 +413,13 @@
                 </button>
             </div>
         </div>
+
     </div>
 }
+
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private bool isLoading = true;
@@ -384,7 +464,17 @@
     private int reportCategoryId = 0;
     private DateTime? customStartDate;
     private DateTime? customEndDate;
-    private bool isGeneratingReport = false;
+    private bool isGeneratingPdf = false;
+    private bool isGeneratingExcel = false;
+
+    //Tour automático
+    private bool _tourLaunched = false;
+    // Variables de paginación
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalPages => expensesIncomes == null || !expensesIncomes.Any()
+        ? 0
+        : (int)Math.Ceiling(expensesIncomes.Count / (double)pageSize);
 
     protected override async Task OnInitializedAsync()
     {
@@ -403,6 +493,74 @@
         }
 
         isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "expenses");
+        }
+    }
+
+    //Paginación
+    private List<ExpenseIncomeDto> GetPagedTransactions()
+    {
+        if (expensesIncomes == null || !expensesIncomes.Any())
+            return new List<ExpenseIncomeDto>();
+
+        return expensesIncomes
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startExpensesIncomesTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        NavigationManager.NavigateTo("/"); // Redirige al Home
+    }
+
+    private void GoToPage(int page)
+    {
+        if (page < 1 || page > totalPages)
+            return;
+
+        currentPage = page;
+        StateHasChanged();
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            StateHasChanged();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            StateHasChanged();
+        }
+    }
+
+    private void ChangePageSize(int newSize)
+    {
+        pageSize = newSize;
+        currentPage = 1; // Resetear a la primera página
+        StateHasChanged();
     }
 
     private async Task LoadData()
@@ -620,7 +778,7 @@
     {
         try
         {
-            isGeneratingReport = true;
+            isGeneratingPdf = true;
             StateHasChanged();
 
             // Validar fechas personalizadas
@@ -642,14 +800,14 @@
             // Crear filtro
             var filter = new ReportFilterDto
             {
-                UserId = currentUserId,
-                UserName = currentUserName,
+                UserId = currentUserId!,
+                UserName = currentUserName ?? "Usuario",
                 PeriodType = reportPeriodType,
                 CustomStartDate = customStartDate,
                 CustomEndDate = customEndDate,
                 TransactionTypeFilter = string.IsNullOrEmpty(reportTransactionType)
-                        ? null
-                        : Enum.Parse<TransactionType>(reportTransactionType),
+                    ? null
+                    : Enum.Parse<TransactionType>(reportTransactionType),
                 CategoryIdFilter = reportCategoryId > 0 ? reportCategoryId : null
             };
 
@@ -657,15 +815,31 @@
             var reportData = await ReportService.GenerateReportDataAsync(filter);
 
             // Generar PDF
-            var pdfBytes = PdfReportGenerator.GeneratePdf(reportData);
+            var logoPath = Path.Combine(WebHostEnvironment.WebRootPath, "images", "MisFinanzas.png");
+
+            // 🔍 DEBUG COMPLETO
+            Console.WriteLine($"WebRootPath: {WebHostEnvironment.WebRootPath}");
+            Console.WriteLine($"Logo path: {logoPath}");
+            Console.WriteLine($"File exists: {File.Exists(logoPath)}");
+
+            if (File.Exists(logoPath))
+            {
+                var fileInfo = new FileInfo(logoPath);
+                Console.WriteLine($"File size: {fileInfo.Length} bytes");
+            }
+
+            // var pdfGenerator = new PdfReportGenerator();
+            var pdfBytes = PdfReportGenerator.GeneratePdf(reportData, logoPath);
 
             // Guardar en caché temporal
+
             var fileName = $"Reporte_MisFinanzas_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+
             var fileId = FileCache.StoreFile(pdfBytes, fileName, "application/pdf");
 
             // Abrir URL de descarga
             var downloadUrl = $"/api/FileDownload/{fileId}";
-            await JSRuntime.InvokeVoidAsync("eval", $"window.open('{downloadUrl}', '_blank')");
+            NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
 
             ShowSuccessMessage("Reporte PDF generado correctamente");
         }
@@ -676,7 +850,7 @@
         }
         finally
         {
-            isGeneratingReport = false;
+            isGeneratingPdf = false;
             StateHasChanged();
         }
     }
@@ -685,7 +859,7 @@
     {
         try
         {
-            isGeneratingReport = true;
+            isGeneratingExcel = true;
             StateHasChanged();
 
             // Validar fechas personalizadas
@@ -707,14 +881,14 @@
             // Crear filtro
             var filter = new ReportFilterDto
             {
-                UserId = currentUserId,
-                UserName = currentUserName,
+                UserId = currentUserId!,
+                UserName = currentUserName ?? "Usuario",
                 PeriodType = reportPeriodType,
                 CustomStartDate = customStartDate,
                 CustomEndDate = customEndDate,
                 TransactionTypeFilter = string.IsNullOrEmpty(reportTransactionType)
-                        ? null
-                        : Enum.Parse<TransactionType>(reportTransactionType),
+                    ? null
+                    : Enum.Parse<TransactionType>(reportTransactionType),
                 CategoryIdFilter = reportCategoryId > 0 ? reportCategoryId : null
             };
 
@@ -722,15 +896,18 @@
             var reportData = await ReportService.GenerateReportDataAsync(filter);
 
             // Generar Excel
-            var excelBytes = ExcelReportGenerator.GenerateExcel(reportData);
+            var logoPath = Path.Combine(WebHostEnvironment.WebRootPath, "images", "MisFinanzas.png");
+            var excelBytes = ExcelReportGenerator.GenerateExcel(reportData, logoPath);
 
             // Guardar en caché temporal
+
             var fileName = $"Reporte_MisFinanzas_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
             var fileId = FileCache.StoreFile(excelBytes, fileName, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
             // Abrir URL de descarga
             var downloadUrl = $"/api/FileDownload/{fileId}";
-            await JSRuntime.InvokeVoidAsync("eval", $"window.open('{downloadUrl}', '_blank')");
+            NavigationManager.NavigateTo(downloadUrl, forceLoad: true);
 
             ShowSuccessMessage("Reporte Excel generado correctamente");
         }
@@ -741,7 +918,7 @@
         }
         finally
         {
-            isGeneratingReport = false;
+            isGeneratingExcel = false;
             StateHasChanged();
         }
     }

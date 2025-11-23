@@ -1,4 +1,6 @@
 ﻿@page "/goals"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using MisFinanzas.Domain.DTOs
 @using MisFinanzas.Domain.Enums
 @using MisFinanzas.Infrastructure.Interfaces
@@ -9,8 +11,7 @@
 @inject IExpenseIncomeService ExpenseIncomeService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
-@attribute [Authorize]
-@rendermode InteractiveServer
+@inject NavigationManager Navigation
 @implements IDisposable
 
 <PageTitle>Metas Financieras - Mis Finanzas</PageTitle>
@@ -23,14 +24,14 @@
                 <h1>🎯 Metas Financieras</h1>
                 <p class="mb-0 text-white">Define y alcanza tus objetivos</p>
             </div>
-            <button class="btnAddGoals" @onclick="OpenCreateModal">
+            <button class="btnAddGoals" id="goals-add-button" @onclick="OpenCreateModal">
                 <span style="font-size: 17px;">➕</span> Nueva Meta
             </button>
         </div>
     </div>
 
     <!-- Balance Disponible -->
-    <div class="balance-info-card">
+    <div class="balance-info-card" id="goals-balance-card">
         <div class="d-flex justify-content-between align-items-center">
             <div>
                 <h5 class="text-white">💵 Balance Disponible</h5>
@@ -49,21 +50,21 @@
     </div>
 
     <!-- Filtros -->
-    <div class="filters-card">
+    <div class="filters-card" id="goals-filters">
         <div class="btn-group" role="group">
-            <button class="text-white btn @(currentFilter == GoalStatus.InProgress ? "" : "btn-outline-primary")"
+            <button class="text-white btn btn-InProgress @(currentFilter == GoalStatus.InProgress ? "" : "btn-outline-primary")"
                     @onclick="() => FilterGoals(GoalStatus.InProgress)">
                 🟢 En Progreso (@activeCount)
             </button>
-            <button class="text-white btn @(currentFilter == GoalStatus.Completed ? "" : "btn-outline-success")"
+            <button class="text-white btn btn-Completed @(currentFilter == GoalStatus.Completed ? "" : "btn-outline-success")"
                     @onclick="() => FilterGoals(GoalStatus.Completed)">
                 ✅ Completadas (@completedCount)
             </button>
-            <button class="text-white btn @(currentFilter == GoalStatus.Cancelled ? "" : "btn-outline-secondary")"
+            <button class="text-white btn btn-Cancelled @(currentFilter == GoalStatus.Cancelled ? "" : "btn-outline-secondary")"
                     @onclick="() => FilterGoals(GoalStatus.Cancelled)">
                 ❌ Canceladas (@cancelledCount)
             </button>
-            <button class="text-white btn @(currentFilter == null ? "" : "btn-outline-info")"
+            <button class="text-white btn btn-all @(currentFilter == null ? "" : "btn-outline-info")"
                     @onclick="() => FilterGoals(null)">
                 📋 Todas (@allGoals.Count)
             </button>
@@ -88,7 +89,7 @@
     }
 
     <!-- Lista de Metas -->
-    <div class="row">
+    <div class="row" id="goals-list">
         @if (isLoading)
         {
             <div class="col-12">
@@ -124,33 +125,54 @@
                                 <div class="goal-actions">
                                     @if (goal.Status == GoalStatus.InProgress)
                                     {
-                                        <button class="btn btn-sm btn-success" style="background-color:rgba(76, 175, 80, 0.25);" @onclick="() => OpenProgressModal(goal)" title="Agregar progreso">
+                                        <button class="btn btn-sm btn-success"
+                                                id="@(filteredGoals.First() == goal ? "goals-add-progress-button" : "")"
+                                                style="background-color:rgba(76, 175, 80, 0.25);"
+                                                @onclick="() => OpenProgressModal(goal)" title="Agregar progreso">
                                             <span style="font-size: 13px;">➕</span>
                                         </button>
-                                        <button class="btn btn-sm btn-secondary" style="background-color:rgba(158, 158, 158, 0.25);" @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
+                                        <button class="btn btn-sm btn-secondary"
+                                                id="@(filteredGoals.First() == goal ? "goals-withdraw-button" : "")"
+                                                style="background-color:rgba(158, 158, 158, 0.25);"
+                                                @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
                                             <span style="font-size: 13px;">➖</span>
                                         </button>
-                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(255, 193, 7, 0.25);" @onclick="() => OpenEditModal(goal)" title="Editar">
+                                        <button class="btn btn-sm btn-warning"
+                                                id="@(filteredGoals.First() == goal ? "goals-edit-button" : "")"
+                                                style="background-color:rgba(255, 193, 7, 0.25);"
+                                                @onclick="() => OpenEditModal(goal)" title="Editar">
                                             <span style="font-size: 13px;">📝</span>
                                         </button>
-                                        <button class="btn btn-sm btn-secondary" style="background-color: rgba(33, 150, 243, 0.25);" @onclick="() => ConfirmCancel(goal.GoalId, goal.Title)" title="Cancelar">
+                                        <button class="btn btn-sm btn-secondary"
+                                                id="@(filteredGoals.First() == goal ? "goals-cancel-button" : "")"
+                                                style="background-color: rgba(33, 150, 243, 0.25);"
+                                                @onclick="() => ConfirmCancel(goal.GoalId, goal.Title)" title="Cancelar">
                                             <span style="font-size: 13px;">❌</span>
                                         </button>
                                     }
                                     else if (goal.Status == GoalStatus.Completed)
                                     {
-                                        <button class="btn btn-sm btn-warning" style="background-color:rgba(158, 158, 158, 0.25);" @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
+                                        <button class="btn btn-sm btn-warning"
+                                                id="@(filteredGoals.First() == goal ? "goals-withdraw-button" : "")"
+                                                style="background-color:rgba(158, 158, 158, 0.25);"
+                                                @onclick="() => OpenWithdrawModal(goal)" title="Retirar dinero">
                                             <span style="font-size: 13px;">➖</span>
                                         </button>
                                     }
                                     else if (goal.Status == GoalStatus.Cancelled)
                                     {
-                                        <button class="btn btn-sm btn-success" style="background-color:rgba(76, 175, 80, 0.25);" @onclick="() => ConfirmReactivate(goal.GoalId, goal.Title)" title="Reactivar meta">
+                                        <button class="btn btn-sm btn-success"
+                                                id="@(filteredGoals.First() == goal ? "goals-reactivate-button" : "")"
+                                                style="background-color:rgba(76, 175, 80, 0.25);"
+                                                @onclick="() => ConfirmReactivate(goal.GoalId, goal.Title)" title="Reactivar meta">
                                             <span style="font-size: 13px;">🔄</span>
                                         </button>
                                     }
                                     <!-- Eliminar está disponible para todas las metas -->
-                                    <button class="btn btn-sm btn-danger" style="background-color:rgba(244, 67, 54, 0.25);" @onclick="() => ConfirmDelete(goal.GoalId, goal.Title)" title="Eliminar">
+                                    <button class="btn btn-sm btn-danger"
+                                            id="@(filteredGoals.First() == goal ? "goals-delete-button" : "")"
+                                            style="background-color:rgba(244, 67, 54, 0.25);"
+                                            @onclick="() => ConfirmDelete(goal.GoalId, goal.Title)" title="Eliminar">
                                         <span style="font-size: 13px;">🗑️</span>
                                     </button>
                                 </div>
@@ -213,291 +235,298 @@
 <!-- Modal Crear/Editar Meta -->
 @if (showModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">
-                        @(isEditing ? "✏️ Editar Meta" : "🎯 Nueva Meta")
-                    </h5>
-                    <button type="button" class="btn-close" @onclick="CloseModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <EditForm Model="formModel" OnValidSubmit="SaveGoal">
-                        <DataAnnotationsValidator />
+    <div class="modal-overlay">
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">
+                    @(isEditing ? "✏️ Editar meta" : "🎯 Nueva meta")
+                </h5>
+                <button class="btn-close-custom" @onclick="CloseModal">✕</button>
 
-                        <div class="row">
-                            <div class="col-md-7 mb-0">
-                                <label class="form-label text-white">Nombre de la Meta</label>
-                                <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Fondo de emergencia" />
-                                <ValidationMessage For="() => formModel.Name" class="text-danger" />
-                                @if (!string.IsNullOrEmpty(nameValidationError))
-                                {
-                                    <div class="text-danger small mt-1">@nameValidationError</div>
-                                }
-                            </div>
+            </div>
+            <div class="modal-body">
+                <EditForm Model="formModel" OnValidSubmit="SaveGoal">
+                    <DataAnnotationsValidator />
 
-                            <div class="col-md-4 mb-0">
-                                <IconSelector @bind-SelectedIcon="formModel.Icon" />
-                                <ValidationMessage For="() => formModel.Icon" class="text-danger" />
-                                @if (!string.IsNullOrEmpty(iconValidationError))
-                                {
-                                    <div class="text-danger small mt-1">@iconValidationError</div>
-                                }
-                            </div>
+                    <div class="row">
+                        <div class="col-md-7 mb-0">
+                            <label class="form-label text-white">Nombre de la meta</label>
+                            <InputText @bind-Value="formModel.Name" class="form-control" placeholder="Ej: Fondo de emergencia" />
+                            <ValidationMessage For="() => formModel.Name" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(nameValidationError))
+                            {
+                                <div class="text-danger small mt-1">@nameValidationError</div>
+                            }
                         </div>
 
-                        <div class="mb-1 mt-0">
-                            <label class="form-label text-white">Descripción (Opcional)</label>
-                            <InputTextArea @bind-Value="formModel.Description" class="form-control" rows="2" placeholder="Describe tu meta..." />
+                        <div class="col-md-4 mb-0">
+                            <IconSelector @bind-SelectedIcon="formModel.Icon" />
+                            <ValidationMessage For="() => formModel.Icon" class="text-danger" />
+                            @if (!string.IsNullOrEmpty(iconValidationError))
+                            {
+                                <div class="text-danger small mt-1">@iconValidationError</div>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="mb-1 mt-0">
+                        <label class="form-label text-white">Descripción (Opcional)</label>
+                        <InputTextArea @bind-Value="formModel.Description" class="form-control" rows="2" placeholder="Describe tu meta..." />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-white">Monto objetivo</label>
+                            <InputNumber @bind-Value="formModel.TargetAmount" class="form-control" placeholder="0.00" />
+                            <ValidationMessage For="() => formModel.TargetAmount" class="text-danger" />
                         </div>
 
-                        <div class="row">
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-white">Monto Objetivo</label>
-                                <InputNumber @bind-Value="formModel.TargetAmount" class="form-control" placeholder="0.00" />
-                                <ValidationMessage For="() => formModel.TargetAmount" class="text-danger" />
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-white">Fecha Inicio</label>
-                                <InputDate @bind-Value="formModel.StartDate" class="form-control" />
-                                <ValidationMessage For="() => formModel.StartDate" class="text-danger" />
-                            </div>
-
-                            <div class="col-md-4 mb-3">
-                                <label class="form-label text-white">Fecha Meta</label>
-                                <InputDate @bind-Value="formModel.TargetDate" class="form-control" />
-                                <ValidationMessage For="() => formModel.TargetDate" class="text-danger" />
-                            </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-white">Fecha inicio</label>
+                            <InputDate @bind-Value="formModel.StartDate" class="form-control text-white'" />
+                            <ValidationMessage For="() => formModel.StartDate" class="text-danger" />
                         </div>
 
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btnSaveEdit" disabled="@isSaving">
-                                @if (isSaving)
-                                {
-                                    <span class="spinner-border spinner-border-sm me-2"></span>
-                                    <span>Guardando...</span>
-                                }
-                                else
-                                {
-                                    <span>Guardar Meta</span>
-                                }
-                            </button>
-                            <button type="button" class="btnCancel" @onclick="CloseModal">Cancelar</button>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label text-white">Fecha meta</label>
+                            <InputDate @bind-Value="formModel.TargetDate" class="form-control" />
+                            <ValidationMessage For="() => formModel.TargetDate" class="text-danger" />
                         </div>
-                    </EditForm>
-                </div>
+                    </div>
+
+                    <div class="modal-footer-custom gap-2">
+                        <button type="submit" class="btn btnSaveEdit" disabled="@isSaving">
+                            @if (isSaving)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <span>Guardando...</span>
+                            }
+                            else
+                            {
+                                <span>Guardar</span>
+                            }
+                        </button>
+                        <button type="button" class="btn btnCancel" @onclick="CloseModal">Cancelar</button>
+                    </div>
+                </EditForm>
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Agregar Progreso -->
 @if (showProgressModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">💰 Agregar Progreso</h5>
-                    <button type="button" class="btn-close" @onclick="CloseProgressModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    @if (selectedGoal != null)
-                    {
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">💰 Agregar progreso</h5>
+                <button class="btn-close-custom" @onclick="CloseProgressModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                @if (selectedGoal != null)
+                {
+                    <div class="mb-3">
+                        <h6>@selectedGoal.Icon @selectedGoal.Title</h6>
+                        <p class="text-info mb-0">
+                            Actual: @selectedGoal.CurrentAmount.ToString("C") / @selectedGoal.TargetAmount.ToString("C")
+                        </p>
+                        <p class="text-warning">
+                            Faltante: @selectedGoal.RemainingAmount.ToString("C")
+                        </p>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <strong>Balance disponible:</strong> @availableBalance.ToString("C")
+                    </div>
+
+                    <EditForm Model="progressModel" OnValidSubmit="AddProgress">
+                        <DataAnnotationsValidator />
+
                         <div class="mb-3">
-                            <h6>@selectedGoal.Icon @selectedGoal.Title</h6>
-                            <p class="text-info mb-0">
-                                Actual: @selectedGoal.CurrentAmount.ToString("C") / @selectedGoal.TargetAmount.ToString("C")
-                            </p>
-                            <p class="text-warning">
-                                Faltante: @selectedGoal.RemainingAmount.ToString("C")
-                            </p>
+                            <label class="form-label text-white">Monto para agregar</label>
+                            <InputNumber @bind-Value="progressModel.Amount" class="form-control" placeholder="0.00" />
+                            <ValidationMessage For="() => progressModel.Amount" class="text-danger" />
+                            <small class="form-text text-danger">
+                                Máximo: @Math.Min(availableBalance, selectedGoal.RemainingAmount).ToString("C")
+                            </small>
                         </div>
 
-                        <div class="alert alert-info">
-                            <strong>Balance disponible:</strong> @availableBalance.ToString("C")
+                        <div class="modal-footer-custom gap-2">
+                            <button type="submit" class="btn btnSaveEdit" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Agregando...</span>
+                                }
+                                else
+                                {
+                                    <span>Agregar progreso</span>
+                                }
+                            </button>
+                            <button type="button" class="btn btnCancel" @onclick="CloseProgressModal">Cancelar</button>
                         </div>
-
-                        <EditForm Model="progressModel" OnValidSubmit="AddProgress">
-                            <DataAnnotationsValidator />
-
-                            <div class="mb-3">
-                                <label class="form-label text-white">Monto a Agregar</label>
-                                <InputNumber @bind-Value="progressModel.Amount" class="form-control" placeholder="0.00" />
-                                <ValidationMessage For="() => progressModel.Amount" class="text-danger" />
-                                <small class="form-text text-danger">
-                                    Máximo: @Math.Min(availableBalance, selectedGoal.RemainingAmount).ToString("C")
-                                </small>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btnSaveEdit" disabled="@isSaving">
-                                    @if (isSaving)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-2"></span>
-                                        <span>Agregando...</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Agregar Progreso</span>
-                                    }
-                                </button>
-                                <button type="button" class="btnCancel" @onclick="CloseProgressModal">Cancelar</button>
-                            </div>
-                        </EditForm>
-                    }
-                </div>
+                    </EditForm>
+                }
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Retirar Progreso -->
 @if (showWithdrawModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">💸 Retirar Dinero de la Meta</h5>
-                    <button type="button" class="btn-close" @onclick="CloseWithdrawModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    @if (selectedGoalForWithdraw != null)
-                    {
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">💸 Retirar dinero de la meta</h5>
+                <button class="btn-close-custom" @onclick="CloseWithdrawModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                @if (selectedGoalForWithdraw != null)
+                {
+                    <div class="mb-3">
+                        <h6>@selectedGoalForWithdraw.Icon @selectedGoalForWithdraw.Title</h6>
+                        <p class="text-info mb-0">
+                            Actual: @selectedGoalForWithdraw.CurrentAmount.ToString("C") / @selectedGoalForWithdraw.TargetAmount.ToString("C")
+                        </p>
+                    </div>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Nota:</strong> Retirar dinero reducirá el progreso de tu meta.
+                    </div>
+
+                    <EditForm Model="withdrawModel" OnValidSubmit="WithdrawProgress">
+                        <DataAnnotationsValidator />
+
                         <div class="mb-3">
-                            <h6>@selectedGoalForWithdraw.Icon @selectedGoalForWithdraw.Title</h6>
-                            <p class="text-info mb-0">
-                                Actual: @selectedGoalForWithdraw.CurrentAmount.ToString("C") / @selectedGoalForWithdraw.TargetAmount.ToString("C")
-                            </p>
+                            <label class="form-label text-white">Monto a retirar</label>
+                            <InputNumber @bind-Value="withdrawModel.Amount" class="form-control" placeholder="0.00" />
+                            <ValidationMessage For="() => withdrawModel.Amount" class="text-danger" />
+                            <small class="form-text text-warning">
+                                Máximo disponible: @selectedGoalForWithdraw.CurrentAmount.ToString("C")
+                            </small>
                         </div>
 
-                        <div class="alert alert-warning">
-                            <strong>⚠️ Nota:</strong> Retirar dinero reducirá el progreso de tu meta.
+                        <div class="modal-footer-custom gap-2">
+                            <button type="submit" class="btn btnWithdraw" disabled="@isSaving">
+                                @if (isSaving)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                    <span>Procesando...</span>
+                                }
+                                else
+                                {
+                                    <span>Retirar dinero</span>
+                                }
+                            </button>
+                            <button type="button" class=" btn btnCancel" @onclick="CloseWithdrawModal">Cancelar</button>
                         </div>
-
-                        <EditForm Model="withdrawModel" OnValidSubmit="WithdrawProgress">
-                            <DataAnnotationsValidator />
-
-                            <div class="mb-3">
-                                <label class="form-label text-white">Monto a Retirar</label>
-                                <InputNumber @bind-Value="withdrawModel.Amount" class="form-control" placeholder="0.00" />
-                                <ValidationMessage For="() => withdrawModel.Amount" class="text-danger" />
-                                <small class="form-text text-warning">
-                                    Máximo disponible: @selectedGoalForWithdraw.CurrentAmount.ToString("C")
-                                </small>
-                            </div>
-
-                            <div class="d-grid gap-2">
-                                <button type="submit" class="btnWithdraw" disabled="@isSaving">
-                                    @if (isSaving)
-                                    {
-                                        <span class="spinner-border spinner-border-sm me-2"></span>
-                                        <span>Procesando...</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Retirar Dinero</span>
-                                    }
-                                </button>
-                                <button type="button" class="btnCancel" @onclick="CloseWithdrawModal">Cancelar</button>
-                            </div>
-                        </EditForm>
-                    }
-                </div>
+                    </EditForm>
+                }
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Confirmar Cancelación -->
 @if (showCancelModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">⚠️ Cancelar Meta</h5>
-                    <button type="button" class="btn-close" @onclick="CloseCancelModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Estás seguro de que deseas cancelar la meta <strong>@goalToCancel</strong>?</p>
-                    <p class="text-white mb-0">
-                        El progreso actual se mantendrá, pero la meta quedará marcada como cancelada.
-                    </p>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btnCancel" @onclick="CloseCancelModal">No, mantener activa</button>
-                    <button type="button" class="btnDelete" @onclick="CancelGoal">
-                        Sí, cancelar meta
-                    </button>
-                </div>
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">⚠️ Cancelar meta</h5>
+                <button class="btn-close-custom" @onclick="CloseCancelModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas cancelar la meta <strong>@goalToCancel</strong>?</p>
+                <p class="text-white mb-0">
+                    El progreso actual se mantendrá, pero la meta quedará marcada como cancelada.
+                </p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btnCancel" @onclick="CloseCancelModal">No, mantener activa</button>
+                <button type="button" class="btnDelete" @onclick="CancelGoal">
+                    Sí, cancelar meta
+                </button>
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Confirmar Reactivación -->
 @if (showReactivateModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">🔄 Reactivar Meta</h5>
-                    <button type="button" class="btn-close" @onclick="CloseReactivateModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Estás seguro de que deseas reactivar la meta <strong>@goalToReactivate</strong>?</p>
-                    <p class="text-info mb-0">
-                        La meta volverá a estar "En Progreso" y podrás seguir trabajando en ella.
-                    </p>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btnCancel" @onclick="CloseReactivateModal">Cancelar</button>
-                    <button type="button" class="btnSaveEdit" @onclick="ReactivateGoal">
-                        <span style="font-size: 13px;">🔄</span> Reactivar
-                    </button>
-                </div>
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">🔄 Reactivar meta</h5>
+                <button class="btn-close-custom" @onclick="CloseReactivateModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas reactivar la meta <strong>@goalToReactivate</strong>?</p>
+                <p class="text-info mb-0">
+                    La meta volverá a estar "En Progreso" y podrás seguir trabajando en ella.
+                </p>
+            </div>
+            <div class="modal-footer-custom border-secondary mb-3" style="margin-right:20px;">
+                <button type="button" class="btn btnCancel" @onclick="CloseReactivateModal">Cancelar</button>
+                <button type="button" class="btn btnSaveEdit" @onclick="ReactivateGoal">
+                    <span style="font-size: 13px;">🔄</span> Reactivar
+                </button>
             </div>
         </div>
+
     </div>
+
 }
 
 <!-- Modal Confirmar Eliminación -->
 @if (showDeleteModal)
 {
-    <div class="modal-backdrop show"></div>
-    <div class="modal show d-block" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content text-white">
-                <div class="modal-header border-secondary">
-                    <h5 class="modal-title">⚠️ Eliminar Meta</h5>
-                    <button type="button" class="btn-close" @onclick="CloseDeleteModal">❌</button>
-                </div>
-                <div class="modal-body">
-                    <p>¿Estás seguro de que deseas eliminar la meta <strong>@goalToDelete</strong>?</p>
-                    <p class="text-danger mb-0">
-                        <strong>Esta acción no se puede deshacer.</strong>
-                    </p>
-                </div>
-                <div class="modal-footer border-secondary">
-                    <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
-                    <button type="button" class="btnDelete" @onclick="DeleteGoal">
-                        <span style="font-size: 13px;">🗑️</span> Eliminar
-                    </button>
-                </div>
+    <div class="modal-overlay">
+
+        <div class="modal-content text-white" @onclick:stopPropagation="true">
+            <div class="modal-header border-secondary">
+                <h5 class="modal-title">⚠️ Eliminar meta</h5>
+                <button class="btn-close-custom" @onclick="CloseDeleteModal">✕</button>
+
+            </div>
+            <div class="modal-body">
+                <p>¿Estás seguro de que deseas eliminar la meta <strong>@goalToDelete</strong>?</p>
+                <p class="text-danger mb-0">
+                    <strong>Esta acción no se puede deshacer.</strong>
+                </p>
+            </div>
+            <div class="modal-footer border-secondary">
+                <button type="button" class="btnCancel" @onclick="CloseDeleteModal">Cancelar</button>
+                <button type="button" class="btnDelete" @onclick="DeleteGoal">
+                    <span style="font-size: 13px;">🗑️</span> Eliminar
+                </button>
             </div>
         </div>
     </div>
 }
+
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     private bool isLoading = true;
@@ -562,6 +591,9 @@
     private int goalIdToDelete;
     private string? goalToDelete;
 
+    //Tour automático
+    private bool _tourLaunched = false;
+
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
@@ -578,6 +610,28 @@
         }
 
         isLoading = false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_tourLaunched)
+        {
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "goals");
+        }
+    }
+
+    //Botones flotantes
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startGoalsTour");
+    }
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        Navigation.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task LoadData()

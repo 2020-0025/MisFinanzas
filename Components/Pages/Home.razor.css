@@ -1,5 +1,32 @@
-﻿body {
+﻿.home-container {
+    min-height: 100vh;
+    width:100%;
+    padding: 30px;
+    background: transparent;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
 }
+
+
+
+
+.btnLogin {
+    background: rgba(76, 175, 80, 0.25);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+    .btnLogin:hover {
+        background: rgba(76, 175, 80, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+    }
 
 /*Formulario de cerrar sesion (OJO; UBICAR DONDE ESTA ESA CLASE) */
 .logout-form {
@@ -12,7 +39,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 100px;
+    width: 40px;
     height: 40px;
     background: rgba(244, 67, 54, 0.15);
     border: 1px solid rgba(244, 67, 54, 0.3);
@@ -27,3 +54,210 @@
         background: rgba(244, 67, 54, 0.25);
         transform: translateY(-2px);
     }
+
+.btnWhatsApp {
+    background: rgba(76, 175, 80, 0.25);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+    .btnWhatsApp:hover {
+        background: rgba(76, 175, 80, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+    }
+
+.btnEmail {
+    background: rgba(244, 67, 54, 0.25);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 12px rgba(33, 150, 243, 0.3);
+    border-radius: 10px;
+    padding: 0.5rem 1rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+    .btnEmail:hover {
+        background: rgba(244, 67, 54, 0.35);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 20px rgba(33, 150, 243, 0.4);
+    }
+
+
+@media (min-width: 1024px) {
+    .navigation-bar {
+        text-align: center !important;
+        align-items: center !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        margin: 0 auto !important;
+        width: 80% !important;
+    }
+}
+
+@media (max-width: 930px) {
+    .navigation-bar {
+        text-align: center !important;
+        align-items: center !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        margin: 0 auto !important;
+        width: 100% !important;
+    }
+
+    .title img {
+        width: 100px !important;
+        height: 100px !important;
+    }
+
+    h1 {
+        font-size: 2.5rem !important;
+    }
+}
+
+
+@media (max-width: 600px) {
+    .navigation-bar {
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        justify-items: center !important;
+        width: 80% !important;
+        gap: 1rem !important;
+    }
+
+        /* Centrar logo y título */
+        .navigation-bar > div:first-child {
+            justify-content: center !important;
+        }
+
+        /* Apilar botones verticalmente */
+        .navigation-bar .links {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+            width: 100% !important;
+        }
+
+            .navigation-bar .links a,
+            .navigation-bar .links .btn-help {
+                width: 100% !important;
+                justify-content: center !important;
+            }
+}
+
+@media (max-width: 440px) {
+    .navigation-bar {
+        text-align: center !important;
+        align-items: center !important;
+        display: grid !important;
+        grid-template-columns: 1fr !important;
+        justify-items: center !important;
+        gap: 10px !important;
+        margin: 0 auto !important;
+        width: 80% !important;
+    }
+
+        /* Logo y título centrados */
+        .navigation-bar > div:first-child {
+            justify-content: center !important;
+        }
+
+        /* Botones en columna */
+        .navigation-bar .links {
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+            gap: 8px !important;
+            width: 100% !important;
+        }
+
+            .navigation-bar .links a {
+                width: 100% !important;
+                max-width: 200px !important;
+                height: auto !important;
+                font-size: 0.8rem !important;
+                margin: 0 auto !important;
+                padding: 8px 12px !important;
+            }
+
+            .navigation-bar .links .btn-help {
+                width: 100% !important;
+                max-width: 200px !important;
+                margin: 0 auto !important;
+            }
+
+    .title img {
+        width: 75px !important;
+        height: 75px !important;
+    }
+
+    h1 {
+        font-size: 2rem !important;
+    }
+
+    .navigation-bar h3 {
+        font-size: 1.2rem !important;
+    }
+}
+
+@media (max-width: 400px) {
+    .title {
+        flex-direction: column !important;
+        text-align: center !important;
+    }
+
+        .title img {
+            width: 60px !important;
+            height: 60px !important;
+        }
+
+    h1 {
+        font-size: 1.8rem !important;
+    }
+
+    .home-container {
+        padding: 15px !important;
+    }
+
+    .glass-card {
+        padding: 20px !important;
+    }
+
+    .navigation-bar .links a,
+    .navigation-bar .links .btn-help {
+        font-size: 0.75rem !important;
+        padding: 6px 10px !important;
+    }
+}
+
+@media (max-width: 360px) {
+    .navigation-bar {
+        width: 90% !important;
+    }
+
+    .title img {
+        width: 50px !important;
+        height: 50px !important;
+    }
+
+    h1 {
+        font-size: 1.6rem !important;
+    }
+
+    .title {
+        flex-direction: column !important;
+    }
+
+    .navigation-bar .links a,
+    .navigation-bar .links .btn-help {
+        max-width: 180px !important;
+        font-size: 0.7rem !important;
+    }
+}

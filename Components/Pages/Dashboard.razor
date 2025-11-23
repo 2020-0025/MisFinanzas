@@ -1,4 +1,6 @@
 ﻿@page "/dashboard"
+@rendermode InteractiveServer
+@attribute [Authorize]
 @using MisFinanzas.Domain.DTOs
 @using MisFinanzas.Domain.Enums
 @using MisFinanzas.Infrastructure.Interfaces
@@ -9,9 +11,8 @@
 @inject IFinancialGoalService GoalService
 @inject IBudgetService BudgetService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
-@attribute [Authorize]
-@rendermode InteractiveServer
 @implements IAsyncDisposable
 
 <PageTitle>Panel de Control - Mis Finanzas</PageTitle>
@@ -46,7 +47,7 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4" id="dashboard-summary-cards">
             <!-- Balance Card -->
             <div class="col-xl-3 col-md-6">
                 <div class="glass-card stat-card animate-slide-up h-100">
@@ -167,7 +168,7 @@
         </div>
 
         <!-- Main Charts Row -->
-        <div class="row g-4 mb-4">
+        <div class="row g-4 mb-4" id="dashboard-income-expense-chart">
             <!-- Bar Chart -->
             <div class="col-lg-12">
                 <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.4s;">
@@ -177,7 +178,7 @@
                                 <span style="font-size: 20px;">📊</span>
                                 Ingresos vs Gastos
                             </h5>
-                            <div class="btn-group btn-group-sm" role="group">
+                            <div class="btn-group btn-group-sm" id="dashboard-period-selector" role="group">
                                 <button type="button"
                                         class="glass-btn text-white @(selectedDays == 7 ? "active" : "")"
                                         @onclick="() => ChangePeriod(7)">
@@ -210,7 +211,7 @@
             </div>
 
             <!-- Expenses Distribution Doughnut Chart -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" id="dashboard-expenses-by-category">
                 <div class="glass-card animate-slide-up" style="animation-delay: 0.8s;">
                     <div class="card-header-glass">
                         <h5 class="mb-0 text-white fw-semibold">
@@ -236,7 +237,7 @@
             </div>
 
             <!-- Budget Doughnut Chart -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" id="dashboard-budget-chart">
                 <div class="glass-card animate-slide-up" style="animation-delay: 0.6s;">
                     <div class="card-header-glass">
                         <h5 class="mb-0 text-white fw-semibold">
@@ -275,7 +276,7 @@
         <!-- Goals + Alerts -->
         <div class="row g-4 mb-4">
             <!-- Goals -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" id="dashboard-active-goals">
                 <div class="glass-card h-100 animate-slide-up" style="animation-delay: 0.5s;">
                     <div class="card-header-glass">
                         <div class="d-flex justify-content-between align-items-center">
@@ -324,7 +325,7 @@
             </div>
 
             <!-- Alerts Widget -->
-            <div class="col-lg-6">
+            <div class="col-lg-6" id="dashboard-budget-alerts">
                 <div class="glass-card animate-slide-up" style="animation-delay: 0.7s;">
                     <div class="card-header-glass">
                         <h5 class="mb-0 text-white fw-semibold">
@@ -361,7 +362,7 @@
 
         <!-- Recent Transactions -->
         <div class="row g-4">
-            <div class="col-12">
+            <div class="col-12" id="dashboard-recent-transactions">
                 <div class="glass-card">
                     <div class="card-header-glass">
                         <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
@@ -369,7 +370,7 @@
                                 <span style="font-size: 32px;">💳</span>
                                 Historial
                             </h5>
-                            <a href="/transactions" class="glass-link">
+                            <a href="/transactions" class="glass-link" id="dashboard-view-all-link">
                                 Ver todas <i class="bi bi-arrow-right ms-1"></i>
                             </a>
                         </div>
@@ -430,6 +431,9 @@
         </div>
     }
 </div>
+<FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
+
+<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
 
 @code {
     // ===== VARIABLES DE ESTADO =====
@@ -468,7 +472,7 @@
         if (user.Identity?.IsAuthenticated ?? false)
         {
             userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
-            await LoadDashboardData();
+            await LoadDashboardData(); 
         }
 
         isLoading = false;
@@ -479,7 +483,23 @@
         if (firstRender && !isLoading)
         {
             await RenderCharts();
+            // NUEVO: Iniciar tour automáticamente si es primera vez
+            await Task.Delay(500); // Pequeño delay para que cargue la UI
+            await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "dashboard");
         }
+    }
+
+    //Botones flotantes
+
+    private async Task StartTour()
+    {
+        await JSRuntime.InvokeVoidAsync("tourService.startDashboardTour");
+    }
+
+    // Lógica para redirigir
+    private void GotoHome()
+    {
+        Navigation.NavigateTo("/"); // Redirige al Home
     }
 
     private async Task ChangePeriod(int days)
