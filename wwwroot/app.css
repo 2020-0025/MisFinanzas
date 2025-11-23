@@ -23,7 +23,7 @@ body {
    EFECTO GLASS BLUR GLOBAL
    =================================== */
 .glass-card {
-    background: rgba(255, 255, 255, 0.05);
+    background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -32,11 +32,14 @@ body {
 }
 
 .glass-nav {
-    background: rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(15px);
-    -webkit-backdrop-filter: blur(15px);
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.3);
+    text-align: center;
+    align-items: center;
+    align-content: center;
 }
 
 /* ===================================
@@ -154,6 +157,18 @@ a, .btn-link {
     .form-control::placeholder {
         color: rgba(255, 255, 255, 0.5);
     }
+
+    .form-control[type="date"] {
+        color-scheme: dark; /* Automáticamente adapta iconos a blanco */
+        background-color: rgba(255, 255, 255, 0.1); /* Fondo semi-transparente */
+        color: white; /* Texto blanco */
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+        .form-control[type="date"]::-webkit-calendar-picker-indicator {
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="white"><path d="M3.5 0a.5.5 0 0 1 .5.5V1h8V.5a.5.5 0 0 1 1 0V1h1a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2V3a2 2 0 0 1 2-2h1V.5a.5.5 0 0 1 .5-.5zM1 4v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4H1z"/></svg>');
+            filter: none;
+        }
 
 /* Checkbox personalizado */
 input[type="checkbox"] {
@@ -468,12 +483,6 @@ input[type="checkbox"] {
         max-width: 80px;
     }
 
-
-    /* Cards más compactos 
-    .glass-card {
-        margin: 5px;
-        padding: 10px;
-    }*/
 
     /* Cards más anchos en móvil */
     .glass-card {

@@ -1,0 +1,129 @@
+﻿/* Estilos personalizados para Driver.js */
+
+/* ===== ELEMENTO DESTACADO ===== */
+.driver-active-element {
+    box-shadow: 
+        0 0 0 1px rgba(102, 126, 234, 0.6) !important;
+}
+
+/* Animación de pulso */
+@keyframes subtlePulse {
+    0%, 100% {
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 1), 0 0 0 6px rgba(102, 126, 234, 0.6);
+    }
+
+    50% {
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 1), 0 0 0 6px rgba(102, 126, 234, 0.9), 0 0 20px rgba(102, 126, 234, 0.6);
+    }
+}
+
+.driver-active-element {
+    animation: subtlePulse 2s ease-in-out infinite;
+}
+
+    /* Forzar visibilidad del contenido */
+    .driver-active-element,
+    .driver-active-element * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+/* ===== POPOVER ===== */
+.driver-popover {
+    background: linear-gradient(135deg, #0a192f 0%, #1e3a5f 100%) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    max-width: 400px !important;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2), 0 10px 40px rgba(0, 0, 0, 0.6) !important;
+}
+
+.driver-popover-title {
+    font-size: 1.15rem !important;
+    font-weight: bold !important;
+    color: white !important;
+}
+
+.driver-popover-description {
+    font-size: 0.95rem !important;
+    color: rgba(255, 255, 255, 0.95) !important;
+    line-height: 1.5 !important;
+}
+
+.driver-popover-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+}
+
+.driver-popover-next-btn,
+.driver-popover-prev-btn {
+    background: rgba(94, 158, 214, 0.15) !important; /* Azul claro translúcido */
+    color: white !important; /* Azul celeste brillante */
+    border: 1.5px solid rgba(100, 181, 246, 0.5) !important; /* Borde azul claro */
+    padding: 8px 16px !important;
+    border-radius: 8px !important;
+    transition: all 0.3s ease !important;
+    margin-top: 13px !important;
+    /* ===== TEXTO NÍTIDO ===== */
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
+    letter-spacing: 0.5px !important;
+    /* ===== FORZAR RENDERIZADO NÍTIDO ===== */
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
+    will-change: transform !important;
+    /* ===== SOMBRA PARA PROFUNDIDAD ===== */
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+}
+
+    .driver-popover-next-btn:hover,
+    .driver-popover-prev-btn:hover {
+        background: rgba(100, 181, 246, 0.25) !important; /* Más brillante al hover */
+        color: #90caf9 !important; /* Azul más claro */
+        border-color: rgba(144, 202, 249, 0.8) !important;
+        transform: translateZ(0) scale(1.02) !important;
+        box-shadow: 0 0 15px rgba(100, 181, 246, 0.3) !important; /* Glow azul */
+    }
+
+.driver-popover-close-btn {
+    background: rgba(255, 255, 255, 0.2) !important;
+    color: white !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 0.04rem 0.04rem !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    transition: all 0.3s ease !important;
+    margin-top: 0.15rem !important;
+    margin-right: 0.15rem !important;
+    margin-left: auto !important;
+}
+
+    .driver-popover-close-btn:hover {
+        background: rgba(244, 67, 54, 0.3) !important;
+        transform: scale(1.05) !important;
+    }
+
+.driver-popover-progress-text {
+    color: rgba(255, 255, 255, 0.8) !important;
+    font-size: 0.85rem !important;
+}
+
+@media (max-width: 600px) {
+    .driver-popover {
+        max-width: 90% !important;
+        padding: 15px !important;
+    }
+    .driver-popover-title {
+        font-size: 1rem !important;
+    }
+    .driver-popover-description {
+        font-size: 0.9rem !important;
+    }
+    .driver-popover-next-btn,
+    .driver-popover-prev-btn {
+        font-size: 0.7rem !important;
+        padding: 6px 12px !important;
+    }
+} 
