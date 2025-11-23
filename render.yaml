@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: MisFinanzas
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: DATABASE_URL
+        sync: false
+      - key: Authentication__Google__ClientId
+        sync: false
+      - key: Authentication__Google__ClientSecret
+        sync: false
+      - key: Authentication__Microsoft__ClientId
+        sync: false
+      - key: Authentication__Microsoft__ClientSecret
+        sync: false
+      - key: Security__UsePasswordEncryption
+        value: "false"

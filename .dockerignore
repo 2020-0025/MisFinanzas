@@ -1,0 +1,14 @@
+bin/
+obj/
+out/
+.git/
+.vs/
+.vscode/
+*.user
+*.suo
+.dockerignore
+Dockerfile
+render.yaml
+README.md
+.gitignore
+.gitattributes
