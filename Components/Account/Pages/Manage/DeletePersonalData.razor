@@ -71,17 +71,23 @@
                 @if (requirePassword)
                 {
                     <div class="mb-3">
-                        <label for="password" class="form-label">Confirma tu Contraseña</label>
-                        <InputText type="password"
-                                   @bind-Value="Input.Password"
-                                   class="form-control"
-                                   id="password"
-                                   autocomplete="current-password"
-                                   placeholder="Ingresa tu contraseña para confirmar" />
+                        <label for="password" class="form-label">Password</label>
+                        <div class="password-input-wrapper">
+                            <InputText type="password"
+                                       @bind-Value="Input.Password"
+                                       class="form-control"
+                                       id="password"
+                                       autocomplete="current-password"
+                                       placeholder="Please enter your password." />
+                            <button type="button"
+                                    class="password-toggle-btn"
+                                    id="password-toggle"
+                                    onclick="togglePasswordVisibility('password', 'password-toggle')"
+                                    title="Mostrar contraseña">
+                                👁️
+                            </button>
+                        </div>
                         <ValidationMessage For="() => Input.Password" class="text-danger" />
-                        <small class="form-text text-warning">
-                            Debes confirmar tu identidad antes de eliminar la cuenta
-                        </small>
                     </div>
                 }
                 else

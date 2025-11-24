@@ -26,3 +26,25 @@ window.downloadFile = async function (filename, downloadName) {
         alert('Ocurrió un error al descargar el archivo.');
     }
 };
+
+
+// Función para toggle de visibilidad de contraseña
+window.togglePasswordVisibility = function (inputId, buttonId) {
+    const input = document.getElementById(inputId);
+    const button = document.getElementById(buttonId);
+
+    if (!input || !button) {
+        console.error('No se encontró el input o el botón con los IDs proporcionados');
+        return;
+    }
+
+    if (input.type === 'password') {
+        input.type = 'text';
+        button.innerHTML = '👁️‍🗨️'; // Ojo tachado (ocultar)
+        button.setAttribute('title', 'Ocultar contraseña');
+    } else {
+        input.type = 'password';
+        button.innerHTML = '👁️'; // Ojo abierto (mostrar)
+        button.setAttribute('title', 'Mostrar contraseña');
+    }
+};

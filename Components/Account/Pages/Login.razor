@@ -50,12 +50,21 @@
 
                 <div class="mb-3">
                     <label for="password" class="form-label">Contraseña</label>
-                    <InputText @bind-Value="Input.Password"
-                               type="password"
-                               class="form-control"
-                               id="password"
-                               autocomplete="current-password"
-                               placeholder="••••••••" />
+                    <div class="password-input-wrapper">
+                        <InputText @bind-Value="Input.Password"
+                                   type="password"
+                                   class="form-control"
+                                   id="password"
+                                   autocomplete="current-password"
+                                   placeholder="••••••••" />
+                        <button type="button"
+                                class="password-toggle-btn"
+                                id="password-toggle"
+                                onclick="togglePasswordVisibility('password', 'password-toggle')"
+                                title="Mostrar contraseña">
+                            👁️
+                        </button>
+                    </div>
                     <ValidationMessage For="() => Input.Password" class="text-danger" />
                 </div>
 
