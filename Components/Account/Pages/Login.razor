@@ -1,5 +1,4 @@
 ﻿@page "/Account/Login"
-@rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Identity
@@ -163,7 +162,7 @@
     </div>
 </div>
 
-<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="90" />
+<a href="/" class="fab-help" style="bottom: 90px;" title="Ir al Inicio">🏠</a>
 
 @code {
     private string? errorMessage;
@@ -181,17 +180,12 @@
 
     protected override async Task OnInitializedAsync()
     {
-        if (HttpMethods.IsGet(HttpContext.Request.Method))
+        if (HttpContext != null && HttpMethods.IsGet(HttpContext.Request.Method))
         {
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
 
         externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-    }
-
-    private void GotoHome()
-    {
-        NavigationManager.NavigateTo("/");
     }
 
     public async Task LoginUser()

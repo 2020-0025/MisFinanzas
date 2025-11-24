@@ -12,7 +12,8 @@
 
 <PageTitle>Confirmar Email - Mis Finanzas</PageTitle>
 
-<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+<div style="min-height: 100vh; display: flex; align-items: center; justify-content: center;
+        padding: 20px; width:100%; backdrop-filter: blur(20px);">
 
     <div style="width: 100%; max-width: 500px;">
 
@@ -26,7 +27,7 @@
                 <h1 style="color: white; font-size: 2rem; margin-bottom: 20px; font-weight: 700;">
                     Error de Confirmación
                 </h1>
-                <div style="background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
+                <div style="background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.4); border-radius: 12px; padding: 20px; margin-bottom: 30px; color:black;">
                     <StatusMessage Message="@statusMessage" />
                 </div>
                 <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 35px; line-height: 1.6;">
@@ -43,7 +44,7 @@
                 <div style="background: rgba(76, 175, 80, 0.2); border: 1px solid rgba(76, 175, 80, 0.4); border-radius: 12px; padding: 20px; margin-bottom: 30px;">
                     <StatusMessage Message="@statusMessage" />
                 </div>
-                <p style="color: rgba(255, 255, 255, 0.8); margin-bottom: 35px; line-height: 1.6;">
+                <p style="color: white; margin-bottom: 35px; line-height: 1.6;">
                     Tu cuenta ha sido verificada exitosamente. Ya puedes iniciar sesión y comenzar a gestionar tus finanzas.
                 </p>
             }
@@ -128,7 +129,7 @@
         {
             var code = Encoding.UTF8.GetString(WebEncoders.Base64UrlDecode(Code));
             var result = await UserManager.ConfirmEmailAsync(user, code);
-            statusMessage = result.Succeeded ? "Thank you for confirming your email." : "Error confirming your email.";
+            statusMessage = result.Succeeded ? "Gracias por confirmar tu email." : "Error confimando tu email.";
         }
     }
 }

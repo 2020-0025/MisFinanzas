@@ -1,5 +1,4 @@
 ﻿@page "/Account/Register"
-@rendermode InteractiveServer
 @using System.ComponentModel.DataAnnotations
 @using System.Text
 @using System.Text.Encodings.Web
@@ -179,7 +178,7 @@
     </div>
 </div>
 
-<FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="90" />
+<a href="/" class="fab-help" style="bottom: 90px;" title="Ir al Inicio">🏠</a>
 
 @code {
     private string? errorMessage;
@@ -196,11 +195,6 @@
     protected override async Task OnInitializedAsync()
     {
         externalLogins = (await SignInManager.GetExternalAuthenticationSchemesAsync()).ToList();
-    }
-
-    private void GotoHome()
-    {
-        NavigationManager.NavigateTo("/");
     }
 
     public async Task RegisterUser(EditContext editContext)
