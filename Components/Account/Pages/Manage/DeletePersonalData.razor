@@ -3,45 +3,144 @@
 @using System.ComponentModel.DataAnnotations
 @using Microsoft.AspNetCore.Identity
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Layout
+
+@layout MinimalLayout
 
 @inject UserManager<ApplicationUser> UserManager
 @inject SignInManager<ApplicationUser> SignInManager
 @inject IdentityUserAccessor UserAccessor
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<DeletePersonalData> Logger
+@inject NavigationManager NavigationManager
 
-<PageTitle>Delete Personal Data</PageTitle>
+<PageTitle>Eliminar Cuenta - Mis Finanzas</PageTitle>
 
-<StatusMessage Message="@message" />
+<div class="auth-container-split">
+    <div style="width: 100%; max-width: 600px; margin: 0 auto;">
 
-<h3>Delete Personal Data</h3>
+        <!-- Hero Title -->
+        <div class="glass-card animate-slide-up" style="padding: 40px; text-align: center; margin-bottom: 30px;">
+            <span style="font-size: 64px; display: block; margin-bottom: 20px;">⚠️</span>
+            <h1 style="color: white; font-size: 2rem; margin-bottom: 15px; font-weight: 700;">
+                Eliminar Cuenta
+            </h1>
+            <p style="color: white; font-size: 1rem;">
+                Esta acción es permanente e irreversible
+            </p>
+        </div>
 
-<div class="alert alert-warning" role="alert">
-    <p>
-        <strong>Deleting this data will permanently remove your account, and this cannot be recovered.</strong>
-    </p>
-</div>
-
-<div>
-    <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
-        <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger" role="alert" />
-        @if (requirePassword)
-        {
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Please enter your password." />
-                <label for="password" class="form-label">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+        <!-- Delete Form Card -->
+        <div class="glass-card animate-slide-up animate-delay-1" style="padding: 40px;">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                <span style="font-size: 28px;">🗑️</span>
+                <h2 style="color: white; margin: 0; font-size: 1.5rem;">Confirmar Eliminación</h2>
             </div>
-        }
-        <button class="w-100 btn btn-lg btn-danger" type="submit">Delete data and close my account</button>
-    </EditForm>
+
+            <!-- Warning Alert -->
+            <div class="alert alert-danger" role="alert" style="margin-bottom: 25px; background: rgba(244, 67, 54, 0.2); border: 1px solid rgba(244, 67, 54, 0.5);">
+                <h6 style="color: #EF4444; font-weight: 700; margin-bottom: 15px;">
+                    🚫 ADVERTENCIA IMPORTANTE
+                </h6>
+                <p style="color: white; margin-bottom: 12px; font-weight: 500;">
+                    Al eliminar tu cuenta, perderás <strong>permanentemente</strong> todos tus datos:
+                </p>
+                <ul class="text-warning" style="margin-bottom: 12px; padding-left: 20px;">
+                    <li>Categorías de gastos e ingresos</li>
+                    <li>Todas tus transacciones financieras</li>
+                    <li>Metas financieras y su progreso</li>
+                    <li>Presupuestos mensuales</li>
+                    <li>Información de préstamos</li>
+                    <li>Notificaciones y recordatorios</li>
+                </ul>
+                <p style="color: #EF4444; margin: 0; font-weight: 700;">
+                    ⚠️ Esta acción NO se puede deshacer.
+                </p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(message))
+            {
+                <div class="alert alert-danger" role="alert" style="margin-bottom: 20px;">
+                    @message
+                </div>
+            }
+
+            <EditForm Model="Input" FormName="delete-user" OnValidSubmit="OnValidSubmitAsync" method="post">
+                <DataAnnotationsValidator />
+
+                @if (requirePassword)
+                {
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Confirma tu Contraseña</label>
+                        <InputText type="password"
+                                   @bind-Value="Input.Password"
+                                   class="form-control"
+                                   id="password"
+                                   autocomplete="current-password"
+                                   placeholder="Ingresa tu contraseña para confirmar" />
+                        <ValidationMessage For="() => Input.Password" class="text-danger" />
+                        <small class="form-text text-warning">
+                            Debes confirmar tu identidad antes de eliminar la cuenta
+                        </small>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert" style="background: rgba(33, 150, 243, 0.15); border: 1px solid rgba(33, 150, 243, 0.4); margin-bottom: 20px;">
+                        <p style="color: white; margin: 0;">
+                            💡 Tu cuenta no tiene contraseña configurada. Puedes proceder directamente con la eliminación.
+                        </p>
+                    </div>
+                }
+
+                <div class="login-footer-custom" style="margin-top: 30px;">
+                    <button type="submit"
+                            class="btnLogin"
+                            disabled="@isLoading"
+                            style="background: rgba(244, 67, 54, 0.25); border: 1px solid rgba(244, 67, 54, 0.5); box-shadow: 0 0 12px rgba(244, 67, 54, 0.3); margin: 0 auto;">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2"></span>
+                            <span>Eliminando cuenta...</span>
+                        }
+                        else
+                        {
+                            <span>🗑️ Eliminar mi cuenta permanentemente</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="auth-footer" style="margin-top: 25px; padding-top: 25px; border-top: 1px solid rgba(255, 255, 255, 0.1);">
+                <p>
+                    ¿Cambiaste de opinión? <a class="text-info" href="/profile">Volver a mi perfil</a>
+                </p>
+            </div>
+        </div>
+
+        <!-- Info Card -->
+        <div class="glass-card animate-slide-up animate-delay-2" style="padding: 25px; margin-top: 20px; background: rgba(255, 193, 7, 0.1); border: 1px solid rgba(255, 193, 7, 0.3);">
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <span style="font-size: 32px;">💡</span>
+                <div>
+                    <h3 style="color: white; margin: 0 0 10px 0; font-size: 1.1rem;">¿Tienes problemas?</h3>
+                    <p style="color: white; margin: 0; line-height: 1.6; font-size: 0.95rem;">
+                        Si tienes problemas con tu cuenta, considera cambiar tu contraseña o actualizar tu información antes de eliminarla permanentemente.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+    </div>
 </div>
+
+<a href="/" class="fab-help" style="bottom: 90px;" title="Ir al Inicio">🏠</a>
 
 @code {
     private string? message;
     private ApplicationUser user = default!;
     private bool requirePassword;
+    private bool isLoading = false;
 
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = default!;
@@ -51,6 +150,11 @@
 
     protected override async Task OnInitializedAsync()
     {
+        if (HttpContext == null)
+        {
+            return;
+        }
+
         Input ??= new();
         user = await UserAccessor.GetRequiredUserAsync(HttpContext);
         requirePassword = await UserManager.HasPasswordAsync(user);
@@ -60,7 +164,7 @@
     {
         if (requirePassword && !await UserManager.CheckPasswordAsync(user, Input.Password))
         {
-            message = "Error: Incorrect password.";
+            message = "Error: Contraseña incorrecta. Verifica e intenta de nuevo.";
             return;
         }
 
@@ -75,7 +179,7 @@
         var userId = await UserManager.GetUserIdAsync(user);
         Logger.LogInformation("User with ID '{UserId}' deleted themselves.", userId);
 
-        RedirectManager.RedirectToCurrentPage();
+        RedirectManager.RedirectTo("/");  // USAR RedirectManager en vez de NavigationManager
     }
 
     private sealed class InputModel
