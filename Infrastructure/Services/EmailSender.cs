@@ -21,7 +21,7 @@ namespace MisFinanzas.Infrastructure.Services
             var subject = "Confirma tu cuenta - MisFinanzas";
             var htmlMessage = $@"
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-                    <div style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
+                    <div style='background: linear-gradient(135deg, #0a192f 0%, #1e3a5f 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
                         <h1 style='color: white; margin: 0;'>🎉 ¡Bienvenido a MisFinanzas!</h1>
                     </div>
                     <div style='background: #f7f7f7; padding: 30px; border-radius: 0 0 10px 10px;'>
@@ -32,7 +32,7 @@ namespace MisFinanzas.Infrastructure.Services
                         </p>
                         <div style='text-align: center; margin: 30px 0;'>
                             <a href='{confirmationLink}' 
-                               style='background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                               style='background: linear-gradient(135deg, #0a192f 0%, #1e3a5f 100%); 
                                       color: white; 
                                       padding: 15px 30px; 
                                       text-decoration: none; 
@@ -57,7 +57,7 @@ namespace MisFinanzas.Infrastructure.Services
             var subject = "Restablecer contraseña - MisFinanzas";
             var htmlMessage = $@"
                 <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
-                    <div style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
+                    <div style='background: linear-gradient(135deg, #0a192f 0%, #1e3a5f 100%); padding: 30px; text-align: center; border-radius: 10px 10px 0 0;'>
                         <h1 style='color: white; margin: 0;'>🔐 Restablecer Contraseña</h1>
                     </div>
                     <div style='background: #f7f7f7; padding: 30px; border-radius: 0 0 10px 10px;'>
@@ -67,7 +67,7 @@ namespace MisFinanzas.Infrastructure.Services
                         </p>
                         <div style='text-align: center; margin: 30px 0;'>
                             <a href='{resetLink}' 
-                               style='background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); 
+                               style='background: linear-gradient(135deg, #0a192f 0%, #1e3a5f 100%); 
                                       color: white; 
                                       padding: 15px 30px; 
                                       text-decoration: none; 

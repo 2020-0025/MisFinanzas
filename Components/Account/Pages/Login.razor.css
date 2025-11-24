@@ -17,6 +17,7 @@
     background: transparent;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
+    width: 100%;
 }
 
 .auth-grid {
