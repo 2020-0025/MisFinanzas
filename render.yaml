@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: MisFinanzas
+    name: MisFinanzasOriginal
     runtime: docker
     plan: free
     dockerfilePath: ./Dockerfile
