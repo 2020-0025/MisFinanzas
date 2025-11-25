@@ -29,5 +29,3 @@ services:
         sync: false
       - key: EmailSettings__FromName
         value: Mis Finanzas
-      - key: Security__UsePasswordEncryption
-        value: "false"
