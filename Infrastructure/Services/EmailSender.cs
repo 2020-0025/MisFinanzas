@@ -2,6 +2,8 @@
 using MisFinanzas.Domain.Entities;
 using System.Net;
 using System.Net.Mail;
+using SendGrid;
+using SendGrid.Helpers.Mail;
 
 namespace MisFinanzas.Infrastructure.Services
 {
@@ -123,6 +125,35 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
+                // Intentar usar SendGrid primero (para producción/Render)
+                var sendGridApiKey = _configuration["SENDGRID_API_KEY"];
+
+                if (!string.IsNullOrEmpty(sendGridApiKey))
+                {
+                    // Usar SendGrid
+                    var client = new SendGrid.SendGridClient(sendGridApiKey);
+                    var from = new SendGrid.Helpers.Mail.EmailAddress(
+                     _configuration["EmailSettings:FromEmail"] ?? "soportemisfinanzas@gmail.com",
+                     _configuration["EmailSettings:FromName"] ?? "MisFinanzas");
+                    var to = new SendGrid.Helpers.Mail.EmailAddress(email);
+                    var msg = SendGrid.Helpers.Mail.MailHelper.CreateSingleEmail(from, to, subject, "", htmlMessage);
+
+                    var response = await client.SendEmailAsync(msg);
+
+                    if (response.StatusCode == System.Net.HttpStatusCode.Accepted ||
+                        response.StatusCode == System.Net.HttpStatusCode.OK)
+                    {
+                        _logger.LogInformation("Correo enviado exitosamente via SendGrid a {Email}", email);
+                    }
+                    else
+                    {
+                        _logger.LogError("SendGrid returned status {StatusCode} when sending to {Email}",
+                            response.StatusCode, email);
+                    }
+                    return;
+                }
+
+                // Fallback a SMTP (para desarrollo local)
                 var smtpHost = _configuration["EmailSettings:SmtpHost"];
                 var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
                 var smtpUsername = _configuration["EmailSettings:SmtpUsername"];
@@ -132,11 +163,11 @@ namespace MisFinanzas.Infrastructure.Services
 
                 if (string.IsNullOrEmpty(smtpHost) || string.IsNullOrEmpty(smtpUsername) || string.IsNullOrEmpty(smtpPassword))
                 {
-                    _logger.LogWarning("Email settings are not configured. Email not sent to {Email}", email);
-                    return;
+                    _logger.LogWarning("⚠️ Email settings are not configured. Email not sent to {Email}", email);
+                    return; // No lanzar excepción, solo advertir
                 }
 
-                using var client = new SmtpClient(smtpHost, smtpPort)
+                using var smtpClient = new SmtpClient(smtpHost, smtpPort)
                 {
                     Credentials = new NetworkCredential(smtpUsername, smtpPassword),
                     EnableSsl = true
@@ -152,14 +183,16 @@ namespace MisFinanzas.Infrastructure.Services
 
                 mailMessage.To.Add(email);
 
-                await client.SendMailAsync(mailMessage);
-                _logger.LogInformation("Email sent successfully to {Email}", email);
+                await smtpClient.SendMailAsync(mailMessage);
+                _logger.LogInformation("Email sent successfully via SMTP to {Email}", email);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error sending email to {Email}", email);
-                throw; // Re-lanzar para que Identity maneje el error
+                _logger.LogError(ex, "❌ Error sending email to {Email}", email);
+                // NO re-lanzar la excepción para evitar que falle todo el registro
+                // En producción es mejor permitir el registro y que el usuario reenvíe el email
             }
         }
+
     }
 }
