@@ -7,6 +7,9 @@
 @using Microsoft.AspNetCore.Identity
 @using Microsoft.AspNetCore.WebUtilities
 @using MisFinanzas.Domain.Entities
+@using MisFinanzas.Components.Layout
+
+@layout MinimalLayout
 
 @inject SignInManager<ApplicationUser> SignInManager
 @inject UserManager<ApplicationUser> UserManager
@@ -16,33 +19,87 @@
 @inject IdentityRedirectManager RedirectManager
 @inject ILogger<ExternalLogin> Logger
 
-<PageTitle>Register</PageTitle>
+<PageTitle>Completar Registro - Mis Finanzas</PageTitle>
 
-<StatusMessage Message="@message" />
-<h1>Register</h1>
-<h2>Associate your @ProviderDisplayName account.</h2>
-<hr />
+<div class="auth-container-split">
+    <div style="width: 100%; max-width: 550px; margin: 0 auto;">
 
-<div  class="alert alert-info">
-    You've successfully authenticated with <strong>@ProviderDisplayName</strong>.
-    Please enter an email address for this site below and click the Register button to finish
-    logging in.
-</div>
+        <!-- Hero Title -->
+        <div class="glass-card animate-slide-up" style="padding: 40px; text-align: center; margin-bottom: 30px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);">
+            <span style="font-size: 64px; display: block; margin-bottom: 20px;">🎉</span>
+            <h1 style="color: white; font-size: 2rem; margin-bottom: 15px; font-weight: 700;">
+                ¡Casi listo!
+            </h1>
+            <p style="color: white; font-size: 1rem;">
+                Completa tu registro con @ProviderDisplayName
+            </p>
+        </div>
 
-<div class="row">
-    <div class="col-md-4">
-        <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
-            <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="email" placeholder="Please enter your email." />
-                <label for="email" class="form-label">Email</label>
-                <ValidationMessage For="() => Input.Email" />
+        <!-- Info Card -->
+        <div class="glass-card animate-slide-up animate-delay-1" style="padding: 30px; margin-bottom: 20px; background: rgba(76, 175, 80, 0.1); backdrop-filter: blur(20px); border-radius: 15px; border: 1px solid rgba(76, 175, 80, 0.3);">
+            <div style="display: flex; gap: 15px; align-items: flex-start;">
+                <span style="font-size: 32px;">✅</span>
+                <div style="flex: 1;">
+                    <h3 style="color: white; margin: 0 0 10px 0; font-size: 1.1rem;">Autenticación Exitosa</h3>
+                    <p style="color: white; margin: 0; line-height: 1.6; font-size: 0.95rem;">
+                        Te has autenticado exitosamente con <strong>@ProviderDisplayName</strong>.
+                        Por favor confirma tu correo electrónico para completar el registro.
+                    </p>
+                </div>
             </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
-        </EditForm>
+        </div>
+
+        <!-- Error Message -->
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <div class="alert alert-danger" role="alert" style="margin-bottom: 20px; background: rgba(220, 53, 69, 0.2); border: 1px solid rgba(220, 53, 69, 0.5); color: white; border-radius: 8px; padding: 12px;">
+                @message
+            </div>
+        }
+
+        <!-- Registration Form Card -->
+        <div class="glass-card animate-slide-up animate-delay-2" style="padding: 40px; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(20px); border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);">
+            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 25px;">
+                <span style="font-size: 28px;">📧</span>
+                <h2 style="color: white; margin: 0; font-size: 1.5rem;">Confirma tu Email</h2>
+            </div>
+
+            <EditForm Model="Input" OnValidSubmit="OnValidSubmitAsync" FormName="confirmation" method="post">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="text-danger" role="alert" />
+
+                <div class="mb-3">
+                    <label for="email" class="form-label">Correo Electrónico</label>
+                    <InputText @bind-Value="Input.Email"
+                               class="form-control"
+                               id="email"
+                               autocomplete="email"
+                               placeholder="tu@email.com"
+                               style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.3); color: white; padding: 12px; border-radius: 8px; font-size: 0.95rem;" />
+                    <ValidationMessage For="() => Input.Email" class="text-danger" />
+                    <small class="form-text" style="color: white; font-size: 0.85rem;">
+                        Este email se asociará con tu cuenta de @ProviderDisplayName
+                    </small>
+                </div>
+
+                <div class="login-footer-custom" style="display: flex; justify-content: center; margin-top: 25px;">
+                    <button type="submit" class="btnLogin" style="background: rgba(76, 175, 80, 0.25); border: 1px solid rgba(76, 175, 80, 0.5); color: white; font-weight: 600; box-shadow: 0 0 12px rgba(76, 175, 80, 0.3); border-radius: 10px; padding: 0.75rem 2rem; transition: all 0.3s ease; cursor: pointer; width: auto;">
+                        Completar Registro
+                    </button>
+                </div>
+            </EditForm>
+
+            <div class="auth-footer" style="text-align: center; margin-top: 25px;">
+                <p style="color: white; margin-bottom: 10px; font-size: 0.9rem;">
+                    ¿Ya tienes cuenta? <a class="text-info" href="/Account/Login" style="color: #4FC3F7; text-decoration: none; font-weight: 500;">Inicia sesión aquí</a>
+                </p>
+            </div>
+        </div>
+
     </div>
 </div>
+
+<a href="/" class="fab-help" style="position: fixed; right: 6px; bottom: 90px; z-index: 1000; width: 45px; height: 45px; border-radius: 50%; background: rgba(255, 193, 7, 0.15); border: 1px solid rgba(255, 193, 7, 0.3); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; text-decoration: none; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); transition: all 0.3s ease;" title="Ir al Inicio">🏠</a>
 
 @code {
     public const string LoginCallbackAction = "LoginCallback";
@@ -71,13 +128,13 @@
     {
         if (RemoteError is not null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", $"Error from external provider: {RemoteError}", HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Login", $"Error del proveedor externo: {RemoteError}", HttpContext);
         }
 
         var info = await SignInManager.GetExternalLoginInfoAsync();
         if (info is null)
         {
-            RedirectManager.RedirectToWithStatus("Account/Login", "Error loading external login information.", HttpContext);
+            RedirectManager.RedirectToWithStatus("Account/Login", "Error al cargar información de inicio de sesión externo.", HttpContext);
         }
 
         externalLoginInfo = info;
@@ -90,15 +147,12 @@
                 return;
             }
 
-            // We should only reach this page via the login callback, so redirect back to
-            // the login page if we get here some other way.
             RedirectManager.RedirectTo("Account/Login");
         }
     }
 
     private async Task OnLoginCallbackAsync()
     {
-        // Sign in the user with this external login provider if the user already has a login.
         var result = await SignInManager.ExternalLoginSignInAsync(
             externalLoginInfo.LoginProvider,
             externalLoginInfo.ProviderKey,
@@ -108,17 +162,16 @@
         if (result.Succeeded)
         {
             Logger.LogInformation(
-                "{Name} logged in with {LoginProvider} provider.",
+                "{Name} inició sesión con el proveedor {LoginProvider}.",
                 externalLoginInfo.Principal.Identity?.Name,
                 externalLoginInfo.LoginProvider);
-            RedirectManager.RedirectTo(ReturnUrl);
+            RedirectManager.RedirectTo(ReturnUrl ?? "/dashboard");
         }
         else if (result.IsLockedOut)
         {
             RedirectManager.RedirectTo("Account/Lockout");
         }
 
-        // If the user does not have an account, then ask the user to create an account.
         if (externalLoginInfo.Principal.HasClaim(c => c.Type == ClaimTypes.Email))
         {
             Input.Email = externalLoginInfo.Principal.FindFirstValue(ClaimTypes.Email) ?? "";
@@ -139,7 +192,7 @@
             result = await UserManager.AddLoginAsync(user, externalLoginInfo);
             if (result.Succeeded)
             {
-                Logger.LogInformation("User created an account using {Name} provider.", externalLoginInfo.LoginProvider);
+                Logger.LogInformation("Usuario creó una cuenta usando el proveedor {Name}.", externalLoginInfo.LoginProvider);
 
                 var userId = await UserManager.GetUserIdAsync(user);
                 var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
@@ -150,18 +203,17 @@
                     new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code });
                 await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
 
-                // If account confirmation is required, we need to show the link if we don't have a real email sender
                 if (UserManager.Options.SignIn.RequireConfirmedAccount)
                 {
                     RedirectManager.RedirectTo("Account/RegisterConfirmation", new() { ["email"] = Input.Email });
                 }
 
                 await SignInManager.SignInAsync(user, isPersistent: false, externalLoginInfo.LoginProvider);
-                RedirectManager.RedirectTo(ReturnUrl);
+                RedirectManager.RedirectTo(ReturnUrl ?? "/dashboard");
             }
         }
 
-        message = $"Error: {string.Join(",", result.Errors.Select(error => error.Description))}";
+        message = $"Error: {string.Join(", ", result.Errors.Select(error => error.Description))}";
     }
 
     private ApplicationUser CreateUser()
@@ -172,8 +224,8 @@
         }
         catch
         {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(ApplicationUser)}'. " +
-                $"Ensure that '{nameof(ApplicationUser)}' is not an abstract class and has a parameterless constructor");
+            throw new InvalidOperationException($"No se puede crear una instancia de '{nameof(ApplicationUser)}'. " +
+                $"Asegúrate de que '{nameof(ApplicationUser)}' no sea una clase abstracta y tenga un constructor sin parámetros.");
         }
     }
 
@@ -181,15 +233,15 @@
     {
         if (!UserManager.SupportsUserEmail)
         {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
+            throw new NotSupportedException("La interfaz de usuario predeterminada requiere un almacén de usuarios con soporte de correo electrónico.");
         }
         return (IUserEmailStore<ApplicationUser>)UserStore;
     }
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Email inválido")]
         public string Email { get; set; } = "";
     }
 }
