@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -9,6 +10,7 @@ using MisFinanzas.Infrastructure.Data;
 using MisFinanzas.Infrastructure.Interfaces;
 using MisFinanzas.Infrastructure.Services;
 using System.Globalization;
+using Microsoft.AspNetCore.StaticFiles;
 
 // Configurar PostgreSQL para usar timestamps sin zona horaria (compatibilidad con SQLite)
 AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
@@ -150,6 +152,11 @@ builder.Services.AddScoped(p =>
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
+// CONFIGURAR DATA PROTECTION PARA RENDER
+builder.Services.AddDataProtection()
+    .PersistKeysToDbContext<ApplicationDbContext>()
+    .SetApplicationName("MisFinanzas");
+
 //  CONFIGURAR IDENTITY CON ApplicationUser
 builder.Services.AddIdentityCore<MisFinanzas.Domain.Entities.ApplicationUser>(options =>
 {
@@ -192,14 +199,10 @@ builder.Services.AddSignalR(options =>
     options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
 });
 
-//*********************************************************************************************
 // Registrar servicio de fondo para notificaciones automáticas
 // ACTIVO EN MODO TESTING (cada 1 minuto) para demostración/presentación
 // Ver NotificationBackgroundService.cs para cambiar a modo producción (24 horas)
-
-// TEMPORALMENTE DESHABILITADO para configuración de PostgreSQL/Render
-// builder.Services.AddHostedService<NotificationBackgroundService>();
-//**********************************************************************************************
+ builder.Services.AddHostedService<NotificationBackgroundService>();
 
 //Servicio para correo
 builder.Services.AddScoped<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Infrastructure.Services.EmailSender>();
