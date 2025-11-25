@@ -14,7 +14,7 @@ RUN dotnet publish -c Release -o out
 RUN echo "Verificando fuentes en build..." && \
     ls -la /app/out/wwwroot/fonts/ || echo "Directorio de fuentes NO encontrado en build"
 
-# Etapa de ejecución
+# Etapa de ejecución; Copiar aplicación desde build
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 COPY --from=build /app/out .
@@ -25,8 +25,6 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-    # Copiar aplicación desde build
-COPY --from=build /app/out .
 
 # Copiar fuentes explícitamente (doble seguridad)
 COPY --from=build /app/wwwroot/fonts ./wwwroot/fonts

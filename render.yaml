@@ -17,5 +17,17 @@ services:
         sync: false
       - key: Authentication__Microsoft__ClientSecret
         sync: false
+      - key: EmailSettings__SmtpHost
+        value: smtp.gmail.com
+      - key: EmailSettings__SmtpPort
+        value: "587"
+      - key: EmailSettings__SmtpUsername
+        sync: false
+      - key: EmailSettings__SmtpPassword
+        sync: false
+      - key: EmailSettings__FromEmail
+        sync: false
+      - key: EmailSettings__FromName
+        value: Mis Finanzas
       - key: Security__UsePasswordEncryption
         value: "false"
