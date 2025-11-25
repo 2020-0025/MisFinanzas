@@ -176,10 +176,10 @@
     <div class="notification-dropdown notification-dropdown-global" @onclick:stopPropagation="true">
         <div class="dropdown-header">
             <h6>🔔 Notificaciones</h6>
-            @* @if (unreadCount > 0)
+            @if (unreadCount > 0)
             {
                 <button @onclick="MarkAllAsRead" class="btn-mark-all">Marcar todas</button>
-            } *@
+            } 
         </div>
         <div class="dropdown-body">
             @if (notifications == null || !notifications.Any())
@@ -205,7 +205,7 @@
                                 <p class="notification-amount">~@notification.CategoryEstimatedAmount.Value.ToString("C", System.Globalization.CultureInfo.GetCultureInfo("es-DO"))</p>
                             }
                         </div>
-                        @* <div class="notification-action">
+                        <div class="notification-action">
                             @if (!notification.IsRead)
                             {
                                 <button class="btn-mark-read-dropdown" @onclick="() => MarkAsRead(notification.NotificationId)" title="Marcar como leída">
@@ -216,7 +216,7 @@
                             {
                                 <span class="read-checkmark-dropdown" title="Leída">✓</span>
                             }
-                        </div> *@
+                        </div> 
                     </div>
                 }
             }
@@ -251,11 +251,11 @@
         {
             currentUserId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
 
-            // if (!string.IsNullOrEmpty(currentUserId))
-            // {
-            //     await LoadNotifications();
-            //     StartNotificationTimer();
-            // }
+             if (!string.IsNullOrEmpty(currentUserId))
+             {
+                 await LoadNotifications();
+                 StartNotificationTimer();
+             }
         }
     }
 
@@ -267,88 +267,88 @@
 
     // ========== MÉTODOS DE NOTIFICACIONES ==========
 
-    // private async Task LoadNotifications()
-    // {
-    //     try
-    //     {
-    //         if (string.IsNullOrEmpty(currentUserId))
-    //             return;
+     private async Task LoadNotifications()
+     {
+         try
+         {
+             if (string.IsNullOrEmpty(currentUserId))
+                 return;
 
-    //         notifications = await NotificationService.GetUnreadNotificationsByUserAsync(currentUserId);
-    //         unreadCount = notifications.Count;
-    //         await InvokeAsync(StateHasChanged);
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Error loading notifications: {ex.Message}");
-    //     }
-    // }
+             notifications = await NotificationService.GetUnreadNotificationsByUserAsync(currentUserId);
+             unreadCount = notifications.Count;
+             await InvokeAsync(StateHasChanged);
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Error loading notifications: {ex.Message}");
+         }
+     }
 
     private void ToggleNotifications()
     {
         showDropdown = !showDropdown;
     }
 
-    // private async Task MarkAsRead(int notificationId)
-    // {
-    //     try
-    //     {
-    //         if (string.IsNullOrEmpty(currentUserId))
-    //             return;
+     private async Task MarkAsRead(int notificationId)
+     {
+         try
+         {
+             if (string.IsNullOrEmpty(currentUserId))
+                 return;
 
-    //         var success = await NotificationService.MarkAsReadAsync(notificationId, currentUserId);
-    //         if (success)
-    //         {
-    //             await LoadNotifications();
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Error marking notification as read: {ex.Message}");
-    //     }
-    // }
+             var success = await NotificationService.MarkAsReadAsync(notificationId, currentUserId);
+             if (success)
+             {
+                 await LoadNotifications();
+             }
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Error marking notification as read: {ex.Message}");
+         }
+     }
 
-    // private async Task MarkAllAsRead()
-    // {
-    //     try
-    //     {
-    //         if (string.IsNullOrEmpty(currentUserId))
-    //             return;
+     private async Task MarkAllAsRead()
+     {
+         try
+         {
+            if (string.IsNullOrEmpty(currentUserId))
+                 return;
 
-    //         var success = await NotificationService.MarkAllAsReadAsync(currentUserId);
-    //         if (success)
-    //         {
-    //             await LoadNotifications();
-    //             showDropdown = false;
-    //         }
-    //     }
-    //     catch (Exception ex)
-    //     {
-    //         Console.WriteLine($"Error marking all notifications as read: {ex.Message}");
-    //     }
-    // }
+             var success = await NotificationService.MarkAllAsReadAsync(currentUserId);
+             if (success)
+             {
+                 await LoadNotifications();
+                 showDropdown = false;
+             }
+         }
+         catch (Exception ex)
+         {
+             Console.WriteLine($"Error marking all notifications as read: {ex.Message}");
+         }
+     }
 
-    // private void StartNotificationTimer()
-    // {
-    //     // Refrescar notificaciones cada 5 minutos
-    //     notificationTimer = new System.Threading.Timer(async _ =>
-    //     {
-    //         await InvokeAsync(async () =>
-    //         {
-    //             try
-    //             {
-    //                 if (string.IsNullOrEmpty(currentUserId))
-    //                     return;
+     private void StartNotificationTimer()
+     {
+         // Refrescar notificaciones cada 5 minutos
+         notificationTimer = new System.Threading.Timer(async _ =>
+         {
+             await InvokeAsync(async () =>
+            {
+                 try
+                 {
+                     if (string.IsNullOrEmpty(currentUserId))
+                         return;
 
-    //                 await LoadNotifications();
-    //             }
-    //             catch (Exception ex)
-    //             {
-    //                 Console.WriteLine($"Error loading notifications from timer: {ex.Message}");
-    //             }
-    //         });
-    //     }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
-    // }
+                     await LoadNotifications();
+                 }
+                 catch (Exception ex)
+                {
+                     Console.WriteLine($"Error loading notifications from timer: {ex.Message}");
+                 }
+            });
+         }, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+     }
 
     private void StopNotificationTimer()
     {
