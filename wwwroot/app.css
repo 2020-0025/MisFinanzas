@@ -12,7 +12,7 @@ html, body {
    FONDO GLOBAL CON IMAGEN
    =================================== */
 body {
-    background-image: url('/images/dark-blue.jpg');
+    background-image: url('/images/dark-blue-1080-compress.jpg');
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
