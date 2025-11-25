@@ -2,11 +2,12 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Domain.Entities;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using MisFinanzas.Domain.Enums;
 
 namespace MisFinanzas.Infrastructure.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>, IDataProtectionKeyContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
@@ -20,6 +21,9 @@ namespace MisFinanzas.Infrastructure.Data
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Loan> Loans { get; set; }
+
+        // Para DataProtection
+        public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
