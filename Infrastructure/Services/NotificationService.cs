@@ -1,6 +1,7 @@
-﻿using Microsoft.EntityFrameworkCore;
-using MisFinanzas.Domain.Entities;
+﻿using DocumentFormat.OpenXml.InkML;
+using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Domain.DTOs;
+using MisFinanzas.Domain.Entities;
 using MisFinanzas.Domain.Enums;
 using MisFinanzas.Infrastructure.Data;
 using MisFinanzas.Infrastructure.Interfaces;
@@ -9,11 +10,12 @@ namespace MisFinanzas.Infrastructure.Services
 {
     public class NotificationService : INotificationService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IDbContextFactory<ApplicationDbContext> _contextFactory;
 
-        public NotificationService(ApplicationDbContext context)
+        public NotificationService(IDbContextFactory<ApplicationDbContext> contextFactory)
+
         {
-            _context = context;
+            _contextFactory = contextFactory;
         }
 
         // ==================== MÉTODOS DE MAPEO ====================
@@ -55,7 +57,9 @@ namespace MisFinanzas.Infrastructure.Services
 
         public async Task<List<NotificationDto>> GetUnreadNotificationsByUserAsync(string userId)
         {
-            var notifications = await _context.Notifications
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var notifications = await context.Notifications
                 .Include(n => n.Category)
                 .Where(n => n.UserId == userId && !n.IsRead)
                 .OrderBy(n => n.DueDate)
@@ -66,10 +70,16 @@ namespace MisFinanzas.Infrastructure.Services
 
         public async Task<List<NotificationDto>> GetAllNotificationsByUserAsync(string userId)
         {
-            var notifications = await _context.Notifications
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var notifications = await context.Notifications
+
                 .Include(n => n.Category)
+
                 .Where(n => n.UserId == userId)
+
                 .OrderByDescending(n => n.CreatedAt)
+
                 .ToListAsync();
 
             return notifications.Select(MapToDto).ToList();
@@ -77,62 +87,84 @@ namespace MisFinanzas.Infrastructure.Services
 
         public async Task<int> GetUnreadCountAsync(string userId)
         {
-            return await _context.Notifications
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            return await context.Notifications
                 .CountAsync(n => n.UserId == userId && !n.IsRead);
         }
 
         public async Task<bool> MarkAsReadAsync(int notificationId, string userId)
         {
-            var notification = await _context.Notifications
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var notification = await context.Notifications
+
                 .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
 
             if (notification == null)
+
                 return false;
 
             notification.IsRead = true;
-            await _context.SaveChangesAsync();
+
+            await context.SaveChangesAsync();
+
             return true;
         }
 
         public async Task<bool> MarkAllAsReadAsync(string userId)
         {
-            var notifications = await _context.Notifications
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            var notifications = await context.Notifications
+
                 .Where(n => n.UserId == userId && !n.IsRead)
+
                 .ToListAsync();
 
             foreach (var notification in notifications)
+
             {
                 notification.IsRead = true;
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return true;
         }
 
-        /// Genera notificaciones para TODAS las categorías con gastos fijos
-        /// Llamado por el servicio de fondo diariamente
+        // Genera notificaciones para TODAS las categorías con gastos fijos
+        // Llamado por el servicio de fondo diariamente
         public async Task GenerateNotificationsForFixedExpensesAsync()
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
             var today = DateTime.Now.Date;
+
             var daysToNotify = 3; // Notificar 3 días antes
 
             // Obtener todas las categorías con gastos fijos activos
-            var fixedExpenseCategories = await _context.Categories
+
+            var fixedExpenseCategories = await context.Categories
+
                 .Where(c => c.IsFixedExpense && c.DayOfMonth.HasValue)
+
                 .ToListAsync();
 
             foreach (var category in fixedExpenseCategories)
+
             {
-                await GenerateNotificationForCategoryIfNeededAsync(category, today, daysToNotify);
+
+                await GenerateNotificationForCategoryIfNeededAsync(context, category, today, daysToNotify);
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
         }
 
-        /// Genera notificación INMEDIATA para una categoría específica (llamado al crear/editar)
+        // Genera notificación INMEDIATA para una categoría específica (llamado al crear/editar)
         public async Task GenerateNotificationForCategoryAsync(int categoryId)
         {
-            var category = await _context.Categories
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var category = await context.Categories
                 .FirstOrDefaultAsync(c => c.CategoryId == categoryId && c.IsFixedExpense && c.DayOfMonth.HasValue);
 
             if (category == null)
@@ -141,8 +173,8 @@ namespace MisFinanzas.Infrastructure.Services
             var today = DateTime.Now.Date;
             var daysToNotify = 3;
 
-            await GenerateNotificationForCategoryIfNeededAsync(category, today, daysToNotify);
-            await _context.SaveChangesAsync();
+            await GenerateNotificationForCategoryIfNeededAsync(context, category, today, daysToNotify);
+            await context.SaveChangesAsync();
         }
 
         // ==================== MÉTODOS PRIVADOS (usan Entity internamente) ====================
@@ -152,7 +184,7 @@ namespace MisFinanzas.Infrastructure.Services
         /// 1. Si ya existe notificación para este mes
         /// 2. Si ya se registró un pago de esta categoría este mes
         /// 3. Si estamos dentro de los 3 días antes de la fecha límite
-        private async Task GenerateNotificationForCategoryIfNeededAsync(Category category, DateTime today, int daysToNotify)
+        private async Task GenerateNotificationForCategoryIfNeededAsync(ApplicationDbContext context, Category category, DateTime today, int daysToNotify)
         {
             // Calcular la fecha de vencimiento del mes actual
             var currentMonth = today.Month;
@@ -167,7 +199,7 @@ namespace MisFinanzas.Infrastructure.Services
             var dueDateCurrentMonth = new DateTime(currentYear, currentMonth, dayOfMonth);
 
             // VERIFICACIÓN 1: ¿Ya existe una notificación para este mes?
-            var existingNotification = await _context.Notifications
+            var existingNotification = await context.Notifications
                 .FirstOrDefaultAsync(n =>
                     n.CategoryId == category.CategoryId &&
                     n.UserId == category.UserId &&
@@ -184,7 +216,7 @@ namespace MisFinanzas.Infrastructure.Services
             var startOfMonth = new DateTime(currentYear, currentMonth, 1);
             var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
-            var hasPaymentThisMonth = await _context.ExpensesIncomes
+            var hasPaymentThisMonth = await context.ExpensesIncomes
                 .AnyAsync(ei =>
                     ei.CategoryId == category.CategoryId &&
                     ei.UserId == category.UserId &&
@@ -236,33 +268,35 @@ namespace MisFinanzas.Infrastructure.Services
                 CreatedAt = DateTime.UtcNow
             };
 
-            _context.Notifications.Add(notification);
+            context.Notifications.Add(notification);
         }
 
         public async Task CleanOldNotificationsAsync(int daysOld = 60)
         {
+            using var context = await _contextFactory.CreateDbContextAsync();
             var cutoffDate = DateTime.Now.AddDays(-daysOld);
 
-            var oldNotifications = await _context.Notifications
+            var oldNotifications = await context.Notifications
                 .Where(n => n.CreatedAt < cutoffDate)
                 .ToListAsync();
 
-            _context.Notifications.RemoveRange(oldNotifications);
-            await _context.SaveChangesAsync();
+            context.Notifications.RemoveRange(oldNotifications);
+            await context.SaveChangesAsync();
         }
 
         public async Task<bool> DeleteNotificationAsync(int notificationId, string userId)
         {
             try
             {
-                var notification = await _context.Notifications
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var notification = await context.Notifications
                     .FirstOrDefaultAsync(n => n.NotificationId == notificationId && n.UserId == userId);
 
                 if (notification == null)
                     return false;
 
-                _context.Notifications.Remove(notification);
-                await _context.SaveChangesAsync();
+                context.Notifications.Remove(notification);
+                await context.SaveChangesAsync();
                 return true;
             }
             catch (Exception ex)
@@ -279,12 +313,13 @@ namespace MisFinanzas.Infrastructure.Services
         {
             try
             {
+                using var context = await _contextFactory.CreateDbContextAsync();
                 var today = DateTime.Now.Date;
                 var startOfMonth = new DateTime(today.Year, today.Month, 1);
                 var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
 
                 // Eliminar TODAS las notificaciones del mes actual (vencidas, hoy y futuras)
-                var currentMonthNotifications = await _context.Notifications
+                var currentMonthNotifications = await context.Notifications
                     .Where(n => n.CategoryId == categoryId &&
                                n.UserId == userId &&
                                n.DueDate >= startOfMonth &&
@@ -293,8 +328,8 @@ namespace MisFinanzas.Infrastructure.Services
 
                 if (currentMonthNotifications.Any())
                 {
-                    _context.Notifications.RemoveRange(currentMonthNotifications);
-                    await _context.SaveChangesAsync();
+                    context.Notifications.RemoveRange(currentMonthNotifications);
+                    await context.SaveChangesAsync();
                     Console.WriteLine($"🗑️ Eliminadas {currentMonthNotifications.Count} notificación(es) del mes actual de la categoría {categoryId}");
                 }
             }
