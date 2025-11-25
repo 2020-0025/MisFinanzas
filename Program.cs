@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Components.Authorization;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Components;
@@ -9,6 +10,8 @@ using MisFinanzas.Infrastructure.Interfaces;
 using MisFinanzas.Infrastructure.Services;
 using System.Globalization;
 
+// Configurar PostgreSQL para usar timestamps sin zona horaria (compatibilidad con SQLite)
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -22,6 +25,15 @@ dominicanCulture.NumberFormat.CurrencyGroupSeparator = ",";
 CultureInfo.DefaultThreadCurrentCulture = dominicanCulture;
 CultureInfo.DefaultThreadCurrentUICulture = dominicanCulture;
 
+// Configurar que la aplicación siempre use HTTPS en producción
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Services.AddHttpsRedirection(options =>
+    {
+        options.HttpsPort = 443;
+    });
+}
+
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
@@ -33,17 +45,108 @@ builder.Services.AddScoped<IdentityUserAccessor>();
 builder.Services.AddScoped<IdentityRedirectManager>();
 builder.Services.AddScoped<AuthenticationStateProvider, IdentityRevalidatingAuthenticationStateProvider>();
 
-builder.Services.AddAuthentication(options =>
-    {
-        options.DefaultScheme = IdentityConstants.ApplicationScheme;
-        options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
-    })
-    .AddIdentityCookies();
+// Agregar Autenticación con Identity y Google
+var authBuilder = builder.Services.AddAuthentication(options =>
+{
+    options.DefaultScheme = IdentityConstants.ApplicationScheme;
+    options.DefaultSignInScheme = IdentityConstants.ExternalScheme;
+});
 
-// CONFIGURAR SQLite CON NUESTRO DbContext
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+authBuilder.AddIdentityCookies();
+
+// Configurar cookies para usar HTTPS
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
+});
+
+// Configurar autenticación con Google
+authBuilder.AddGoogle(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Google:ClientId"]
+        ?? throw new InvalidOperationException("Google ClientId not configured");
+    options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"]
+        ?? throw new InvalidOperationException("Google ClientSecret not configured");
+    options.CallbackPath = "/signin-google";
+    // Forzar uso de HTTPS en producción (Render)
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.Events.OnRedirectToAuthorizationEndpoint = context =>
+        {
+            context.HttpContext.Request.Scheme = "https";
+            context.Response.Redirect(context.RedirectUri.Replace("http://", "https://"));
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HttpContext.Request.Scheme = "https";
+            return Task.CompletedTask;
+        };
+    }
+    options.SaveTokens = true;
+
+    // Solicitar permisos de perfil y email
+    options.Scope.Add("profile");
+    options.Scope.Add("email");
+
+    Console.WriteLine("Google Authentication configured");
+});
+
+// Configurar autenticación con Microsoft
+authBuilder.AddMicrosoftAccount(options =>
+{
+    options.ClientId = builder.Configuration["Authentication:Microsoft:ClientId"]
+        ?? throw new InvalidOperationException("Microsoft ClientId not configured");
+    options.ClientSecret = builder.Configuration["Authentication:Microsoft:ClientSecret"]
+        ?? throw new InvalidOperationException("Microsoft ClientSecret not configured");
+    options.CallbackPath = "/signin-microsoft";
+    // Forzar uso de HTTPS en producción (Render)
+    if (!builder.Environment.IsDevelopment())
+    {
+        options.Events.OnRedirectToAuthorizationEndpoint = context =>
+        {
+            context.HttpContext.Request.Scheme = "https";
+            context.Response.Redirect(context.RedirectUri.Replace("http://", "https://"));
+            return Task.CompletedTask;
+        };
+
+        options.Events.OnRemoteFailure = context =>
+        {
+            context.HttpContext.Request.Scheme = "https";
+            return Task.CompletedTask;
+        };
+    }
+    options.SaveTokens = true;
+
+    // Solicitar permisos de perfil y email
+    options.Scope.Add("User.Read");
+
+    Console.WriteLine("✅ Microsoft Authentication configured");
+});
+
+
+// CONFIGURAR PostgreSQL
+// En producción (Render), usar variable de entorno DATABASE_URL
+var connectionString = Environment.GetEnvironmentVariable("DATABASE_URL")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+// Render usa formato DATABASE_URL de Heroku, convertir a formato Npgsql si es necesario
+if (connectionString.StartsWith("postgres://") || connectionString.StartsWith("postgresql://"))
+{
+    var uri = new Uri(connectionString);
+    var dbPort = uri.Port > 0 ? uri.Port : 5432; // Usar puerto por defecto si no está especificado
+    var userInfo = uri.UserInfo.Split(':');
+    connectionString = $"Host={uri.Host};Port={dbPort};Database={uri.LocalPath.TrimStart('/')};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require;Trust Server Certificate=true";
+    Console.WriteLine($"✅ Connection string convertido correctamente (Host: {uri.Host}, Port: {dbPort})");
+}
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseNpgsql(connectionString));
+
+// Registrar también DbContext para servicios que lo necesiten directamente
+builder.Services.AddScoped(p =>
+    p.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
 
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
@@ -79,13 +182,90 @@ builder.Services.AddScoped<IExcelReportGenerator, ExcelReportGenerator>();
 // Cache temporal (Singleton porque mantiene estado en memoria)
 builder.Services.AddSingleton<ITemporaryFileCache, TemporaryFileCache>();
 
-// Servicio en background para notificaciones
-builder.Services.AddHostedService<NotificationBackgroundService>();
+// Agregar soporte para controladores API
+
+builder.Services.AddControllers();
+
+// Configurar SignalR para archivos grandes
+builder.Services.AddSignalR(options =>
+{
+    options.MaximumReceiveMessageSize = 10 * 1024 * 1024; // 10 MB
+});
+
+//*********************************************************************************************
+// Registrar servicio de fondo para notificaciones automáticas
+// ACTIVO EN MODO TESTING (cada 1 minuto) para demostración/presentación
+// Ver NotificationBackgroundService.cs para cambiar a modo producción (24 horas)
+
+// TEMPORALMENTE DESHABILITADO para configuración de PostgreSQL/Render
+// builder.Services.AddHostedService<NotificationBackgroundService>();
+//**********************************************************************************************
 
 //Servicio para correo
 builder.Services.AddScoped<IEmailSender<MisFinanzas.Domain.Entities.ApplicationUser>, MisFinanzas.Infrastructure.Services.EmailSender>();
 
+// Configurar puerto para Render (usa variable de entorno PORT) - SOLO EN PRODUCCIÓN
+if (!builder.Environment.IsDevelopment())
+{
+    var port = Environment.GetEnvironmentVariable("PORT") ?? "5000";
+    builder.WebHost.ConfigureKestrel(options =>
+    {
+        options.ListenAnyIP(int.Parse(port));
+    });
+}
+
+// Configurar ForwardedHeaders en el builder (ANTES de construir la app)
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
+
 var app = builder.Build();
+
+// Forzar HTTPS en producción ANTES de cualquier otro middleware
+if (!app.Environment.IsDevelopment())
+{
+    app.Use(async (context, next) =>
+    {
+        context.Request.Scheme = "https";
+        context.Request.Host = new HostString(context.Request.Host.Host);
+        await next();
+    });
+}
+
+// APLICAR MIGRACIONES AUTOMÁTICAMENTE EN PRODUCCIÓN
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        var context = services.GetRequiredService<ApplicationDbContext>();
+
+        // Aplicar migraciones pendientes
+        if (context.Database.GetPendingMigrations().Any())
+        {
+            Console.WriteLine("🔄 Aplicando migraciones pendientes...");
+            context.Database.Migrate();
+            Console.WriteLine("✅ Migraciones aplicadas exitosamente");
+        }
+        else
+        {
+            Console.WriteLine("✅ Base de datos ya está actualizada");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error al aplicar migraciones: {ex.Message}");
+        // En producción, podrías querer que falle si no puede migrar
+        // throw;
+    }
+}
+
+// Aplicar ForwardedHeaders
+app.UseForwardedHeaders();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
