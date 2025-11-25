@@ -1,6 +1,6 @@
 ﻿.home-container {
     min-height: 100vh;
-    width:100%;
+    width: 100%;
     padding: 30px;
     background: transparent;
     backdrop-filter: blur(20px);
@@ -151,6 +151,8 @@
                 width: 100% !important;
                 justify-content: center !important;
             }
+
+        
 }
 
 @media (max-width: 440px) {
@@ -187,16 +189,24 @@
                 padding: 8px 12px !important;
             }
 
-            .navigation-bar .links .btn-help {
-                width: 100% !important;
-                max-width: 200px !important;
-                margin: 0 auto !important;
-            }
+        .navigation-bar .link-autorized a {
+            margin: 0 auto !important;
+            display: grid !important;
+            grid-template-columns: 1fr !important;
+        }
 
-    .title img {
-        width: 75px !important;
-        height: 75px !important;
+    .title {
+        display: grid !important;
+        flex-direction: column !important;
+        text-align: center !important;
     }
+
+
+        .title img {
+            width: 75px !important;
+            height: 75px !important;
+            margin: 0 auto !important;
+        }
 
     h1 {
         font-size: 2rem !important;
