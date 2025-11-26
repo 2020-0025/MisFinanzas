@@ -327,7 +327,7 @@
     text-decoration: none;
 }
 
-    /* 6. Tu efecto Hover (¡Mantenido y adaptado!) */
+    /* 6. efecto Hover */
     .fab-help:hover {
         background: rgba(255, 193, 7, 0.25);
         color: #FFF176;
