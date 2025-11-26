@@ -8,6 +8,7 @@
 @using System.ComponentModel.DataAnnotations
 @using MisFinanzas.Components.Shared
 @inject ICategoryService CategoryService
+@inject IBudgetService BudgetService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
@@ -190,7 +191,7 @@
                         }
                     </div>
 
-                    <!-- Campos de Recordatorio (Solo para Gastos) -->
+                    <!-- Campos de Recordatorio y Presupuesto (Solo para Gastos) -->
                     @if (formModel.Type == TransactionType.Expense)
                     {
                         <div class="mb-3">
@@ -224,8 +225,68 @@
                                 </div>
                             </div>
                         }
-                    }
 
+                        <div class="mb-3 mt-3">
+                            <div class="form-check">
+                                <InputCheckbox @bind-Value="formModel.CreateBudget" class="form-check-input" id="createBudget" />
+                                <label class="form-check-label text-white" for="createBudget">
+                                    💰 Asignar presupuesto a esta categoría
+                                </label>
+                            </div>
+                        </div>
+
+                        @if (formModel.CreateBudget)
+                        {
+                            <div class="alert alert-info mb-3">
+                                <small class="text-info">
+                                    <strong>💡 Presupuesto:</strong> Se creará automáticamente para el mes actual.
+                                </small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-white">Monto del presupuesto</label>
+                                <InputNumber @bind-Value="formModel.BudgetAmount" class="form-control" placeholder="5000.00" min="0.01" />
+                                <small class="form-text text-white">Monto disponible para gastar en esta categoría</small>
+                                <ValidationMessage For="() => formModel.BudgetAmount" class="text-danger" />
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-white">Mes</label>
+                                    <InputSelect @bind-Value="formModel.BudgetMonth" class="form-select glass-card text-white">
+                                        <option value="1">Enero</option>
+                                        <option value="2">Febrero</option>
+                                        <option value="3">Marzo</option>
+                                        <option value="4">Abril</option>
+                                        <option value="5">Mayo</option>
+                                        <option value="6">Junio</option>
+                                        <option value="7">Julio</option>
+                                        <option value="8">Agosto</option>
+                                        <option value="9">Septiembre</option>
+                                        <option value="10">Octubre</option>
+                                        <option value="11">Noviembre</option>
+                                        <option value="12">Diciembre</option>
+                                    </InputSelect>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label text-white">Año</label>
+                                    <InputSelect @bind-Value="formModel.BudgetYear" class="form-select glass-card text-white">
+                                        @for (int year = DateTime.Now.Year - 1; year <= DateTime.Now.Year + 2; year++)
+                                        {
+                                            <option value="@year">@year</option>
+                                        }
+                                    </InputSelect>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label text-white">Nombre del presupuesto (opcional)</label>
+                                <InputText @bind-Value="formModel.BudgetName" class="form-control" placeholder="Presupuesto Alimentación" />
+                                <small class="form-text text-white">Se auto-generará si se deja vacío</small>
+                            </div>
+                        }
+                    }
 
                     <div class="modal-footer-custom gap-2">
                         <button type="submit" class="btn btnSaveEdit" disabled="@isSaving">
@@ -539,7 +600,45 @@
 
                 if (created != null)
                 {
-                    ShowSuccessMessage("Categoría creada correctamente");
+                    //  CREAR PRESUPUESTO SI ESTÁ MARCADO
+                    if (formModel.CreateBudget && formModel.BudgetAmount.HasValue && formModel.BudgetAmount > 0)
+                    {
+                        try
+                        {
+                            var budgetDto = new BudgetDto
+                            {
+                                CategoryId = created.CategoryId,
+                                Name = string.IsNullOrWhiteSpace(formModel.BudgetName)
+                                    ? $"Presupuesto {formModel.Title.Trim()}"
+                                    : formModel.BudgetName.Trim(),
+                                AssignedAmount = formModel.BudgetAmount.Value,
+                                Month = formModel.BudgetMonth,
+                                Year = formModel.BudgetYear,
+                                SpentAmount = 0,
+                                IsActive = true
+                            };
+
+                            var budgetResult = await BudgetService.CreateAsync(budgetDto, currentUserId);
+
+                            if (budgetResult.Success && budgetResult.Budget != null)
+                            {
+                                ShowSuccessMessage($"Categoría creada correctamente y presupuesto asignado para {GetMonthName(formModel.BudgetMonth)} {formModel.BudgetYear}");
+                            }
+                            else
+                            {
+                                ShowSuccessMessage($"Categoría creada correctamente, pero hubo un error al crear el presupuesto: {budgetResult.Error}");
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            ShowSuccessMessage("Categoría creada correctamente, pero hubo un error al crear el presupuesto: " + ex.Message);
+                        }
+                    }
+                    else
+                    {
+                        ShowSuccessMessage("Categoría creada correctamente");
+                    }
+
                     CloseModal();
                     await LoadData();
                 }
@@ -548,6 +647,8 @@
                     ShowErrorMessage("No se pudo crear la categoría");
                 }
             }
+
+
         }
         catch (Exception ex)
         {
@@ -664,6 +765,18 @@
         public int? DayOfMonth { get; set; }
 
         public decimal? EstimatedAmount { get; set; }
+
+        //  CAMPOS NUEVOS PARA PRESUPUESTO
+        public bool CreateBudget { get; set; } = false;
+
+        [Range(0.01, double.MaxValue, ErrorMessage = "El monto debe ser mayor a 0")]
+        public decimal? BudgetAmount { get; set; }
+
+        public int BudgetMonth { get; set; } = DateTime.Now.Month;
+
+        public int BudgetYear { get; set; } = DateTime.Now.Year;
+
+        public string? BudgetName { get; set; }
     }
 
     private void ShowSuccessMessage(string message)
@@ -710,5 +823,27 @@
     {
         successTimer?.Dispose();
         errorTimer?.Dispose();
+    }
+
+
+    //  MÉTODO HELPER PARA NOMBRES DE MESES
+    private string GetMonthName(int month)
+    {
+        return month switch
+        {
+            1 => "Enero",
+            2 => "Febrero",
+            3 => "Marzo",
+            4 => "Abril",
+            5 => "Mayo",
+            6 => "Junio",
+            7 => "Julio",
+            8 => "Agosto",
+            9 => "Septiembre",
+            10 => "Octubre",
+            11 => "Noviembre",
+            12 => "Diciembre",
+            _ => "Desconocido"
+        };
     }
 }
