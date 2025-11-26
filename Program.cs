@@ -160,7 +160,7 @@ builder.Services.AddDataProtection()
 //  CONFIGURAR IDENTITY CON ApplicationUser
 builder.Services.AddIdentityCore<MisFinanzas.Domain.Entities.ApplicationUser>(options =>
 {
-    options.SignIn.RequireConfirmedAccount = true;
+    options.SignIn.RequireConfirmedAccount = false;
     options.Password.RequireDigit = true;
     options.Password.RequireLowercase = true;
     options.Password.RequireUppercase = true;
