@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using MisFinanzas.Domain.Entities;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using MisFinanzas.Domain.Enums;
+using System.Reflection.Emit;
 
 namespace MisFinanzas.Infrastructure.Data
 {
@@ -21,6 +22,7 @@ namespace MisFinanzas.Infrastructure.Data
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Loan> Loans { get; set; }
+        public DbSet<LoanInstallment> LoanInstallments { get; set; } // NUEVO
 
         // Para DataProtection
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
@@ -398,6 +400,29 @@ namespace MisFinanzas.Infrastructure.Data
                 entity.Ignore(l => l.IsCompleted);
                 entity.Ignore(l => l.InterestRateCategory);
                 entity.Ignore(l => l.InterestRateLabel);
+            });
+
+
+            // ====== CONFIGURACIÓN DE LOAN INSTALLMENTS ======
+            builder.Entity<LoanInstallment>(entity =>
+            {
+                // Relación con Loan
+                entity.HasOne(li => li.Loan)
+                    .WithMany(l => l.Installments)
+                    .HasForeignKey(li => li.LoanId)
+                    .OnDelete(DeleteBehavior.Cascade); // Si se elimina el préstamo, eliminar cuotas
+
+                // Relación con ExpenseIncome (opcional)
+                entity.HasOne(li => li.ExpenseIncome)
+                    .WithMany()
+                    .HasForeignKey(li => li.ExpenseIncomeId)
+                    .OnDelete(DeleteBehavior.SetNull); // Si se elimina el gasto, dejar FK en null
+
+                // Índice para mejorar búsquedas por LoanId
+                entity.HasIndex(li => li.LoanId);
+
+                // Índice compuesto para búsquedas por préstamo y número de cuota
+                entity.HasIndex(li => new { li.LoanId, li.InstallmentNumber });
             });
         }
     }

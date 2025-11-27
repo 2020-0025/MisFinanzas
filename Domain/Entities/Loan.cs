@@ -49,6 +49,11 @@ namespace MisFinanzas.Domain.Entities
         [Display(Name = "Icono")]
         public string Icon { get; set; } = "🏦";
 
+        //  NUEVO: Tasa de interés anual
+        [Column(TypeName = "decimal(5,2)")]
+        [Range(0, 100)]
+        public decimal? InterestRate { get; set; } // Tasa anual en porcentaje (opcional)
+
         public bool IsActive { get; set; } = true;
 
         [Range(0, int.MaxValue)]
@@ -63,6 +68,9 @@ namespace MisFinanzas.Domain.Entities
         // Navigation Properties
         public virtual ApplicationUser? User { get; set; }
         public virtual Category? Category { get; set; }
+
+        // NUEVO: Relación con cuotas
+        public virtual ICollection<LoanInstallment> Installments { get; set; } = new List<LoanInstallment>();
 
         // Computed Properties
         [NotMapped]
