@@ -13,6 +13,7 @@ namespace MisFinanzas.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
+           
         }
 
         // DbSets para nuestras entidades
@@ -22,7 +23,9 @@ namespace MisFinanzas.Infrastructure.Data
         public DbSet<Budget> Budgets { get; set; }
         public DbSet<Notification> Notifications { get; set; }
         public DbSet<Loan> Loans { get; set; }
-        public DbSet<LoanInstallment> LoanInstallments { get; set; } // NUEVO
+        public DbSet<LoanInstallment> LoanInstallments { get; set; } 
+        public DbSet<LoanExtraPayment> LoanExtraPayments { get; set; }
+
 
         // Para DataProtection
         public DbSet<DataProtectionKey> DataProtectionKeys { get; set; }
@@ -424,6 +427,40 @@ namespace MisFinanzas.Infrastructure.Data
                 // Índice compuesto para búsquedas por préstamo y número de cuota
                 entity.HasIndex(li => new { li.LoanId, li.InstallmentNumber });
             });
+
+
+            // ====== CONFIGURACIÓN DE LOAN EXTRA PAYMENTS ======
+            builder.Entity<LoanExtraPayment>(entity =>
+            {
+                entity.HasKey(ep => ep.Id);
+
+                entity.Property(ep => ep.Amount)
+                    .HasColumnType("decimal(18,2)")
+                    .IsRequired();
+
+                entity.Property(ep => ep.PaidDate)
+                    .IsRequired();
+
+                entity.Property(ep => ep.Description)
+                    .HasMaxLength(500);
+
+                // Relación con Loan
+                entity.HasOne(ep => ep.Loan)
+                    .WithMany(l => l.ExtraPayments)
+                    .HasForeignKey(ep => ep.LoanId)
+                    .OnDelete(DeleteBehavior.Cascade); // Si se elimina el préstamo, eliminar abonos
+
+                // Índice para mejorar búsquedas por LoanId
+                entity.HasIndex(ep => ep.LoanId);
+
+                // Índice compuesto para búsquedas por préstamo y fecha
+                entity.HasIndex(ep => new { ep.LoanId, ep.PaidDate });
+
+                // Validación: Amount debe ser positivo
+                entity.ToTable(t => t.HasCheckConstraint(
+                    "CK_LoanExtraPayment_Amount", "\"Amount\" > 0"));
+            });
+
         }
     }
 }

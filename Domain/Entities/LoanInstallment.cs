@@ -40,6 +40,11 @@ namespace MisFinanzas.Domain.Entities
 
         public int? ExpenseIncomeId { get; set; }     // FK al registro de gasto (solo interés)
 
+        public bool IsRecalculated { get; set; } = false;
+
+        public DateTime? RecalculatedDate { get; set; }
+
+
         // Navigation Properties
         public virtual Loan? Loan { get; set; }
         public virtual ExpenseIncome? ExpenseIncome { get; set; }

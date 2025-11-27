@@ -42,8 +42,8 @@ namespace MisFinanzas.Infrastructure.Services
                 InstallmentsPaid = loan.InstallmentsPaid,
                 UserId = loan.UserId,
                 CategoryId = loan.CategoryId,
-                InterestRate = loan.InterestRate, //  NUEVO
-                Installments = loan.Installments?.Select(i => new LoanInstallmentDto //  NUEVO
+                InterestRate = loan.InterestRate,
+                Installments = loan.Installments?.Select(i => new LoanInstallmentDto
                 {
                     Id = i.Id,
                     LoanId = i.LoanId,
@@ -55,8 +55,19 @@ namespace MisFinanzas.Infrastructure.Services
                     RemainingBalance = i.RemainingBalance,
                     IsPaid = i.IsPaid,
                     PaidDate = i.PaidDate,
-                    ExpenseIncomeId = i.ExpenseIncomeId
-                }).ToList() ?? new List<LoanInstallmentDto>()
+                    ExpenseIncomeId = i.ExpenseIncomeId,
+                    IsRecalculated = i.IsRecalculated,
+                    RecalculatedDate = i.RecalculatedDate
+                }).ToList() ?? new List<LoanInstallmentDto>(),
+                ExtraPayments = loan.ExtraPayments?.Select(ep => new LoanExtraPaymentDto
+                {
+                    Id = ep.Id,
+                    LoanId = ep.LoanId,
+                    Amount = ep.Amount,
+                    PaidDate = ep.PaidDate,
+                    Description = ep.Description
+                }).ToList() ?? new List<LoanExtraPaymentDto>()
+
             };
         }
 
@@ -103,11 +114,14 @@ namespace MisFinanzas.Infrastructure.Services
             using var context = await _contextFactory.CreateDbContextAsync();
 
             var loans = await context.Loans
-                .Include(l => l.Category)
-                .Include(l => l.Installments) //  CARGAR CUOTAS
-                .Where(l => l.UserId == userId)
-                .OrderByDescending(l => l.StartDate)
-                .ToListAsync();
+                       .AsSplitQuery()
+                       .Include(l => l.Category)
+                       .Include(l => l.Installments)
+                       .Include(l => l.ExtraPayments)
+                       .Where(l => l.UserId == userId)
+                       .OrderByDescending(l => l.StartDate)
+                       .ToListAsync();
+
 
             return loans.Select(MapToDto).ToList();
         }
@@ -119,15 +133,13 @@ namespace MisFinanzas.Infrastructure.Services
             using var context = await _contextFactory.CreateDbContextAsync();
 
             var loans = await context.Loans
-
-                .Include(l => l.Category)
-                .Include(l => l.Installments)
-
-                .Where(l => l.UserId == userId && l.IsActive)
-
-                .OrderByDescending(l => l.StartDate)
-
-                .ToListAsync();
+                       .AsSplitQuery()
+                       .Include(l => l.Category)
+                       .Include(l => l.Installments)
+                       .Include(l => l.ExtraPayments)
+                       .Where(l => l.UserId == userId && l.IsActive)
+                       .OrderByDescending(l => l.StartDate)
+                       .ToListAsync();
 
             return loans.Select(MapToDto).ToList();
 
@@ -138,12 +150,12 @@ namespace MisFinanzas.Infrastructure.Services
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
-            var loan = await context.Loans
-
-                .Include(l => l.Category)
-                .Include(l => l.Installments)
-
-                .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
+                var loan = await context.Loans
+                          .AsSplitQuery()
+                          .Include(l => l.Category)
+                          .Include(l => l.Installments)
+                          .Include(l => l.ExtraPayments)
+                          .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
             return loan != null ? MapToDto(loan) : null;
 
@@ -458,7 +470,7 @@ namespace MisFinanzas.Infrastructure.Services
                 if (loan.InstallmentsPaid >= loan.NumberOfInstallments)
                     return false;
 
-                // ⭐ BUSCAR SIGUIENTE CUOTA PENDIENTE
+                //  BUSCAR SIGUIENTE CUOTA PENDIENTE
                 var nextInstallment = loan.Installments
                     .Where(i => !i.IsPaid)
                     .OrderBy(i => i.InstallmentNumber)
@@ -467,7 +479,7 @@ namespace MisFinanzas.Infrastructure.Services
                 if (nextInstallment == null)
                     return false;
 
-                // ⭐ REGISTRAR SOLO EL INTERÉS COMO GASTO
+                //  REGISTRAR SOLO EL INTERÉS COMO GASTO
                 var interestExpense = new ExpenseIncome
                 {
                     UserId = userId,
@@ -534,6 +546,80 @@ namespace MisFinanzas.Infrastructure.Services
                 if (lastPaidInstallment == null)
                     return false;
 
+                //  NUEVO: Verificar si hay abonos extras del mismo día del pago
+                var paymentDate = lastPaidInstallment.PaidDate?.Date ?? DateTime.MinValue;
+                var extraPaymentsOnSameDay = await context.LoanExtraPayments
+                    .Where(ep => ep.LoanId == loanId && ep.PaidDate.Date == paymentDate)
+                    .ToListAsync();
+
+                if (extraPaymentsOnSameDay.Any())
+                {
+                    // Hay abonos extras asociados a este pago
+                    // Eliminar las cuotas recalculadas pendientes
+                    var recalculatedInstallments = loan.Installments
+                        .Where(i => !i.IsPaid && i.IsRecalculated)
+                        .ToList();
+
+                    if (recalculatedInstallments.Any())
+                    {
+                        context.LoanInstallments.RemoveRange(recalculatedInstallments);
+                    }
+
+                    // Eliminar los abonos extras
+                    context.LoanExtraPayments.RemoveRange(extraPaymentsOnSameDay);
+
+                    // Regenerar cuotas pendientes con el saldo original (antes del abono)
+                    var totalExtraPayments = extraPaymentsOnSameDay.Sum(ep => ep.Amount);
+
+                    // Calcular el saldo original (antes del abono)
+                    var previousPaidInstallment = loan.Installments
+                        .Where(i => i.IsPaid && i.InstallmentNumber < lastPaidInstallment.InstallmentNumber)
+                        .OrderByDescending(i => i.InstallmentNumber)
+                        .FirstOrDefault();
+
+                    decimal originalBalance;
+                    if (previousPaidInstallment != null)
+                    {
+                        originalBalance = previousPaidInstallment.RemainingBalance;
+                    }
+                    else
+                    {
+                        originalBalance = loan.PrincipalAmount;
+                    }
+
+                    // Regenerar cuotas pendientes SIN el abono extra
+                    int remainingInstallmentsCount = loan.NumberOfInstallments - loan.InstallmentsPaid + 1; // +1 porque vamos a deshacer este pago
+                    int startingNumber = lastPaidInstallment.InstallmentNumber;
+                    DateTime startDate = lastPaidInstallment.DueDate.AddMonths(-1);
+
+                    var newInstallments = LoanAmortizationHelper.GenerateAmortizationSchedule(
+                        originalBalance,
+                        loan.InterestRate ?? 0,
+                        remainingInstallmentsCount,
+                        startDate,
+                        loan.DueDay);
+
+                    foreach (var (number, dueDate, principal, interest, total, balance) in newInstallments)
+                    {
+                        var installment = new LoanInstallment
+                        {
+                            LoanId = loanId,
+                            InstallmentNumber = startingNumber + (number - 1),
+                            DueDate = dueDate,
+                            PrincipalAmount = principal,
+                            InterestAmount = interest,
+                            TotalAmount = total,
+                            RemainingBalance = balance,
+                            IsPaid = false,
+                            IsRecalculated = false
+                        };
+
+                        context.LoanInstallments.Add(installment);
+                    }
+
+                    Console.WriteLine($"✅ Abono extra de {totalExtraPayments:C} eliminado y cuotas restauradas");
+                }
+
                 //  ELIMINAR EL GASTO DEL INTERÉS
                 if (lastPaidInstallment.ExpenseIncomeId.HasValue)
                 {
@@ -546,10 +632,8 @@ namespace MisFinanzas.Infrastructure.Services
                     }
                 }
 
-                //  MARCAR CUOTA COMO NO PAGADA
-                lastPaidInstallment.IsPaid = false;
-                lastPaidInstallment.PaidDate = null;
-                lastPaidInstallment.ExpenseIncomeId = null;
+                //  ELIMINAR LA CUOTA PAGADA (porque vamos a regenerarla)
+                context.LoanInstallments.Remove(lastPaidInstallment);
 
                 // Decrementar contador
                 loan.InstallmentsPaid--;
@@ -571,6 +655,181 @@ namespace MisFinanzas.Infrastructure.Services
                 Console.WriteLine($"❌ Error al deshacer pago: {ex.Message}");
                 return false;
             }
+        }
+
+
+        public async Task<(bool Success, string? Error)> RegisterExtraPaymentAsync(int loanId, decimal extraAmount, string userId)
+        {
+            try
+            {
+                if (extraAmount <= 0)
+                    return (false, "El monto del abono debe ser mayor a cero.");
+
+                using var context = await _contextFactory.CreateDbContextAsync();
+
+                var loan = await context.Loans
+                    .Include(l => l.Installments)
+                    .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
+
+                if (loan == null)
+                    return (false, "Préstamo no encontrado.");
+
+                if (!loan.IsActive)
+                    return (false, "El préstamo no está activo.");
+
+                // Validar que haya cuotas pendientes
+                var pendingInstallments = loan.Installments
+                    .Where(i => !i.IsPaid)
+                    .OrderBy(i => i.InstallmentNumber)
+                    .ToList();
+
+                if (!pendingInstallments.Any())
+                    return (false, "No hay cuotas pendientes para aplicar el abono.");
+
+                // Obtener la primera cuota pendiente para saber el saldo actual
+                var firstPendingInstallment = pendingInstallments.First();
+
+                // El saldo actual es el saldo antes de pagar la primera cuota pendiente
+                // Si es la primera cuota pendiente después de algunas pagadas, necesitamos el saldo de la última pagada
+                var lastPaidInstallment = loan.Installments
+                    .Where(i => i.IsPaid)
+                    .OrderByDescending(i => i.InstallmentNumber)
+                    .FirstOrDefault();
+
+                decimal currentBalance;
+                if (lastPaidInstallment != null)
+                {
+                    currentBalance = lastPaidInstallment.RemainingBalance;
+                }
+                else
+                {
+                    // Si no hay cuotas pagadas, el saldo es el monto principal
+                    currentBalance = loan.PrincipalAmount;
+                }
+
+                // Validar que el abono no sea mayor que el saldo actual
+                if (extraAmount > currentBalance)
+                    return (false, $"El abono no puede ser mayor que el saldo actual ({currentBalance:C}).");
+
+                // Calcular nuevo saldo después del abono
+                decimal newBalance = currentBalance - extraAmount;
+
+                // Si el nuevo saldo es muy pequeño o cero, marcar préstamo como completado
+                if (newBalance <= 1)
+                {
+                    // Eliminar todas las cuotas pendientes
+                    context.LoanInstallments.RemoveRange(pendingInstallments);
+
+                    // Crear registro del abono
+                    var finalExtraPayment = new LoanExtraPayment
+                    {
+                        LoanId = loanId,
+                        Amount = extraAmount,
+                        PaidDate = DateTime.Now,
+                        Description = "Abono final - Préstamo liquidado"
+                    };
+                    context.LoanExtraPayments.Add(finalExtraPayment);
+
+                    // Marcar préstamo como completado
+                    loan.IsActive = false;
+
+                    await context.SaveChangesAsync();
+
+                    Console.WriteLine($"✅ Préstamo '{loan.Title}' liquidado completamente con abono de {extraAmount:C}");
+                    return (true, null);
+                }
+
+                // Eliminar cuotas pendientes de la BD
+                context.LoanInstallments.RemoveRange(pendingInstallments);
+
+                // Regenerar cuotas con nuevo saldo
+                int remainingInstallments = pendingInstallments.Count;
+                int startingNumber = firstPendingInstallment.InstallmentNumber;
+                DateTime startDate = firstPendingInstallment.DueDate.AddMonths(-1); // Fecha base para cálculo
+
+                var newInstallments = RecalculateRemainingInstallments(
+                    newBalance,
+                    remainingInstallments,
+                    loan.InterestRate ?? 0,
+                    startDate,
+                    loan.DueDay,
+                    startingNumber);
+
+                // Marcar como recalculadas y agregar a contexto
+                var recalculationDate = DateTime.Now;
+                foreach (var installment in newInstallments)
+                {
+                    installment.LoanId = loanId; //  ASIGNAR LOAN ID
+                    installment.IsRecalculated = true;
+                    installment.RecalculatedDate = recalculationDate;
+                    context.LoanInstallments.Add(installment);
+                }
+
+
+                // Crear registro del abono
+                var extraPayment = new LoanExtraPayment
+                {
+                    LoanId = loanId,
+                    Amount = extraAmount,
+                    PaidDate = DateTime.Now,
+                    Description = $"Abono extraordinario al capital - {remainingInstallments} cuotas recalculadas"
+                };
+
+                context.LoanExtraPayments.Add(extraPayment);
+
+                await context.SaveChangesAsync();
+
+                Console.WriteLine($"✅ Abono de {extraAmount:C} aplicado al préstamo '{loan.Title}'. {remainingInstallments} cuotas recalculadas.");
+
+                return (true, null);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"❌ Error al registrar abono extra: {ex.Message}");
+                return (false, $"Error al procesar el abono: {ex.Message}");
+            }
+        }
+
+        private List<LoanInstallment> RecalculateRemainingInstallments(
+    decimal newBalance,
+    int remainingInstallments,
+    decimal interestRate,
+    DateTime startDate,
+    int dueDay,
+    int startingInstallmentNumber)
+        {
+            var newInstallmentsList = new List<LoanInstallment>();
+
+            // Usar el helper de amortización para generar el nuevo schedule
+            var amortizationSchedule = LoanAmortizationHelper.GenerateAmortizationSchedule(
+                newBalance,
+                interestRate,
+                remainingInstallments,
+                startDate,
+                dueDay);
+
+            // Convertir el schedule a entidades LoanInstallment
+            for (int i = 0; i < amortizationSchedule.Count; i++)
+            {
+                var (number, dueDate, principal, interest, total, balance) = amortizationSchedule[i];
+
+                var installment = new LoanInstallment
+                {
+                    InstallmentNumber = startingInstallmentNumber + i,
+                    DueDate = dueDate,
+                    PrincipalAmount = principal,
+                    InterestAmount = interest,
+                    TotalAmount = total,
+                    RemainingBalance = balance,
+                    IsPaid = false,
+                    PaidDate = null,
+                    ExpenseIncomeId = null
+                };
+
+                newInstallmentsList.Add(installment);
+            }
+
+            return newInstallmentsList;
         }
 
 
@@ -816,6 +1075,36 @@ namespace MisFinanzas.Infrastructure.Services
             return filtered.Select(MapToDto).ToList();
 
         }
+
+        public async Task<List<LoanExtraPaymentDto>> GetExtraPaymentsByLoanAsync(int loanId, string userId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+
+            // Verificar que el préstamo pertenece al usuario
+            var loan = await context.Loans
+                .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
+
+            if (loan == null)
+                return new List<LoanExtraPaymentDto>();
+
+            // Obtener todos los abonos extras del préstamo
+            var extraPayments = await context.LoanExtraPayments
+                .Where(ep => ep.LoanId == loanId)
+                .OrderByDescending(ep => ep.PaidDate)
+                .ToListAsync();
+
+            // Mapear a DTOs
+            return extraPayments.Select(ep => new LoanExtraPaymentDto
+            {
+                Id = ep.Id,
+                LoanId = ep.LoanId,
+                Amount = ep.Amount,
+                PaidDate = ep.PaidDate,
+                Description = ep.Description
+            }).ToList();
+        }
+
+
 
     }
 

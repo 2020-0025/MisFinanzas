@@ -71,6 +71,8 @@ namespace MisFinanzas.Domain.Entities
 
         // NUEVO: Relación con cuotas
         public virtual ICollection<LoanInstallment> Installments { get; set; } = new List<LoanInstallment>();
+        public virtual ICollection<LoanExtraPayment> ExtraPayments { get; set; } = new List<LoanExtraPayment>();
+
 
         // Computed Properties
         [NotMapped]
