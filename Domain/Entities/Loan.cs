@@ -54,6 +54,7 @@ namespace MisFinanzas.Domain.Entities
         [Range(0, int.MaxValue)]
         public int InstallmentsPaid { get; set; } = 0; // Cuántas cuotas pagadas
 
+        [Column(TypeName = "decimal(18,2)")]
         public decimal CurrentBalance { get; set; } // El saldo real que se le debe al banco
 
         public DateTime? LastAdjustmentDate { get; set; } // Cuándo fue la última vez que se ajusto el saldo
@@ -64,7 +65,7 @@ namespace MisFinanzas.Domain.Entities
 
         public int CategoryId { get; set; } // Categoría auto-creada (se asigna en servidor)
 
-        [Column(TypeName = "decimal(18,2)")]
+        
         
 
         // Navigation Properties

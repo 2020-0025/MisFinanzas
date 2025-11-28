@@ -572,7 +572,10 @@ namespace MisFinanzas.Infrastructure.Services
 
                 loan.InstallmentsPaid--;
 
-                // 2. Si estaba marcado como completado, reactivarlo
+                // 2. Restaurar el saldo real (devolver el monto pagado)
+                loan.CurrentBalance += lastPayment.Amount;
+
+                // 3. Si estaba marcado como completado, reactivarlo
 
                 if (!loan.IsActive && loan.InstallmentsPaid < loan.NumberOfInstallments)
 
@@ -580,7 +583,7 @@ namespace MisFinanzas.Infrastructure.Services
                     loan.IsActive = true;
                 }
 
-                // 3. Eliminar el ExpenseIncome (registro del pago)
+                // 4. Eliminar el ExpenseIncome (registro del pago)
 
                 context.ExpensesIncomes.Remove(lastPayment);
 
