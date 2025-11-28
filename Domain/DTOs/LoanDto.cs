@@ -19,10 +19,6 @@
         public string UserId { get; set; } = string.Empty;
         public int CategoryId { get; set; }
 
-        //  NUEVO
-        public decimal? InterestRate { get; set; }
-        public List<LoanInstallmentDto> Installments { get; set; } = new();
-
         // Computed Properties
         public decimal TotalToPay => InstallmentAmount * NumberOfInstallments;
 

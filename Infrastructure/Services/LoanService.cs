@@ -26,40 +26,38 @@ namespace MisFinanzas.Infrastructure.Services
         // ========== MÉTODOS DE MAPEO ==========
 
         private LoanDto MapToDto(Loan loan)
+
         {
             return new LoanDto
+
             {
                 LoanId = loan.LoanId,
+
                 Title = loan.Title,
+
                 Description = loan.Description,
+
                 PrincipalAmount = loan.PrincipalAmount,
+
                 InstallmentAmount = loan.InstallmentAmount,
+
                 NumberOfInstallments = loan.NumberOfInstallments,
+
                 DueDay = loan.DueDay,
+
                 StartDate = loan.StartDate,
+
                 Icon = loan.Icon,
+
                 IsActive = loan.IsActive,
+
                 InstallmentsPaid = loan.InstallmentsPaid,
+
                 UserId = loan.UserId,
-                CategoryId = loan.CategoryId,
-                InterestRate = loan.InterestRate, //  NUEVO
-                Installments = loan.Installments?.Select(i => new LoanInstallmentDto //  NUEVO
-                {
-                    Id = i.Id,
-                    LoanId = i.LoanId,
-                    InstallmentNumber = i.InstallmentNumber,
-                    DueDate = i.DueDate,
-                    PrincipalAmount = i.PrincipalAmount,
-                    InterestAmount = i.InterestAmount,
-                    TotalAmount = i.TotalAmount,
-                    RemainingBalance = i.RemainingBalance,
-                    IsPaid = i.IsPaid,
-                    PaidDate = i.PaidDate,
-                    ExpenseIncomeId = i.ExpenseIncomeId
-                }).ToList() ?? new List<LoanInstallmentDto>()
+
+                CategoryId = loan.CategoryId
             };
         }
-
 
         private Loan MapToEntity(LoanDto dto)
 
@@ -99,19 +97,22 @@ namespace MisFinanzas.Infrastructure.Services
         // ========== CONSULTAS BÁSICAS ==========
 
         public async Task<List<LoanDto>> GetAllByUserAsync(string userId)
+
         {
             using var context = await _contextFactory.CreateDbContextAsync();
 
             var loans = await context.Loans
+
                 .Include(l => l.Category)
-                .Include(l => l.Installments) //  CARGAR CUOTAS
+
                 .Where(l => l.UserId == userId)
+
                 .OrderByDescending(l => l.StartDate)
+
                 .ToListAsync();
 
             return loans.Select(MapToDto).ToList();
         }
-
 
         public async Task<List<LoanDto>> GetActiveByUserAsync(string userId)
 
@@ -121,7 +122,6 @@ namespace MisFinanzas.Infrastructure.Services
             var loans = await context.Loans
 
                 .Include(l => l.Category)
-                .Include(l => l.Installments)
 
                 .Where(l => l.UserId == userId && l.IsActive)
 
@@ -141,7 +141,6 @@ namespace MisFinanzas.Infrastructure.Services
             var loan = await context.Loans
 
                 .Include(l => l.Category)
-                .Include(l => l.Installments)
 
                 .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
@@ -151,125 +150,126 @@ namespace MisFinanzas.Infrastructure.Services
         // ========== CRUD ==========
 
         public async Task<(bool Success, string? Error, LoanDto? Loan)> CreateAsync(LoanDto loanDto, string userId, bool createReminder = false)
+
         {
             try
+
             {
                 // Validar que no exista préstamo con el mismo título
+
                 if (await ExistsLoanWithTitleAsync(loanDto.Title, userId))
+
                 {
                     return (false, "Ya existe un préstamo con ese título.", null);
                 }
 
                 // Validar datos
+
                 if (loanDto.PrincipalAmount <= 0)
+
                     return (false, "El monto del préstamo debe ser mayor a cero.", null);
 
                 if (loanDto.InstallmentAmount <= 0)
+
                     return (false, "La cuota mensual debe ser mayor a cero.", null);
 
                 if (loanDto.NumberOfInstallments < 1)
+
                     return (false, "El número de cuotas debe ser al menos 1.", null);
 
                 if (loanDto.DueDay < 1 || loanDto.DueDay > 31)
+
                     return (false, "El día de pago debe estar entre 1 y 31.", null);
 
                 using var context = await _contextFactory.CreateDbContextAsync();
 
-                // ⭐ CALCULAR O USAR TASA DE INTERÉS
-                decimal interestRate = loanDto.InterestRate ??
-                    LoanAmortizationHelper.CalculateApproximateInterestRate(
-                        loanDto.PrincipalAmount,
-                        loanDto.InstallmentAmount,
-                        loanDto.NumberOfInstallments);
-
                 // 1. Crear categoría automáticamente para este préstamo
+
                 var category = new Category
+
                 {
                     UserId = userId,
+
                     Title = loanDto.Title,
+
                     Icon = loanDto.Icon,
+
                     Type = TransactionType.Expense,
+
                     IsFixedExpense = createReminder,
+
                     DayOfMonth = createReminder ? loanDto.DueDay : null,
+
                     EstimatedAmount = createReminder ? loanDto.InstallmentAmount : null
                 };
 
                 context.Categories.Add(category);
+
                 await context.SaveChangesAsync();
 
-                // 2. Crear préstamo
-                var loan = new Loan
-                {
-                    UserId = userId,
-                    Title = loanDto.Title,
-                    Description = loanDto.Description,
-                    PrincipalAmount = loanDto.PrincipalAmount,
-                    InstallmentAmount = loanDto.InstallmentAmount,
-                    NumberOfInstallments = loanDto.NumberOfInstallments,
-                    DueDay = loanDto.DueDay,
-                    StartDate = loanDto.StartDate,
-                    Icon = loanDto.Icon,
-                    IsActive = true,
-                    InstallmentsPaid = 0,
-                    CategoryId = category.CategoryId,
-                    InterestRate = interestRate // ⭐ GUARDAR TASA
-                };
+                // 2. Convertir DTO a entidad y asignar categoría
+
+                var loan = MapToEntity(loanDto);
+
+                loan.UserId = userId;
+
+                loan.CategoryId = category.CategoryId;
+
+                loan.IsActive = true;
+
+                loan.InstallmentsPaid = 0;
 
                 context.Loans.Add(loan);
-                await context.SaveChangesAsync();
-
-                // ⭐ 3. GENERAR TABLA DE AMORTIZACIÓN
-                var amortizationSchedule = LoanAmortizationHelper.GenerateAmortizationSchedule(
-                    loanDto.PrincipalAmount,
-                    interestRate,
-                    loanDto.NumberOfInstallments,
-                    loanDto.StartDate,
-                    loanDto.DueDay);
-
-                foreach (var (number, dueDate, principal, interest, total, balance) in amortizationSchedule)
-                {
-                    var installment = new LoanInstallment
-                    {
-                        LoanId = loan.LoanId,
-                        InstallmentNumber = number,
-                        DueDate = dueDate,
-                        PrincipalAmount = principal,
-                        InterestAmount = interest,
-                        TotalAmount = total,
-                        RemainingBalance = balance,
-                        IsPaid = false
-                    };
-
-                    context.LoanInstallments.Add(installment);
-                }
 
                 await context.SaveChangesAsync();
 
-                // 4. Registrar INGRESO inicial del préstamo
-                var initialIncome = new ExpenseIncome
+                // 3. Registrar el monto del préstamo como INGRESO
+
+                var loanIncome = new ExpenseIncome
+
                 {
                     UserId = userId,
+
                     CategoryId = category.CategoryId,
+
                     Type = TransactionType.Income,
-                    Amount = loanDto.PrincipalAmount,
-                    Description = $"Préstamo recibido: {loanDto.Title}",
-                    Date = loanDto.StartDate
+
+                    Amount = loan.PrincipalAmount,
+
+                    Description = $"💰 Préstamo recibido - {loan.Title}",
+
+                    Date = loan.StartDate,
+
+                    CreatedAt = DateTime.UtcNow
                 };
 
-                context.ExpensesIncomes.Add(initialIncome);
+                context.ExpensesIncomes.Add(loanIncome);
+
                 await context.SaveChangesAsync();
 
-                Console.WriteLine($"✅ Préstamo '{loan.Title}' creado con {amortizationSchedule.Count} cuotas. Tasa: {interestRate}%");
+                Console.WriteLine($"✅ Préstamo registrado como ingreso: {loan.PrincipalAmount:C} en {loan.StartDate:dd/MM/yyyy}");
+
+                // 4. Las notificaciones se generarán automáticamente por el background service
+
+                // No generamos notificación inmediata para evitar conflictos de DbContext
+
+                if (createReminder)
+
+                {
+                    Console.WriteLine($"✅ Recordatorio configurado para préstamo {loan.LoanId}. El background service generará las notificaciones.");
+                }
 
                 return (true, null, MapToDto(loan));
             }
+
             catch (Exception ex)
+
             {
                 Console.WriteLine($"❌ Error al crear préstamo: {ex.Message}");
-                return (false, ex.Message, null);
+
+                return (false, "Error al crear el préstamo.", null);
             }
         }
-
 
         public async Task<bool> UpdateAsync(int loanId, LoanDto updatedLoanDto, string userId)
 
@@ -442,137 +442,148 @@ namespace MisFinanzas.Infrastructure.Services
         }
         // ========== OPERACIONES ESPECÍFICAS DE PRÉSTAMOS ==========
         public async Task<bool> RegisterPaymentAsync(int loanId, string userId)
+
         {
             try
+
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var loan = await context.Loans
-                    .Include(l => l.Installments)
+
                     .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null || !loan.IsActive)
+
                     return false;
 
                 // Validar que no haya pagado todas las cuotas
+
                 if (loan.InstallmentsPaid >= loan.NumberOfInstallments)
+
                     return false;
 
-                // ⭐ BUSCAR SIGUIENTE CUOTA PENDIENTE
-                var nextInstallment = loan.Installments
-                    .Where(i => !i.IsPaid)
-                    .OrderBy(i => i.InstallmentNumber)
-                    .FirstOrDefault();
+                // 1. Incrementar cuotas pagadas
 
-                if (nextInstallment == null)
-                    return false;
+                loan.InstallmentsPaid++;
 
-                // ⭐ REGISTRAR SOLO EL INTERÉS COMO GASTO
-                var interestExpense = new ExpenseIncome
+                // 2. Crear ExpenseIncome (registro del pago)
+
+                var payment = new ExpenseIncome
+
                 {
                     UserId = userId,
+
                     CategoryId = loan.CategoryId,
+
                     Type = TransactionType.Expense,
-                    Amount = nextInstallment.InterestAmount, //  SOLO INTERÉS
-                    Description = $"Interés cuota {nextInstallment.InstallmentNumber}/{loan.NumberOfInstallments} - {loan.Title}",
+
+                    Amount = loan.InstallmentAmount,
+
+                    Description = $"Cuota {loan.InstallmentsPaid}/{loan.NumberOfInstallments} - {loan.Title}",
+
                     Date = DateTime.Now
                 };
 
-                context.ExpensesIncomes.Add(interestExpense);
-                await context.SaveChangesAsync();
+                context.ExpensesIncomes.Add(payment);
 
-                //  MARCAR CUOTA COMO PAGADA
-                nextInstallment.IsPaid = true;
-                nextInstallment.PaidDate = DateTime.Now;
-                nextInstallment.ExpenseIncomeId = interestExpense.Id;
+                // 3. Si completó todas las cuotas, marcar como completado
 
-                // Incrementar contador
-                loan.InstallmentsPaid++;
-
-                // Si completó todas las cuotas, marcar préstamo como completado
                 if (loan.InstallmentsPaid >= loan.NumberOfInstallments)
+
                 {
                     loan.IsActive = false;
                 }
-
                 await context.SaveChangesAsync();
-
-                Console.WriteLine($"✅ Cuota {nextInstallment.InstallmentNumber} pagada. Capital: {nextInstallment.PrincipalAmount:C}, Interés: {nextInstallment.InterestAmount:C}");
 
                 return true;
             }
+
             catch (Exception ex)
+
             {
                 Console.WriteLine($"❌ Error al registrar pago: {ex.Message}");
+
                 return false;
             }
         }
-
         public async Task<bool> UndoLastPaymentAsync(int loanId, string userId)
+
         {
             try
+
             {
                 using var context = await _contextFactory.CreateDbContextAsync();
 
                 var loan = await context.Loans
-                    .Include(l => l.Installments)
+
                     .FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
 
                 if (loan == null)
+
                     return false;
 
                 // Validar que haya al menos un pago registrado
+
                 if (loan.InstallmentsPaid <= 0)
+
                     return false;
 
-                //  BUSCAR ÚLTIMA CUOTA PAGADA
-                var lastPaidInstallment = loan.Installments
-                    .Where(i => i.IsPaid)
-                    .OrderByDescending(i => i.InstallmentNumber)
-                    .FirstOrDefault();
+                // Buscar el último ExpenseIncome de este préstamo
 
-                if (lastPaidInstallment == null)
-                    return false;
+                var lastPayment = await context.ExpensesIncomes
 
-                //  ELIMINAR EL GASTO DEL INTERÉS
-                if (lastPaidInstallment.ExpenseIncomeId.HasValue)
+                    .Where(ei => ei.CategoryId == loan.CategoryId && ei.UserId == userId && ei.Type == TransactionType.Expense)
+
+                    .OrderByDescending(ei => ei.Date)
+
+                    .ThenByDescending(ei => ei.Id)
+
+                    .FirstOrDefaultAsync();
+
+                if (lastPayment == null)
+
                 {
-                    var expense = await context.ExpensesIncomes
-                        .FirstOrDefaultAsync(ei => ei.Id == lastPaidInstallment.ExpenseIncomeId.Value);
+                    // Inconsistencia: Hay contador pero no hay pago registrado
 
-                    if (expense != null)
-                    {
-                        context.ExpensesIncomes.Remove(expense);
-                    }
+                    loan.InstallmentsPaid = 0;
+
+                    await context.SaveChangesAsync();
+
+                    return false;
                 }
 
-                //  MARCAR CUOTA COMO NO PAGADA
-                lastPaidInstallment.IsPaid = false;
-                lastPaidInstallment.PaidDate = null;
-                lastPaidInstallment.ExpenseIncomeId = null;
+                // 1. Decrementar cuotas pagadas
 
-                // Decrementar contador
                 loan.InstallmentsPaid--;
 
-                // Reactivar préstamo si estaba completado
+                // 2. Si estaba marcado como completado, reactivarlo
+
                 if (!loan.IsActive && loan.InstallmentsPaid < loan.NumberOfInstallments)
+
                 {
                     loan.IsActive = true;
                 }
 
+                // 3. Eliminar el ExpenseIncome (registro del pago)
+
+                context.ExpensesIncomes.Remove(lastPayment);
+
                 await context.SaveChangesAsync();
 
-                Console.WriteLine($"✅ Pago de cuota {lastPaidInstallment.InstallmentNumber} deshecho");
+                Console.WriteLine($"✅ Pago deshecho para préstamo {loan.LoanId}. Cuotas pagadas: {loan.InstallmentsPaid}");
 
                 return true;
             }
+
             catch (Exception ex)
+
             {
                 Console.WriteLine($"❌ Error al deshacer pago: {ex.Message}");
+
                 return false;
             }
         }
-
 
         public async Task<bool> MarkAsCompletedAsync(int loanId, string userId)
 

@@ -8,7 +8,6 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
 @using MisFinanzas.Components.Shared
-@using MisFinanzas.Infrastructure.Services
 @inject ILoanService LoanService
 @inject IJSRuntime JSRuntime
 @inject AuthenticationStateProvider AuthenticationStateProvider
@@ -31,105 +30,50 @@
         </div>
     </div>
 
-    <!-- Resumen General con estilo Dashboard -->
-    <div class="row g-4 mb-4" id="loans-summary-cards">
-        <!-- Total Prestado Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="glass-card stat-card animate-slide-up h-100">
-                <div class="stat-card-body">
-                    <div class="stat-icon income-icon">
-                        <span style="font-size: 32px;">📥</span>
-                    </div>
-                    <div class="stat-content">
-                        <p class="stat-label text-white">Total Prestado</p>
-                        <h2 class="stat-value text-info">@totalBorrowed.ToString("C0")</h2>
-                        <small class="stat-subtitle text-white">
-                            <span style="font-size: 15px;">💵</span>Recibido
-                        </small>
-                    </div>
+    <!-- Resumen General -->
+    <div class="summary-card" id="loans-summary-card">
+        <h4>📊 Resumen General</h4>
+        <div class="row">
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total Prestado</span>
+                    <h5 class="text-info">@totalBorrowed.ToString("C")</h5>
                 </div>
-                <div class="stat-footer text-white">
-                    <span style="font-size: 17px;">🏦</span>
-                    Capital inicial
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total a Pagar</span>
+                    <h5 class="text-warning">@totalToPay.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Total Pagado</span>
+                    <h5 class="text-success">@totalPaid.ToString("C")</h5>
+                </div>
+            </div>
+            <div class="col-md-3 col-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Deuda Pendiente</span>
+                    <h5 class="text-danger">@totalRemaining.ToString("C")</h5>
                 </div>
             </div>
         </div>
-
-        <!-- Deuda Pendiente Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.1s;">
-                <div class="stat-card-body">
-                    <div class="stat-icon expense-icon">
-                        <span style="font-size: 32px;">💰</span>
-                    </div>
-                    <div class="stat-content">
-                        <p class="stat-label text-white">Deuda Pendiente</p>
-                        <h2 class="stat-value text-danger">@totalRemaining.ToString("C0")</h2>
-                        <small class="stat-subtitle text-white">
-                            <span style="font-size: 15px;">📊</span>Por pagar
-                        </small>
-                    </div>
-                </div>
-                <div class="stat-footer text-white">
-                    <span style="font-size: 17px;">⚠️</span>
-                    Saldo actual
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Cuotas Mensuales</span>
+                    <h5 class="text-primary">@monthlyPaymentsTotal.ToString("C")</h5>
                 </div>
             </div>
-        </div>
-
-        <!-- Cuotas Mensuales Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.2s;">
-                <div class="stat-card-body">
-                    <div class="stat-icon balance-icon">
-                        <span style="font-size: 32px;">📅</span>
-                    </div>
-                    <div class="stat-content">
-                        <p class="stat-label text-white">Cuotas Mensuales</p>
-                        <h2 class="stat-value text-warning">@monthlyPaymentsTotal.ToString("C0")</h2>
-                        <small class="stat-subtitle text-white">
-                            <span style="font-size: 15px;">📆</span>Este mes
-                        </small>
-                    </div>
-                </div>
-                <div class="stat-footer text-white">
-                    <span style="font-size: 17px;">💳</span>
-                    Pagos mensuales
-                </div>
-            </div>
-        </div>
-
-        <!-- Préstamos Activos Card -->
-        <div class="col-xl-3 col-md-6">
-            <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.3s;">
-                <div class="stat-card-body">
-                    <div class="stat-icon goals-icon">
-                        <span style="font-size: 32px;">🏦</span>
-                    </div>
-                    <div class="stat-content">
-                        <p class="stat-label text-white">Préstamos Activos</p>
-                        <h2 class="stat-value text-info">@activeLoans.Count</h2>
-                        <small class="stat-subtitle text-info">
-                            <span style="font-size: 15px;">✅</span>En curso
-                        </small>
-                    </div>
-                </div>
-                <div class="stat-footer text-white">
-                    <span style="font-size: 17px;">📋</span>
-                    @(activeLoans.Count == 1 ? "Préstamo" : "Préstamos")
+            <div class="col-md-6">
+                <div class="summary-item">
+                    <span class="summary-label text-white">Tasa Promedio</span>
+                    <h5 class="text-warning">@averageInterestRate.ToString("F2")%</h5>
                 </div>
             </div>
         </div>
     </div>
-
-    <!-- Tip informativo -->
-    <div class="glass-card mb-4" style="padding: 15px;">
-        <p class="text-white mb-0">
-            <span style="font-size: 20px;">💡</span>
-            <strong>Tip:</strong> Revisa cada préstamo abajo para ver detalles de capital e interés pagados.
-        </p>
-    </div>
-
 
     <!-- Filtros -->
     <div class="filters-card" id="loans-filters">
@@ -259,19 +203,19 @@
                         <div class="loan-info">
                             <div class="row text-white">
                                 <div class="col-6">
-                                    <small class="text-white">💵 Monto Prestado:</small>
+                                    <small>💵 Monto Prestado:</small>
                                     <p><strong>@loan.PrincipalAmount.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-white">📅 Cuota Mensual:</small>
+                                    <small>📅 Cuota Mensual:</small>
                                     <p><strong>@loan.InstallmentAmount.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-white">💰 Total a Pagar:</small>
+                                    <small>💰 Total a Pagar:</small>
                                     <p><strong>@loan.TotalToPay.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-white">📈 Interés Cobrado:</small>
+                                    <small>📈 Interés Cobrado:</small>
                                     <p>
                                         <strong class="@GetInterestColorClass(loan.InterestRateCategory)">
                                             @loan.TotalInterest.ToString("C") (@loan.ApproximateInterestRate.ToString("F2")%)
@@ -283,7 +227,7 @@
                             @if (loan.ApproximateInterestRate > 30)
                             {
                                 <div class="alert alert-warning py-2 mt-2">
-                                    <small class="text-danger">⚠️ @loan.InterestRateLabel</small>
+                                    <small>⚠️ @loan.InterestRateLabel</small>
                                 </div>
                             }
                         </div>
@@ -304,26 +248,15 @@
                         <div class="loan-footer text-white">
                             <div class="row">
                                 <div class="col-6">
-                                    <small class="text-white">🗓️ Inicio:</small>
+                                    <small>🗓️ Inicio:</small>
                                     <p>@loan.StartDate.ToString("dd/MM/yyyy")</p>
                                 </div>
                                 <div class="col-6">
-                                    <small class="text-white">📆 Próximo Pago:</small>
+                                    <small>📆 Próximo Pago:</small>
                                     <p>@(loan.IsActive && !loan.IsCompleted ? loan.NextPaymentDate.ToString("dd/MM/yyyy") : "N/A")</p>
                                 </div>
                             </div>
                         </div>
-
-                        <!--  NUEVO: Botón ver tabla de amortización -->
-                        <div class="mt-3 text-center">
-                            <button class="btn btn-sm btn-info glass-button"
-                                    style="width: 100%;"
-                                    @onclick="() => ShowAmortizationTable(loan.LoanId)">
-                                <span style="font-size: 13px;">📊</span> Ver Tabla de Amortización
-                            </button>
-                        </div>
-
-
                     </div>
                 </div>
             }
@@ -406,46 +339,9 @@
                         <ValidationMessage For="@(() => currentLoan.StartDate)" />
                     </div>
 
-                    <div class="mb-3 text-white">
+                    <div class="mb-3">
                         <IconSelector @bind-SelectedIcon="currentLoan.Icon" Label="Icono" />
                     </div>
-
-                    <!-- ⭐ NUEVO: Campo de tasa de interés -->
-                    <div class="mb-3">
-                        <div style="display:flex; gap:0.4rem;">
-                            <label class="form-label text-white">Tasa de interés anual (%)</label>
-                        </div>
-                        <div class="input-group">
-                            <InputNumber @bind-Value="currentLoan.InterestRate"
-                                         @bind-Value:after="CalculatePreview"
-                                         class="form-control glass-input"
-                                         placeholder="18.5"
-                                         min="0"
-                                         max="100"
-                                         step="0.01"
-                                         disabled="@useApproximateRate"
-                                         style="@(useApproximateRate ? "background: rgba(255, 255, 255, 0.1) !important; border: 1px solid rgba(255, 255, 255, 0.2) !important; color: white !important; opacity: 0.7;" : "")" />
-                            <span class="input-group-text" style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); color: white;">%</span>
-                        </div>
-                        <div class="form-check mt-2">
-                            <input class="form-check-input"
-                                   type="checkbox"
-                                   @bind="useApproximateRate"
-                                   @bind:after="CalculatePreview"
-                                   id="useApproximateRate">
-                            <label class="form-check-label text-white" for="useApproximateRate">
-                                ❓ No conozco mi tasa, calcular aproximada
-                            </label>
-                        </div>
-                        @if (useApproximateRate && approximateRate > 0)
-                        {
-                            <small class="form-text text-warning">
-                                ⚠️ Tasa aproximada: <strong>@approximateRate.ToString("F2")%</strong> (puede no ser exacta)
-                            </small>
-                        }
-                    </div>
-
-
 
                     @if (!isEditMode)
                     {
@@ -547,109 +443,6 @@
     </div>
 }
 
-
-<!-- Modal Tabla de Amortización -->
-@if (showAmortizationModal && selectedLoanForTable != null)
-{
-    <div class="modal-overlay">
-        <div class="modal-content-amortization border-primary" @onclick:stopPropagation="true">
-            <div class="modal-header-custom border-secondary">
-                <h5>📊 Tabla de Amortización - @selectedLoanForTable.Icon @selectedLoanForTable.Title</h5>
-                <button class="btn-close-custom" @onclick="CloseAmortizationTable">✕</button>
-            </div>
-            <div class="modal-body-custom" style="max-height: 70vh; overflow-y: auto;">
-
-                <div class="glass-card mb-3 p-3 border-primary" style="background: rgba(0, 0, 0, 0.5) !important;">
-                    <div class="row text-white">
-                        <div class="col-md-3">
-                            <small>💵 Monto:</small>
-                            <p class="mb-0"><strong>@selectedLoanForTable.PrincipalAmount.ToString("C")</strong></p>
-                        </div>
-                        <div class="col-md-3">
-                            <small>📈 Tasa:</small>
-                            <p class="mb-0"><strong>@(selectedLoanForTable.InterestRate?.ToString("F2") ?? selectedLoanForTable.ApproximateInterestRate.ToString("F2"))% anual</strong></p>
-                        </div>
-                        <div class="col-md-3">
-                            <small>📅 Cuotas:</small>
-                            <p class="mb-0"><strong>@selectedLoanForTable.NumberOfInstallments de @selectedLoanForTable.InstallmentAmount.ToString("C")</strong></p>
-                        </div>
-                        <div class="col-md-3">
-                            <small>💰 Total:</small>
-                            <p class="mb-0"><strong>@selectedLoanForTable.TotalToPay.ToString("C")</strong></p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="table-responsive">
-                    <table class="table table-dark">
-                        <thead>
-                            <tr class="text-white">
-                                <th style="width: 5%;">#</th>
-                                <th style="width: 15%;">Fecha</th>
-                                <th style="width: 18%;">Capital</th>
-                                <th style="width: 18%;">Interés</th>
-                                <th style="width: 18%;">Total</th>
-                                <th style="width: 18%;">Saldo</th>
-                                <th style="width: 8%;">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach (var installment in selectedLoanForTable.Installments.OrderBy(i => i.InstallmentNumber))
-                            {
-                                var isNext = !installment.IsPaid && (selectedLoanForTable.Installments.Where(i => !i.IsPaid).OrderBy(i => i.InstallmentNumber).FirstOrDefault()?.InstallmentNumber == installment.InstallmentNumber);
-
-                                <tr>
-                                    <td>@installment.InstallmentNumber</td>
-                                    <td>@installment.DueDate.ToString("dd/MM/yyyy")</td>
-                                    <td class="text-info">@installment.PrincipalAmount.ToString("C")</td>
-                                    <td class="text-danger">@installment.InterestAmount.ToString("C")</td>
-                                    <td class="text-white"><strong>@installment.TotalAmount.ToString("C")</strong></td>
-                                    <td class="text-warning">@installment.RemainingBalance.ToString("C")</td>
-                                    <td class="text-center">
-                                        @if (installment.IsPaid)
-                                        {
-                                            <span title="Pagada">✅</span>
-                                        }
-                                        else if (isNext)
-                                        {
-                                            <span title="Próxima">⏳</span>
-                                        }
-                                        else
-                                        {
-                                            <span title="Pendiente">⏸️</span>
-                                        }
-                                    </td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="glass-card mt-3 p-3 border-primary" style="background: rgba(0, 0, 0, 0.5) !important;">
-                    <h6 class="text-white mb-3">📋 Resumen</h6>
-                    <div class="row text-white">
-                        <div class="col-md-6">
-                            <p><strong>✅ Cuotas pagadas:</strong> @selectedLoanForTable.InstallmentsPaid</p>
-                            <p><strong>💰 Capital pagado:</strong> @selectedLoanForTable.Installments.Where(i => i.IsPaid).Sum(i => i.PrincipalAmount).ToString("C")</p>
-                            <p><strong>📈 Interés pagado:</strong> @selectedLoanForTable.Installments.Where(i => i.IsPaid).Sum(i => i.InterestAmount).ToString("C")</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>⏸️ Cuotas pendientes:</strong> @selectedLoanForTable.RemainingInstallments</p>
-                            <p><strong>💵 Saldo por pagar:</strong> @((selectedLoanForTable.TotalToPay - selectedLoanForTable.TotalPaid).ToString("C"))</p>
-                            <p><strong>📊 Progreso:</strong> @selectedLoanForTable.ProgressPercentage.ToString("F1")%</p>
-                        </div>
-                    </div>
-                </div>
-
-            </div>
-            <div class="modal-footer-custom">
-                <button class="btn btnCancel" @onclick="CloseAmortizationTable">Cerrar</button>
-            </div>
-        </div>
-    </div>
-}
-
-
 <FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
 
 <FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
@@ -679,11 +472,6 @@
     private bool deleteHistory = false;
     private bool createReminder = false;
 
-
-    // NUEVAS VARIABLES PARA TASA
-    private bool useApproximateRate = false;
-    private decimal approximateRate = 0;
-
     // Vista previa
     private decimal previewTotalToPay = 0;
     private decimal previewInterest = 0;
@@ -698,10 +486,6 @@
     private bool showErrorMessage = false;
     private System.Threading.Timer? successTimer;
     private System.Threading.Timer? errorTimer;
-
-    //  NUEVO: Variables para modal de amortización
-    private bool showAmortizationModal = false;
-    private LoanDto? selectedLoanForTable = null;
 
     //Tour automático
     private bool _tourLaunched = false;
@@ -804,22 +588,13 @@
         isEditMode = false;
         currentLoan = new LoanDto
         {
-            StartDate = DateTime.Now,
             Icon = "🏦",
-            PrincipalAmount = 0,
-            InstallmentAmount = 0,
-            NumberOfInstallments = 12,
-            DueDay = DateTime.Now.Day
+            StartDate = DateTime.Now,
+            DueDay = DateTime.Now.Day,
+            NumberOfInstallments = 12
         };
-
-        //  RESET VARIABLES
-        useApproximateRate = false;
-        approximateRate = 0;
         createReminder = false;
-
-        previewTotalToPay = 0;
-        previewInterest = 0;
-        previewInterestRate = 0;
+        ResetPreview();
         showModal = true;
     }
 
@@ -1027,56 +802,56 @@
 
     private void CalculatePreview()
     {
-        if (currentLoan.PrincipalAmount > 0 && currentLoan.InstallmentAmount > 0 && currentLoan.NumberOfInstallments > 0)
+        try
         {
-            // Calcular o usar tasa
-            decimal rate;
-            if (useApproximateRate)
+            if (currentLoan.PrincipalAmount > 0 &&
+                currentLoan.InstallmentAmount > 0 &&
+                currentLoan.NumberOfInstallments > 0)
             {
-                rate = LoanAmortizationHelper.CalculateApproximateInterestRate(
-                    currentLoan.PrincipalAmount,
-                    currentLoan.InstallmentAmount,
-                    currentLoan.NumberOfInstallments);
-                approximateRate = rate;
-                currentLoan.InterestRate = null; // No guardar tasa aproximada
+                previewTotalToPay = currentLoan.InstallmentAmount * currentLoan.NumberOfInstallments;
+                previewInterest = previewTotalToPay - currentLoan.PrincipalAmount;
+
+                // Calcular tasa aproximada
+                if (currentLoan.PrincipalAmount > 0 && currentLoan.NumberOfInstallments > 0)
+                {
+                    previewInterestRate = (previewInterest / currentLoan.PrincipalAmount) *
+                                         (12m / currentLoan.NumberOfInstallments) * 100m;
+                    previewInterestRate = Math.Round(previewInterestRate, 2);
+                }
+                else
+                {
+                    previewInterestRate = 0;
+                }
+
+                // Categorizar tasa
+                if (previewInterestRate <= 15)
+                {
+                    previewInterestCategory = "favorable";
+                    previewInterestLabel = "✅ Tasa favorable";
+                }
+                else if (previewInterestRate <= 30)
+                {
+                    previewInterestCategory = "moderada";
+                    previewInterestLabel = "⚠️ Tasa moderada";
+                }
+                else
+                {
+                    previewInterestCategory = "alta";
+                    previewInterestLabel = "🔴 Tasa alta - Considerar refinanciar";
+                }
             }
             else
             {
-                rate = currentLoan.InterestRate ?? 0;
-                approximateRate = 0;
+                ResetPreview();
             }
 
-            previewTotalToPay = currentLoan.InstallmentAmount * currentLoan.NumberOfInstallments;
-            previewInterest = previewTotalToPay - currentLoan.PrincipalAmount;
-            previewInterestRate = rate;
-
-            // Clasificación
-            if (rate <= 15)
-            {
-                previewInterestCategory = "favorable";
-                previewInterestLabel = "✅ Tasa favorable - Buen préstamo";
-            }
-            else if (rate <= 30)
-            {
-                previewInterestCategory = "moderada";
-                previewInterestLabel = "⚠️ Tasa moderada - Aceptable";
-            }
-            else
-            {
-                previewInterestCategory = "alta";
-                previewInterestLabel = "🚨 Tasa alta - Considera refinanciar";
-            }
+            StateHasChanged();
         }
-        else
+        catch
         {
-            previewTotalToPay = 0;
-            previewInterest = 0;
-            previewInterestRate = 0;
-            previewInterestCategory = "";
-            previewInterestLabel = "";
+            ResetPreview();
         }
     }
-
 
     private void ResetPreview()
     {
@@ -1168,22 +943,5 @@
     {
         successTimer?.Dispose();
         errorTimer?.Dispose();
-    }
-
-    //  NUEVOS MÉTODOS PARA TABLA DE AMORTIZACIÓN
-    private async Task ShowAmortizationTable(int loanId)
-    {
-        var loan = await LoanService.GetByIdAsync(loanId, currentUserId);
-        if (loan != null)
-        {
-            selectedLoanForTable = loan;
-            showAmortizationModal = true;
-        }
-    }
-
-    private void CloseAmortizationTable()
-    {
-        showAmortizationModal = false;
-        selectedLoanForTable = null;
     }
 }

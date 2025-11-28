@@ -516,9 +516,6 @@ namespace MisFinanzas.Migrations
                         .HasColumnType("integer")
                         .HasDefaultValue(0);
 
-                    b.Property<decimal?>("InterestRate")
-                        .HasColumnType("decimal(5,2)");
-
                     b.Property<bool>("IsActive")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("boolean")
@@ -564,55 +561,6 @@ namespace MisFinanzas.Migrations
 
                             t.HasCheckConstraint("CK_Loan_PrincipalAmount", "\"PrincipalAmount\" > 0");
                         });
-                });
-
-            modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanInstallment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<int?>("ExpenseIncomeId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("InstallmentNumber")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("InterestAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsPaid")
-                        .HasColumnType("boolean");
-
-                    b.Property<int>("LoanId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("PaidDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.Property<decimal>("PrincipalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("RemainingBalance")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<decimal>("TotalAmount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ExpenseIncomeId");
-
-                    b.HasIndex("LoanId");
-
-                    b.HasIndex("LoanId", "InstallmentNumber");
-
-                    b.ToTable("LoanInstallments");
                 });
 
             modelBuilder.Entity("MisFinanzas.Domain.Entities.Notification", b =>
@@ -789,24 +737,6 @@ namespace MisFinanzas.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanInstallment", b =>
-                {
-                    b.HasOne("MisFinanzas.Domain.Entities.ExpenseIncome", "ExpenseIncome")
-                        .WithMany()
-                        .HasForeignKey("ExpenseIncomeId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("MisFinanzas.Domain.Entities.Loan", "Loan")
-                        .WithMany("Installments")
-                        .HasForeignKey("LoanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ExpenseIncome");
-
-                    b.Navigation("Loan");
-                });
-
             modelBuilder.Entity("MisFinanzas.Domain.Entities.Notification", b =>
                 {
                     b.HasOne("MisFinanzas.Domain.Entities.Category", "Category")
@@ -846,11 +776,6 @@ namespace MisFinanzas.Migrations
                     b.Navigation("Budgets");
 
                     b.Navigation("ExpensesIncomes");
-                });
-
-            modelBuilder.Entity("MisFinanzas.Domain.Entities.Loan", b =>
-                {
-                    b.Navigation("Installments");
                 });
 #pragma warning restore 612, 618
         }
