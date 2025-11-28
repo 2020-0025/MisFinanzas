@@ -53,6 +53,10 @@ namespace MisFinanzas.Infrastructure.Services
 
                 InstallmentsPaid = loan.InstallmentsPaid,
 
+                CurrentBalance = loan.CurrentBalance, // Nuevo 
+
+                LastAdjustmentDate = loan.LastAdjustmentDate, // Nuevo
+
                 UserId = loan.UserId,
 
                 CategoryId = loan.CategoryId
@@ -86,6 +90,10 @@ namespace MisFinanzas.Infrastructure.Services
                 IsActive = dto.IsActive,
 
                 InstallmentsPaid = dto.InstallmentsPaid,
+
+                CurrentBalance = dto.CurrentBalance,  // Nuevo
+                
+                LastAdjustmentDate = dto.LastAdjustmentDate, // Nuevo
 
                 UserId = dto.UserId,
 
@@ -219,6 +227,9 @@ namespace MisFinanzas.Infrastructure.Services
 
                 loan.InstallmentsPaid = 0;
 
+                // --- NUEVO: Inicializar el saldo real igual al monto prestado ---
+                loan.CurrentBalance = loan.PrincipalAmount;
+
                 context.Loans.Add(loan);
 
                 await context.SaveChangesAsync();
@@ -232,7 +243,7 @@ namespace MisFinanzas.Infrastructure.Services
 
                     CategoryId = category.CategoryId,
 
-                    Type = TransactionType.Income,
+                    Type = TransactionType.Adjustment, // Tipo Ajuste para no afectar estadísticas
 
                     Amount = loan.PrincipalAmount,
 
@@ -467,6 +478,10 @@ namespace MisFinanzas.Infrastructure.Services
 
                 loan.InstallmentsPaid++;
 
+                // --- NUEVO: Reducir el saldo real ---
+                loan.CurrentBalance -= loan.InstallmentAmount;
+                if (loan.CurrentBalance < 0) loan.CurrentBalance = 0; // Evitar negativos
+
                 // 2. Crear ExpenseIncome (registro del pago)
 
                 var payment = new ExpenseIncome
@@ -581,6 +596,29 @@ namespace MisFinanzas.Infrastructure.Services
             {
                 Console.WriteLine($"❌ Error al deshacer pago: {ex.Message}");
 
+                return false;
+            }
+        }
+
+        public async Task<bool> AdjustBalanceAsync(int loanId, decimal newBalance, string userId)
+        {
+            try
+            {
+                using var context = await _contextFactory.CreateDbContextAsync();
+                var loan = await context.Loans.FirstOrDefaultAsync(l => l.LoanId == loanId && l.UserId == userId);
+
+                if (loan == null) return false;
+
+                // Actualizamos el saldo a lo que diga el usuario (sincronización con el banco)
+                loan.CurrentBalance = newBalance;
+                loan.LastAdjustmentDate = DateTime.Now;
+
+                await context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error ajustando saldo: {ex.Message}");
                 return false;
             }
         }

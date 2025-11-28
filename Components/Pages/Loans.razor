@@ -75,6 +75,14 @@
         </div>
     </div>
 
+    <!-- Tip informativo -->
+    <div class="glass-card mb-4" style="padding: 15px;">
+        <p class="text-white mb-0">
+            <span style="font-size: 20px;">💡</span>
+            <strong>Tip:</strong> Revisa cada préstamo abajo para ver sus detalles individuales.
+        </p>
+    </div>
+
     <!-- Filtros -->
     <div class="filters-card" id="loans-filters">
         <div class="btn-group" role="group">
@@ -167,6 +175,17 @@
                                                 <span style="font-size: 13px;">↩️</span>
                                             </button>
                                         }
+
+                                        @if (loan.IsActive && !loan.IsCompleted)
+                                        {
+                                            <button class="btn btn-sm btn-secondary"
+                                                    style="background-color:rgba(156, 39, 176, 0.25);"
+                                                    @onclick="() => OpenAdjustmentModal(loan)"
+                                                    title="Ajustar saldo real (Conciliar con Banco)">
+                                                <span style="font-size: 13px;">⚖️</span>
+                                            </button>
+                                        }
+
                                         <button class="btn btn-sm btn-warning"
                                                 id="@(filteredLoans.First() == loan ? "loans-edit-button" : "")"
                                                 style="background-color:rgba(255, 193, 7, 0.25);"
@@ -203,19 +222,23 @@
                         <div class="loan-info">
                             <div class="row text-white">
                                 <div class="col-6">
-                                    <small>💵 Monto Prestado:</small>
+                                    <small class="text-white">💵 Monto Prestado:</small>
                                     <p><strong>@loan.PrincipalAmount.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small>📅 Cuota Mensual:</small>
+                                    <small class="text-white">📅 Cuota Mensual:</small>
                                     <p><strong>@loan.InstallmentAmount.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small>💰 Total a Pagar:</small>
+                                    <small class="text-white">💰 Total a Pagar:</small>
                                     <p><strong>@loan.TotalToPay.ToString("C")</strong></p>
                                 </div>
                                 <div class="col-6">
-                                    <small>📈 Interés Cobrado:</small>
+                                    <small class="text-white">💰 Saldo Real (App):</small>
+                                    <p class="text-info"><strong>@loan.CurrentBalance.ToString("C")</strong></p>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-white">📈 Interés Cobrado:</small>
                                     <p>
                                         <strong class="@GetInterestColorClass(loan.InterestRateCategory)">
                                             @loan.TotalInterest.ToString("C") (@loan.ApproximateInterestRate.ToString("F2")%)
@@ -443,6 +466,34 @@
     </div>
 }
 
+@if (showAdjustmentModal)
+{
+    <div class="modal-overlay">
+        <div class="modal-content-custom" @onclick:stopPropagation="true" style="max-width: 400px;">
+            <div class="modal-header-custom">
+                <h5>⚖️ Conciliar Saldo</h5>
+                <button class="btn-close-custom" @onclick="CloseAdjustmentModal">✕</button>
+            </div>
+            <div class="modal-body-custom">
+                <p class="text-white">Ingresa el saldo pendiente actual que figura en tu banco.</p>
+
+                <div class="mb-3">
+                    <label class="form-label text-white">Saldo Real Banco:</label>
+                    <InputNumber class="form-control glass-input" @bind-Value="adjustmentAmount" />
+                </div>
+
+                <div class="alert alert-info">
+                    <small class="text-info">Esto actualizará la deuda en la App sin generar gastos extras. Úsalo cuando el banco cobre intereses.</small>
+                </div>
+            </div>
+            <div class="adjusment-modal-footer-custom">
+                <button class="btn btnCancel" @onclick="CloseAdjustmentModal">Cancelar</button>
+                <button class="btn btnSaveEdit" @onclick="SaveAdjustment">Guardar Ajuste</button>
+            </div>
+        </div>
+    </div>
+}
+
 <FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
 
 <FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
@@ -471,6 +522,11 @@
     private LoanDto? loanToDelete;
     private bool deleteHistory = false;
     private bool createReminder = false;
+
+    // Modal Ajuste de Saldo
+    private bool showAdjustmentModal = false;
+    private decimal adjustmentAmount = 0;
+    private int loanIdToAdjust = 0;
 
     // Vista previa
     private decimal previewTotalToPay = 0;
@@ -665,6 +721,39 @@
         catch (Exception ex)
         {
             ShowErrorMessage($"Error: {ex.Message}");
+        }
+    }
+
+
+    private void OpenAdjustmentModal(LoanDto loan)
+    {
+        loanIdToAdjust = loan.LoanId;
+        adjustmentAmount = loan.CurrentBalance; // Mostrar saldo actual por defecto
+        showAdjustmentModal = true;
+    }
+
+    private void CloseAdjustmentModal()
+    {
+        showAdjustmentModal = false;
+        loanIdToAdjust = 0;
+        adjustmentAmount = 0;
+    }
+
+    private async Task SaveAdjustment()
+    {
+        if (loanIdToAdjust == 0) return;
+
+        var success = await LoanService.AdjustBalanceAsync(loanIdToAdjust, adjustmentAmount, currentUserId);
+        if (success)
+        {
+            ShowSuccessMessage("Saldo actualizado correctamente");
+            await LoadLoans(); // Recargar para ver el nuevo saldo
+            await LoadSummary();
+            CloseAdjustmentModal();
+        }
+        else
+        {
+            ShowErrorMessage("No se pudo actualizar el saldo");
         }
     }
 

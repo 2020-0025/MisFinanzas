@@ -18,6 +18,7 @@ namespace MisFinanzas.Infrastructure.Interfaces
         // Operaciones específicas de préstamos
         Task<bool> RegisterPaymentAsync(int loanId, string userId);
         Task<bool> UndoLastPaymentAsync(int loanId, string userId);
+        Task<bool> AdjustBalanceAsync(int loanId, decimal newBalance, string userId);
         Task<bool> MarkAsCompletedAsync(int loanId, string userId);
         Task<bool> ReactivateLoanAsync(int loanId, string userId);
 

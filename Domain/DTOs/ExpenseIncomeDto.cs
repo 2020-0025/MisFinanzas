@@ -30,7 +30,19 @@ namespace MisFinanzas.Domain.DTOs
         public TransactionType Type { get; set; }
 
         // Propiedades computadas
-        public string TypeDisplay => Type == TransactionType.Income ? "Ingreso" : "Gasto";
+        public string TypeDisplay
+        {
+            get
+            {
+                return Type switch
+                {
+                    TransactionType.Income => "Ingreso",
+                    TransactionType.Expense => "Gasto",
+                    TransactionType.Adjustment => "Ajuste", // Nuevo tipo
+                    _ => "Otro"
+                };
+            }
+        }
         public string FormattedAmount => Amount.ToString("C2");  // RD$1,234.56
     }
 }

@@ -39,11 +39,32 @@ namespace MisFinanzas.Domain.Entities
 
         // Computed Properties
         [NotMapped]
-        public string FormattedAmount => Type == TransactionType.Income
-            ? $"+{Amount:C2}"
-            : $"-{Amount:C2}";
+        public string FormattedAmount
+        {
+            get
+            {
+                return Type switch
+                {
+                    TransactionType.Income => $"+{Amount:C2}",
+                    TransactionType.Expense => $"-{Amount:C2}",
+                    _ => $"{Amount:C2}" // Ajustes sin signo
+                };
+            }
+        }
 
         [NotMapped]
-        public string TypeDisplay => Type == TransactionType.Income ? "Ingreso" : "Gasto";
+        public string TypeDisplay
+        {
+            get
+            {
+                return Type switch
+                {
+                    TransactionType.Income => "Ingreso",
+                    TransactionType.Expense => "Gasto",
+                    TransactionType.Adjustment => "Ajuste",
+                    _ => "Otro"
+                };
+            }
+        }
     }
 }

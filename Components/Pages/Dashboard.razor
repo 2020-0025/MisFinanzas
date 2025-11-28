@@ -10,6 +10,7 @@
 @inject ICategoryService CategoryService
 @inject IFinancialGoalService GoalService
 @inject IBudgetService BudgetService
+@inject ILoanService LoanService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager Navigation
 @inject IJSRuntime JSRuntime
@@ -47,9 +48,9 @@
         </div>
 
         <!-- Summary Cards -->
-        <div class="row g-4 mb-4" id="dashboard-summary-cards">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-xl-5 g-4 mb-4" id="dashboard-summary-cards">
             <!-- Balance Card -->
-            <div class="col-xl-3 col-md-6">
+            <div class="col">
                 <div class="glass-card stat-card animate-slide-up h-100">
                     <div class="stat-card-body">
                         <div class="stat-icon balance-icon">
@@ -88,7 +89,7 @@
             </div>
 
             <!-- Income Card -->
-            <div class="col-xl-3 col-md-6">
+            <div class="col">
                 <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.1s;">
                     <div class="stat-card-body">
                         <div class="stat-icon income-icon">
@@ -96,7 +97,7 @@
                         </div>
                         <div class="stat-content">
                             <p class="stat-label text-white">Ingresos</p>
-                            <h2 class="stat-value text-info">@totalIncome.ToString("C0")</h2>
+                            <h2 class="stat-value text-success">@totalIncome.ToString("C0")</h2>
                             <small class="stat-subtitle text-white">
                                 <span style="font-size: 15px;">🔼</span>Entradas
                             </small>
@@ -108,9 +109,39 @@
                     </div>
                 </div>
             </div>
+            <!-- Loan Card -->
+            <div class="col">
+                <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.05s;">
+                    <div class="stat-card-body">
+                        <div class="stat-icon loan-icon" style="background: rgba(253, 126, 20, 0.2); color: #fd7e14;">
+                            <span style="font-size: 32px;">🏦</span>
+                        </div>
+                        <div class="stat-content">
+                            <p class="stat-label text-white">Deuda Total</p>
+
+                            <h2 class="stat-value text-warning">@totalDebt.ToString("C0")</h2>
+
+                            <small class="stat-subtitle text-white text-start d-block">
+                                <span style="font-size: 15px;">📉</span> Compromiso Total
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="stat-footer text-white">
+                        <div class="d-flex flex-column">
+                            <span style="font-size: 0.9rem;">
+                                Capital: <strong class="text-info">@totalOriginalAmount.ToString("C0")</strong>
+                            </span>
+                            <span style="font-size: 0.75rem;">
+                                @activeLoansCount préstamos activos
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Expense Card -->
-            <div class="col-xl-3 col-md-6">
+            <div class="col">
                 <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.2s;">
                     <div class="stat-card-body">
                         <div class="stat-icon expense-icon">
@@ -132,7 +163,7 @@
             </div>
 
             <!-- Goals Card -->
-            <div class="col-xl-3 col-md-6">
+            <div class="col">
                 <div class="glass-card stat-card animate-slide-up h-100" style="animation-delay: 0.3s;">
                     <div class="stat-card-body">
                         <div class="stat-icon goals-icon">
@@ -399,8 +430,21 @@
                                                     </div>
                                                 </td>
                                                 <td>
-                                                    <span class="fw-bold @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "text-success" : "text-danger")">
-                                                        @(GetCategoryType(transaction.CategoryId) == TransactionType.Income ? "+" : "-")@transaction.Amount.ToString("C0")
+                                                    <span class="fw-bold @(transaction.Type == TransactionType.Income ? "text-success" :
+                                                          (transaction.Type == TransactionType.Expense ? "text-danger" : "text-info"))">
+
+                                                      @if (transaction.Type == TransactionType.Income)
+                                                         {
+                                                           @:+@transaction.Amount.ToString("C0")
+                                                         }
+                                                         else if (transaction.Type == TransactionType.Expense)
+                                                         {
+                                                           @:-@transaction.Amount.ToString("C0")
+                                                         }
+                                                         else
+                                                         {
+                                                           @transaction.Amount.ToString("C0")
+                                                         }
                                                     </span>
                                                 </td>
                                                 <td>
@@ -438,6 +482,7 @@
 @code {
     // ===== VARIABLES DE ESTADO =====
     private bool isLoading = true;
+    private bool _hasRenderedCharts = false;
     private string userId = string.Empty;
     private int selectedDays = 7;
 
@@ -455,6 +500,10 @@
     private decimal totalExpense = 0;
     private int totalGoalsCount = 0;
     private int completedGoalsCount = 0;
+    private decimal totalAdjustments = 0;
+    private decimal totalDebt = 0;
+    private decimal totalOriginalAmount = 0;
+    private int activeLoansCount = 0;
 
     // Datos para gráficos
     private Dictionary<string, DayData> chartData = new();
@@ -480,9 +529,14 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!isLoading && !_hasRenderedCharts)
+        {
+            _hasRenderedCharts = true;
+            await RenderCharts();
+        }
+
         if (firstRender && !isLoading)
         {
-            await RenderCharts();
             // NUEVO: Iniciar tour automáticamente si es primera vez
             await Task.Delay(500); // Pequeño delay para que cargue la UI
             await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "dashboard");
@@ -514,6 +568,7 @@
         try
         {
             isLoading = true;
+            _hasRenderedCharts = false;
 
             if (string.IsNullOrEmpty(userId))
             {
@@ -527,15 +582,33 @@
             // Cargar datos básicos del período seleccionado
             var periodTransactions = await ExpenseIncomeService.GetByUserAndDateRangeAsync(userId, startDate, endDate);
 
+            //  Calcular Ingresos (Solo TransactionType.Income)
             totalIncome = periodTransactions
-                .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+                .Where(t => t.Type == TransactionType.Income) // <--- CORREGIDO: Usar Type directo
                 .Sum(t => t.Amount);
 
+            //  Calcular Gastos (Solo TransactionType.Expense)
             totalExpense = periodTransactions
-                .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+                .Where(t => t.Type == TransactionType.Expense) // <--- CORREGIDO: Usar Type directo
                 .Sum(t => t.Amount);
 
-            balance = totalIncome - totalExpense;
+            //  Calcular Ajustes (Préstamos recibidos) para el Balance
+            var totalAdjustments = periodTransactions
+                .Where(t => t.Type == TransactionType.Adjustment)
+                .Sum(t => t.Amount);
+
+            //  Calcular Balance del período (Ingresos + Préstamos - Gastos)
+            balance = totalIncome + totalAdjustments - totalExpense;
+
+            // --- NUEVO: Obtener conteo de préstamos activos ---
+            var activeLoans = await LoanService.GetActiveByUserAsync(userId);
+            activeLoansCount = activeLoans.Count;
+
+            //  CALCULAR DEUDA TOTAL - Sumamos lo que falta por pagar de las cuotas
+            totalDebt = activeLoans.Sum(l => (l.NumberOfInstallments - l.InstallmentsPaid) * l.InstallmentAmount);
+
+            //  CALCULAR CAPITAL PENDIENTE - Usamos el saldo real de la BD
+            totalOriginalAmount = activeLoans.Sum(l => l.CurrentBalance);
 
             // Cargar transacciones recientes
             recentTransactions = await ExpenseIncomeService.GetRecentTransactionsAsync(userId, 10);
@@ -596,11 +669,11 @@
                 var dayTransactions = transactions.Where(t => t.Date.Date == date).ToList();
 
                 var income = dayTransactions
-                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Income)
+                    .Where(t => t.Type == TransactionType.Income) // Solo Ingresos reales
                     .Sum(t => t.Amount);
 
                 var expense = dayTransactions
-                    .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+                    .Where(t => t.Type == TransactionType.Expense) // Solo Gastos reales
                     .Sum(t => t.Amount);
 
                 chartData[dayLabel] = new DayData { Income = income, Expense = expense };
@@ -672,7 +745,7 @@
             .ToList();
 
         var expenses = periodTransactions
-            .Where(t => GetCategoryType(t.CategoryId) == TransactionType.Expense)
+            .Where(t => t.Type == TransactionType.Expense) //  Solo Transacciones que sean Gasto real
             .ToList();
 
         if (!expenses.Any())

@@ -209,7 +209,10 @@
                                         <small class="text-white">@item.Date.ToString("dd/MM/yyyy")</small>
                                     </td>
                                     <td>
-                                        <span class="badge @(item.Type == TransactionType.Income ? "bg-success" : "bg-danger")">
+                                        <span class="badge @(item.Type ==
+                                            TransactionType.Income ? "bg-success" :
+                                            (item.Type == TransactionType.Expense ? "bg-danger" :
+                                            "bg-info text-dark"))">
                                             @item.TypeDisplay
                                         </span>
                                     </td>
@@ -220,9 +223,10 @@
                                         @(item.Description ?? "-")
                                     </td>
                                     <td>
-                                        <strong class="@(item.Type == TransactionType.Income ? "text-success" : "text-danger")">
-                                            @item.Amount.ToString("C")
-                                        </strong>
+                                          <strong class="@(item.Type == TransactionType.Income ? "text-success" :
+                                               (item.Type == TransactionType.Expense ? "text-danger" : "text-info"))">
+                                               @item.Amount.ToString("C")
+                                          </strong>
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
@@ -434,6 +438,7 @@
     // Balance
     private decimal totalIngresos = 0;
     private decimal totalGastos = 0;
+    private decimal totalAjustes = 0;
     private decimal balance = 0;
 
     // Mensajes
@@ -578,7 +583,8 @@
             // Calcular balance
             totalIngresos = await ExpenseIncomeService.GetTotalIngresosByUserAsync(currentUserId);
             totalGastos = await ExpenseIncomeService.GetTotalGastosByUserAsync(currentUserId);
-            balance = totalIngresos - totalGastos;
+            totalAjustes = await ExpenseIncomeService.GetTotalAdjustmentsByUserAsync(currentUserId);
+            balance = totalIngresos + totalAjustes - totalGastos;
         }
         catch (Exception ex)
         {

@@ -352,14 +352,26 @@ namespace MisFinanzas.Infrastructure.Services
             return items.Sum(ei => ei.Amount);
         }
 
+        // NUEVO MÉTODO: Sumar los Ajustes (Préstamos recibidos)
+        public async Task<decimal> GetTotalAdjustmentsByUserAsync(string userId)
+        {
+            using var context = await _contextFactory.CreateDbContextAsync();
+            var items = await context.ExpensesIncomes
+                .Where(ei => ei.UserId == userId && ei.Type == TransactionType.Adjustment)
+                .ToListAsync();
+
+            return items.Sum(ei => ei.Amount);
+        }
+
         public async Task<decimal> GetBalanceByUserAsync(string userId)
 
         {
             var ingresos = await GetTotalIngresosByUserAsync(userId);
-
             var gastos = await GetTotalGastosByUserAsync(userId);
+            var ajustes = await GetTotalAdjustmentsByUserAsync(userId); // Nuevo
 
-            return ingresos - gastos;
+            // El dinero disponible es: Lo que gané + Lo que pedí prestado - Lo que gasté
+            return ingresos + ajustes - gastos;
         }
         public async Task<decimal> GetIngresosMesActualAsync(string userId)
 

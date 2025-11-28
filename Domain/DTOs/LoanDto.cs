@@ -14,6 +14,8 @@
         public string Icon { get; set; } = "🏦";
         public bool IsActive { get; set; } = true;
         public int InstallmentsPaid { get; set; } = 0;
+        public decimal CurrentBalance { get; set; }
+        public DateTime? LastAdjustmentDate { get; set; }
 
         // Foreign Keys
         public string UserId { get; set; } = string.Empty;

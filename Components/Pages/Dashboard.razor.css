@@ -108,7 +108,7 @@
 
 .stat-value {
     color: white;
-    font-size: clamp(1.2rem, 3vw, 1.6rem);
+    font-size: clamp(1.09rem, 3vw, 1rem);
     font-weight: 700;
     margin-bottom: 0.5rem;
     line-height: 1.2;
@@ -120,6 +120,9 @@
 .stat-subtitle {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.85rem;
+    display: block; /* Asegura que ocupe todo el ancho */
+    width: 100%; /* Fuerza el ancho completo */
+    text-align: left; /* Alinea el texto a la izquierda */
 }
 
 .stat-footer {

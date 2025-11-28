@@ -16,6 +16,7 @@ namespace MisFinanzas.Infrastructure.Interfaces
         // Cálculos
         Task<decimal> GetTotalIngresosByUserAsync(string userId);
         Task<decimal> GetTotalGastosByUserAsync(string userId);
+        Task<decimal> GetTotalAdjustmentsByUserAsync(string userId);
         Task<decimal> GetBalanceByUserAsync(string userId);
         Task<decimal> GetIngresosMesActualAsync(string userId);
         Task<decimal> GetGastosMesActualAsync(string userId);
