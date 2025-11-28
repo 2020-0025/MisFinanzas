@@ -566,39 +566,6 @@ namespace MisFinanzas.Migrations
                         });
                 });
 
-            modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanExtraPayment", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<decimal>("Amount")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<string>("Description")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<int>("LoanId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("PaidDate")
-                        .HasColumnType("timestamp without time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("LoanId");
-
-                    b.HasIndex("LoanId", "PaidDate");
-
-                    b.ToTable("LoanExtraPayments", t =>
-                        {
-                            t.HasCheckConstraint("CK_LoanExtraPayment_Amount", "\"Amount\" > 0");
-                        });
-                });
-
             modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanInstallment", b =>
                 {
                     b.Property<int>("Id")
@@ -622,9 +589,6 @@ namespace MisFinanzas.Migrations
                     b.Property<bool>("IsPaid")
                         .HasColumnType("boolean");
 
-                    b.Property<bool>("IsRecalculated")
-                        .HasColumnType("boolean");
-
                     b.Property<int>("LoanId")
                         .HasColumnType("integer");
 
@@ -633,9 +597,6 @@ namespace MisFinanzas.Migrations
 
                     b.Property<decimal>("PrincipalAmount")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<DateTime?>("RecalculatedDate")
-                        .HasColumnType("timestamp without time zone");
 
                     b.Property<decimal>("RemainingBalance")
                         .HasColumnType("decimal(18,2)");
@@ -826,17 +787,6 @@ namespace MisFinanzas.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanExtraPayment", b =>
-                {
-                    b.HasOne("MisFinanzas.Domain.Entities.Loan", "Loan")
-                        .WithMany()
-                        .HasForeignKey("LoanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Loan");
                 });
 
             modelBuilder.Entity("MisFinanzas.Domain.Entities.LoanInstallment", b =>

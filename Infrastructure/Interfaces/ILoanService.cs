@@ -20,9 +20,6 @@ namespace MisFinanzas.Infrastructure.Interfaces
         Task<bool> UndoLastPaymentAsync(int loanId, string userId);
         Task<bool> MarkAsCompletedAsync(int loanId, string userId);
         Task<bool> ReactivateLoanAsync(int loanId, string userId);
-        Task<(bool Success, string? Error)> RegisterExtraPaymentAsync(int loanId, decimal extraAmount, string userId);
-        Task<List<LoanExtraPaymentDto>> GetExtraPaymentsByLoanAsync(int loanId, string userId);
-
 
         // Validaciones
         Task<bool> ExistsLoanWithTitleAsync(string title, string userId, int? excludeLoanId = null);

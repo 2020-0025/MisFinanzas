@@ -13,8 +13,5 @@
         public bool IsPaid { get; set; }
         public DateTime? PaidDate { get; set; }
         public int? ExpenseIncomeId { get; set; }
-        public bool IsRecalculated { get; set; }
-        public DateTime? RecalculatedDate { get; set; }
-
     }
 }

@@ -323,46 +323,6 @@
                             </button>
                         </div>
 
-                        <!--  NUEVO: Historial de Abonos Extras -->
-                        @if (loan.ExtraPayments != null && loan.ExtraPayments.Any())
-                        {
-                            <div class="mt-3">
-                                <div class="extra-payments-section">
-                                    <h6 class="text-white mb-3">
-                                        <span style="font-size: 16px;">💎</span> Historial de Abonos Extraordinarios
-                                    </h6>
-                                    <div class="extra-payments-list">
-                                        @foreach (var payment in loan.ExtraPayments.OrderByDescending(p => p.PaidDate))
-                                        {
-                                            <div class="extra-payment-item glass-card p-2 mb-2">
-                                                <div class="d-flex justify-content-between align-items-center">
-                                                    <div>
-                                                        <span class="text-white">
-                                                            <span style="font-size: 14px;">📅</span>
-                                                            @payment.PaidDate.ToString("dd/MM/yyyy")
-                                                        </span>
-                                                        @if (!string.IsNullOrEmpty(payment.Description))
-                                                        {
-                                                            <br />
-                                                            <small class="text-white">@payment.Description</small>
-                                                        }
-                                                    </div>
-                                                    <div>
-                                                        <strong class="text-success">+ @payment.Amount.ToString("C")</strong>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        }
-                                    </div>
-                                    <div class="mt-2 text-center">
-                                        <small class="text-white">
-                                            <span style="font-size: 14px;">✅</span>
-                                            Total abonado: <strong class="text-success">@loan.ExtraPayments.Sum(p => p.Amount).ToString("C")</strong>
-                                        </small>
-                                    </div>
-                                </div>
-                            </div>
-                        }
 
                     </div>
                 </div>
@@ -450,7 +410,7 @@
                         <IconSelector @bind-SelectedIcon="currentLoan.Icon" Label="Icono" />
                     </div>
 
-                    <!--  NUEVO: Campo de tasa de interés -->
+                    <!-- ⭐ NUEVO: Campo de tasa de interés -->
                     <div class="mb-3">
                         <div style="display:flex; gap:0.4rem;">
                             <label class="form-label text-white">Tasa de interés anual (%)</label>
@@ -625,13 +585,12 @@
                         <thead>
                             <tr class="text-white">
                                 <th style="width: 5%;">#</th>
-                                <th style="width: 13%;">Fecha</th>
-                                <th style="width: 16%;">Capital</th>
-                                <th style="width: 16%;">Interés</th>
-                                <th style="width: 16%;">Total</th>
-                                <th style="width: 16%;">Saldo</th>
+                                <th style="width: 15%;">Fecha</th>
+                                <th style="width: 18%;">Capital</th>
+                                <th style="width: 18%;">Interés</th>
+                                <th style="width: 18%;">Total</th>
+                                <th style="width: 18%;">Saldo</th>
                                 <th style="width: 8%;">Estado</th>
-                                <th style="width: 10%;"></th>
                             </tr>
                         </thead>
                         <tbody>
@@ -639,7 +598,7 @@
                             {
                                 var isNext = !installment.IsPaid && (selectedLoanForTable.Installments.Where(i => !i.IsPaid).OrderBy(i => i.InstallmentNumber).FirstOrDefault()?.InstallmentNumber == installment.InstallmentNumber);
 
-                                <tr class="@(installment.IsRecalculated ? "recalculated-row" : "")">
+                                <tr>
                                     <td>@installment.InstallmentNumber</td>
                                     <td>@installment.DueDate.ToString("dd/MM/yyyy")</td>
                                     <td class="text-info">@installment.PrincipalAmount.ToString("C")</td>
@@ -660,55 +619,11 @@
                                             <span title="Pendiente">⏸️</span>
                                         }
                                     </td>
-                                    <td class="text-center">
-                                        @if (installment.IsRecalculated)
-                                        {
-                                            <span title="Recalculada el @installment.RecalculatedDate?.ToString("dd/MM/yyyy")"
-                                                  style="font-size: 16px; cursor: help;">
-                                                🔄
-                                            </span>
-                                        }
-                                    </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
-
-                <!-- NUEVO: Resumen de Abonos Extras -->
-                @if (selectedLoanForTable.ExtraPayments != null && selectedLoanForTable.ExtraPayments.Any())
-                {
-                    <div class="glass-card mt-3 p-3 border-success" style="background: rgba(0, 100, 0, 0.15) !important;">
-                        <h6 class="text-white mb-3">
-                            <span style="font-size: 18px;">💎</span> Abonos Extraordinarios
-                        </h6>
-                        <div class="row text-white">
-                            <div class="col-md-6">
-                                <p><strong>📅 Total de abonos realizados:</strong> @selectedLoanForTable.ExtraPayments.Count</p>
-                                <p>
-                                    <strong>💰 Monto total abonado:</strong>
-                                    <span class="text-success">@selectedLoanForTable.ExtraPayments.Sum(p => p.Amount).ToString("C")</span>
-                                </p>
-                            </div>
-                            <div class="col-md-6">
-                                <p>
-                                    <strong>🔄 Cuotas recalculadas:</strong>
-                                    @selectedLoanForTable.Installments.Count(i => i.IsRecalculated)
-                                </p>
-                                <p>
-                                    <strong>✅ Beneficio:</strong>
-                                    <span class="text-success">Reducción de intereses en cuotas futuras</span>
-                                </p>
-                            </div>
-                        </div>
-                        <div class="mt-2">
-                            <small class="text-white">
-                                <span style="font-size: 14px;">💡</span>
-                                Los abonos extras se aplicaron directamente al capital, reduciendo el saldo y recalculando las cuotas pendientes.
-                            </small>
-                        </div>
-                    </div>
-                }
 
                 <div class="glass-card mt-3 p-3 border-primary" style="background: rgba(0, 0, 0, 0.5) !important;">
                     <h6 class="text-white mb-3">📋 Resumen</h6>
@@ -726,107 +641,9 @@
                     </div>
                 </div>
 
-                <!-- NUEVO: Leyenda de indicadores -->
-                @if (selectedLoanForTable.Installments.Any(i => i.IsRecalculated))
-                {
-                    <div class="glass-card mt-3 p-2 border-info" style="background: rgba(0, 50, 100, 0.15) !important;">
-                        <div class="text-white text-center">
-                            <small>
-                                <span style="font-size: 14px;">ℹ️</span>
-                                Las cuotas marcadas con <span style="font-size: 16px;">🔄</span> fueron recalculadas después de un abono extraordinario.
-                            </small>
-                        </div>
-                    </div>
-                }
             </div>
             <div class="modal-footer-custom">
                 <button class="btn btnCancel" @onclick="CloseAmortizationTable">Cerrar</button>
-            </div>
-        </div>
-    </div>
-}
-
-<!-- Modal Pago con Abono Extra -->
-@if (showPaymentModal && selectedLoanForPayment != null)
-{
-    <div class="modal-overlay">
-        <div class="modal-content-custom modal-payment" @onclick:stopPropagation="true">
-            <div class="modal-header-custom border-secondary">
-                <h5 class="text-white"><span style="font-size: 20px;">💵</span> Registrar Pago</h5>
-                <button class="btn-close-custom" @onclick="ClosePaymentModal">✕</button>
-            </div>
-            <div class="modal-body-custom">
-                <div class="payment-info mb-4">
-                    <h6 class="text-white mb-3">📋 Información del Préstamo</h6>
-                    <p class="text-white mb-2"><strong>@selectedLoanForPayment.Icon @selectedLoanForPayment.Title</strong></p>
-                    <p class="text-white mb-2">Cuota: <strong class="text-info">@selectedLoanForPayment.InstallmentAmount.ToString("C")</strong></p>
-                    <p class="text-white mb-0">Progreso: <strong>@selectedLoanForPayment.InstallmentsPaid / @selectedLoanForPayment.NumberOfInstallments cuotas</strong></p>
-                </div>
-
-                <hr class="border-secondary" />
-
-                <!-- Sección Abono Extra -->
-                <div class="extra-payment-section mb-4">
-                    <div class="form-check mb-3">
-                        <input class="form-check-input" type="checkbox" id="includeExtraPayment"
-                               @bind="includeExtraPayment">
-                        <label class="form-check-label text-white" for="includeExtraPayment">
-                            <span style="font-size: 16px;">➕</span> ¿Deseas hacer un abono extra al capital?
-                        </label>
-                    </div>
-
-                    @if (includeExtraPayment)
-                    {
-                        <div class="extra-payment-input">
-                            <label class="form-label text-white">Monto del Abono Extra:</label>
-                            <InputNumber class="form-control glass-input" @bind-Value="extraPaymentAmount"
-                                         placeholder="0.00" min="0" step="100" />
-                            <small class="form-text text-white">
-                                <span style="font-size: 14px;">💡</span> El abono se aplicará directamente al capital, reduciendo los intereses futuros.
-                            </small>
-                        </div>
-                    }
-                </div>
-
-                <!-- Resumen del Pago -->
-                <div class="payment-summary glass-card p-3">
-                    <h6 class="text-white mb-3">📊 Resumen del Pago</h6>
-                    <div class="d-flex justify-content-between mb-2">
-                        <span class="text-white">Cuota Regular:</span>
-                        <strong class="text-info">@currentInstallmentAmount.ToString("C")</strong>
-                    </div>
-                    @if (includeExtraPayment && extraPaymentAmount > 0)
-                    {
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-white">Abono Extra:</span>
-                            <strong class="text-success">+ @extraPaymentAmount.ToString("C")</strong>
-                        </div>
-                        <hr class="border-secondary" />
-                        <div class="d-flex justify-content-between mb-2">
-                            <span class="text-white"><strong>Total a Pagar:</strong></span>
-                            <strong class="text-warning">@((currentInstallmentAmount + extraPaymentAmount).ToString("C"))</strong>
-                        </div>
-                        <div class="alert alert-success mt-3 mb-0" style="background-color: rgba(76, 175, 80, 0.2); border-color: rgba(76, 175, 80, 0.4);">
-                            <small class="text-white">
-                                <span style="font-size: 14px;">✅</span> Este abono reducirá tus intereses futuros y puede acortar el plazo del préstamo.
-                            </small>
-                        </div>
-                    }
-                    else
-                    {
-                        <hr class="border-secondary" />
-                        <div class="d-flex justify-content-between">
-                            <span class="text-white"><strong>Total a Pagar:</strong></span>
-                            <strong class="text-warning">@currentInstallmentAmount.ToString("C")</strong>
-                        </div>
-                    }
-                </div>
-            </div>
-            <div class="modal-payment-footer-custom">
-                <button class="btn btnCancel" @onclick="ClosePaymentModal">Cancelar</button>
-                <button class="btn btnPrimary" @onclick="ConfirmPayment">
-                    <span style="font-size: 15px;">💳</span> Confirmar Pago
-                </button>
             </div>
         </div>
     </div>
@@ -885,14 +702,6 @@
     //  NUEVO: Variables para modal de amortización
     private bool showAmortizationModal = false;
     private LoanDto? selectedLoanForTable = null;
-
-    //  NUEVO: Variables para modal de pago con abono extra
-    private bool showPaymentModal = false;
-    private LoanDto? selectedLoanForPayment = null;
-    private bool includeExtraPayment = false;
-    private decimal extraPaymentAmount = 0;
-    private decimal currentInstallmentAmount = 0;
-
 
     //Tour automático
     private bool _tourLaunched = false;
@@ -1139,88 +948,29 @@
         }
     }
 
-    private void RegisterPayment(int loanId)
+    private async Task RegisterPayment(int loanId)
     {
         try
         {
             if (string.IsNullOrEmpty(currentUserId))
                 return;
 
-            // Buscar el préstamo seleccionado
-            var loan = allLoans.FirstOrDefault(l => l.LoanId == loanId);
-            if (loan == null)
-                return;
-
-            // Configurar variables del modal
-            selectedLoanForPayment = loan;
-            currentInstallmentAmount = loan.InstallmentAmount;
-            includeExtraPayment = false;
-            extraPaymentAmount = 0;
-
-            // Abrir modal
-            showPaymentModal = true;
-        }
-        catch (Exception ex)
-        {
-            ShowErrorMessage($"Error: {ex.Message}");
-        }
-    }
-
-    private async Task ConfirmPayment()
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(currentUserId) || selectedLoanForPayment == null)
-                return;
-
-            // 1. Registrar pago normal de la cuota
-            var paymentSuccess = await LoanService.RegisterPaymentAsync(selectedLoanForPayment.LoanId, currentUserId);
-
-            if (!paymentSuccess)
+            var success = await LoanService.RegisterPaymentAsync(loanId, currentUserId);
+            if (success)
             {
-                ShowErrorMessage("Error al registrar el pago de la cuota");
-                return;
-            }
-
-            // 2. Si hay abono extra, procesarlo
-            if (includeExtraPayment && extraPaymentAmount > 0)
-            {
-                var (extraSuccess, extraError) = await LoanService.RegisterExtraPaymentAsync(
-                    selectedLoanForPayment.LoanId,
-                    extraPaymentAmount,
-                    currentUserId);
-
-                if (!extraSuccess)
-                {
-                    ShowErrorMessage($"Cuota registrada, pero error en abono extra: {extraError}");
-                }
-                else
-                {
-                    ShowSuccessMessage($"Pago registrado con éxito. Abono extra de {extraPaymentAmount:C} aplicado.");
-                }
+                ShowSuccessMessage("Pago registrado correctamente");
+                await LoadLoans();
+                await LoadSummary();
             }
             else
             {
-                ShowSuccessMessage("Pago registrado correctamente");
+                ShowErrorMessage("Error al registrar el pago");
             }
-
-            // Cerrar modal y recargar
-            ClosePaymentModal();
-            await LoadLoans();
-            await LoadSummary();
         }
         catch (Exception ex)
         {
             ShowErrorMessage($"Error: {ex.Message}");
         }
-    }
-
-    private void ClosePaymentModal()
-    {
-        showPaymentModal = false;
-        selectedLoanForPayment = null;
-        includeExtraPayment = false;
-        extraPaymentAmount = 0;
     }
 
     private async Task UndoLastPayment(int loanId)
