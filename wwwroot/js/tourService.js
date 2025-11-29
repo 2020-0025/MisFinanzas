@@ -369,7 +369,7 @@ window.tourService = {
                 element: '#expenses-balance-cards',
                 popover: {
                     title: '💰 Resumen Financiero',
-                    description: 'Aquí ves tu balance actual: total de ingresos, total de gastos y el balance resultante. Tomar en cuenta que los prestamos son tipo "Ajuste"; agregando saldo a tu balance general, pero no a tus ingresos.',
+                    description: 'Aquí ves tu balance actual: total de ingresos, adquirido en prestamos, total de gastos y el balance resultante. Tomar en cuenta que los prestamos son tipo "Ajuste"; agregando saldo a tu balance general, pero no a tus ingresos.',
                     side: 'bottom',
                     align: 'center'
                 }

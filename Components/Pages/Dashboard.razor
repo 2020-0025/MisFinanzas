@@ -511,6 +511,9 @@
     private List<CategoryExpenseData> expensesByCategoryData = new();
     private List<AlertItem> alerts = new();
 
+    //Tour automático
+    private bool _tourLaunched = false;
+
     // ===== CICLO DE VIDA DEL COMPONENTE =====
 
     protected override async Task OnInitializedAsync()
@@ -535,9 +538,10 @@
             await RenderCharts();
         }
 
-        if (firstRender && !isLoading)
+        if (firstRender && !_tourLaunched)
         {
             // NUEVO: Iniciar tour automáticamente si es primera vez
+            _tourLaunched = true;
             await Task.Delay(500); // Pequeño delay para que cargue la UI
             await JSRuntime.InvokeVoidAsync("tourService.startTourIfFirstTime", "dashboard");
         }

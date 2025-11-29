@@ -16,7 +16,7 @@
 <div class="reminders-container">
     <div class="reminders-header">
         <h3>🔔 Recordatorios de Gastos Fijos</h3>
-        <p class="text-muted">Gestiona tus notificaciones de gastos recurrentes</p>
+        <p class="text-white">Gestiona tus notificaciones de gastos recurrentes</p>
     </div>
 
     @if (!string.IsNullOrEmpty(errorMessage))
@@ -72,7 +72,7 @@
             <div class="empty-state">
                 <span style="font-size: 64px;">📭</span>
                 <h5>No hay notificaciones</h5>
-                <p>@GetEmptyMessage()</p>
+                <p class="text-white">@GetEmptyMessage()</p>
             </div>
         }
         else
