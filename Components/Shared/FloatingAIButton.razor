@@ -1,0 +1,13 @@
+﻿@* Archivo: Shared/FloatingAIButton.razor *@
+
+<button class="fab-ai" @onclick="OnClick" style="bottom: @(Bottom)px;" title="Asistente de IA">
+    🤖
+</button>
+
+@code {
+    [Parameter]
+    public EventCallback OnClick { get; set; }
+
+    [Parameter]
+    public int Bottom { get; set; } = 200; // Por defecto 95px (arriba de los otros dos botones)
+}

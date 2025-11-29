@@ -475,6 +475,14 @@
         </div>
     }
 </div>
+
+<!-- Botón flotante del Asistente de IA -->
+<FloatingAIButton OnClick="ToggleAIModal" Bottom="200" />
+
+<!-- Modal del Asistente de IA -->
+<AIAssistantModal @bind-IsVisible="showAIModal" />
+
+
 <FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
 
 <FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
@@ -513,6 +521,9 @@
 
     //Tour automático
     private bool _tourLaunched = false;
+
+    private bool showAIModal = false;
+
 
     // ===== CICLO DE VIDA DEL COMPONENTE =====
 
@@ -559,6 +570,12 @@
     {
         Navigation.NavigateTo("/"); // Redirige al Home
     }
+
+    private void ToggleAIModal()
+    {
+        showAIModal = !showAIModal;
+    }
+
 
     private async Task ChangePeriod(int days)
     {

@@ -1,0 +1,213 @@
+﻿@* Archivo: Shared/AIAssistantModal.razor *@
+@using MisFinanzas.Domain.DTOs
+@using MisFinanzas.Infrastructure.Interfaces
+@using System.Security.Claims
+@inject IAIAssistantService AIService
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@if (IsVisible)
+{
+    <div class="ai-modal-overlay">
+        <div class="ai-modal-container" @onclick:stopPropagation="true">
+            <!-- Header -->
+            <div class="ai-modal-header">
+                <div class="ai-modal-title">
+                    <span class="ai-icon">🤖</span>
+                    <h5 class="mb-0">Asistente Financiero IA</h5>
+                </div>
+                <button type="button" class="ai-modal-close" @onclick="Close" title="Cerrar">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Body - Chat -->
+            <div class="ai-modal-body" @ref="chatContainer">
+                @if (!AIService.IsAvailable())
+                {
+                    <div class="ai-warning">
+                        <span style="font-size: 2rem;">⚠️</span>
+                        <p>El asistente de IA no está configurado.</p>
+                        <small>Por favor, configura la API key de Google Gemini en appsettings.</small>
+                    </div>
+                }
+                else if (messages.Count == 0)
+                {
+                    <div class="ai-welcome">
+                        <span style="font-size: 3rem;">👋</span>
+                        <h6>¡Hola! Soy tu asistente financiero</h6>
+                        <p class="text-white mb-3">Puedo ayudarte con:</p>
+                        <ul class="ai-capabilities">
+                            <li>💰 Consultar tus gastos e ingresos</li>
+                            <li>📊 Analizar tus presupuestos</li>
+                            <li>🎯 Revisar tus metas financieras</li>
+                            <li>💳 Información sobre tus préstamos</li>
+                            <li>💡 Darte consejos personalizados</li>
+                        </ul>
+                        <p class="text-white mt-3"><strong>¿En qué puedo ayudarte hoy?</strong></p>
+                    </div>
+                }
+                else
+                {
+                    <div class="ai-messages">
+                        @foreach (var message in messages)
+                        {
+                            <div class="ai-message @(message.Role == "user" ? "ai-message-user" : "ai-message-assistant")">
+                                <div class="ai-message-content">
+                                    @if (message.Role == "assistant")
+                                    {
+                                        <span class="ai-message-icon">🤖</span>
+                                    }
+                                    <div class="ai-message-text">
+                                        @((MarkupString)FormatMessage(message.Content))
+                                    </div>
+                                    @if (message.Role == "user")
+                                    {
+                                        <span class="ai-message-icon">👤</span>
+                                    }
+                                </div>
+                                <small class="ai-message-time">@message.Timestamp.ToString("HH:mm")</small>
+                            </div>
+                        }
+                        @if (isLoading)
+                        {
+                            <div class="ai-message ai-message-assistant">
+                                <div class="ai-message-content">
+                                    <span class="ai-message-icon">🤖</span>
+                                    <div class="ai-typing">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+
+            <!-- Footer - Input -->
+            <div class="ai-modal-footer">
+                <div class="ai-input-container">
+                    <input type="text"
+                           class="ai-input"
+                           placeholder="Escribe tu pregunta..."
+                           @bind="userInput"
+                           @bind:event="oninput"
+                           @onkeydown="HandleKeyDown"
+                           disabled="@(!AIService.IsAvailable() || isLoading)" />
+                    <button type="button"
+                            class="ai-send-btn"
+                            @onclick="SendMessage"
+                            disabled="@(string.IsNullOrWhiteSpace(userInput) || !AIService.IsAvailable() || isLoading)">
+                        @if (isLoading)
+                        {
+                            <span class="spinner-border spinner-border-sm"></span>
+                        }
+                        else
+                        {
+                            <span>📤</span>
+                        }
+                    </button>
+                </div>
+                @if (messages.Count > 0)
+                {
+                    <button type="button" class="ai-clear-btn" @onclick="ClearChat">
+                        🗑️ Limpiar chat
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public bool IsVisible { get; set; }
+
+    [Parameter]
+    public EventCallback<bool> IsVisibleChanged { get; set; }
+
+    private ElementReference chatContainer;
+    private List<AIMessageDto> messages = new();
+    private string userInput = string.Empty;
+    private bool isLoading = false;
+    private string? currentUserId;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+
+    private async Task SendMessage()
+    {
+        if (string.IsNullOrWhiteSpace(userInput) || string.IsNullOrEmpty(currentUserId))
+            return;
+
+        var userMessage = userInput.Trim();
+        userInput = string.Empty;
+
+        // Agregar mensaje del usuario
+        messages.Add(new AIMessageDto
+        {
+            Role = "user",
+            Content = userMessage,
+            Timestamp = DateTime.Now
+        });
+
+        isLoading = true;
+        StateHasChanged();
+        await ScrollToBottom();
+
+        // Obtener respuesta de la IA
+        var conversationHistory = messages.Take(messages.Count - 1).ToList(); // Excluir el último mensaje que acabamos de agregar
+        var response = await AIService.SendMessageAsync(userMessage, currentUserId, conversationHistory);
+
+        // Agregar respuesta de la IA
+        messages.Add(response);
+        isLoading = false;
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            await SendMessage();
+        }
+    }
+
+    private void ClearChat()
+    {
+        messages.Clear();
+        userInput = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task Close()
+    {
+        IsVisible = false;
+        await IsVisibleChanged.InvokeAsync(false);
+    }
+
+    private async Task ScrollToBottom()
+    {
+        await Task.Delay(100);
+        StateHasChanged();
+    }
+
+    private string FormatMessage(string content)
+    {
+        if (string.IsNullOrEmpty(content))
+            return string.Empty;
+
+        // Convertir saltos de línea a <br>
+        content = content.Replace("\n", "<br>");
+
+        // Convertir **negrita** a <strong>
+        content = System.Text.RegularExpressions.Regex.Replace(content, @"\*\*(.*?)\*\*", "<strong>$1</strong>");
+
+        return content;
+    }
+}

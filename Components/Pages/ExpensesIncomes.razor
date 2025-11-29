@@ -430,6 +430,12 @@
     </div>
 }
 
+<!-- Botón flotante del Asistente de IA -->
+<FloatingAIButton OnClick="ToggleAIModal" Bottom="200" />
+
+<!-- Modal del Asistente de IA -->
+<AIAssistantModal @bind-IsVisible="showAIModal" />
+
 <FloatingHelpButton OnClick="StartTour" Icono="?" Titulo="Ayuda" Bottom="90" />
 
 <FloatingHelpButton OnClick="GotoHome" Icono="🏠" Titulo="Ir al Inicio" Bottom="140" />
@@ -483,6 +489,9 @@
 
     //Tour automático
     private bool _tourLaunched = false;
+
+    private bool showAIModal = false;
+
     // Variables de paginación
     private int currentPage = 1;
     private int pageSize = 10;
@@ -541,6 +550,11 @@
     private void GotoHome()
     {
         NavigationManager.NavigateTo("/"); // Redirige al Home
+    }
+
+    private void ToggleAIModal()
+    {
+        showAIModal = !showAIModal;
     }
 
     private void GoToPage(int page)

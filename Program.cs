@@ -180,6 +180,8 @@ builder.Services.AddScoped<IFinancialGoalService, FinancialGoalService>();
 builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
+builder.Services.AddScoped<IAIAssistantService, AIAssistantService>();
+
 
 // Servicios de reportes
 builder.Services.AddScoped<IReportService, ReportService>();
@@ -188,6 +190,10 @@ builder.Services.AddScoped<IExcelReportGenerator, ExcelReportGenerator>();
 
 // Cache temporal (Singleton porque mantiene estado en memoria)
 builder.Services.AddSingleton<ITemporaryFileCache, TemporaryFileCache>();
+
+// HttpClient para servicios externos (Google Gemini API)
+builder.Services.AddHttpClient<IAIAssistantService, AIAssistantService>();
+
 
 // Agregar soporte para controladores API
 
