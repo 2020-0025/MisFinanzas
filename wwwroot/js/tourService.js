@@ -48,7 +48,7 @@ window.tourService = {
                 element: '#dashboard-summary-cards',
                 popover: {
                     title: '💰 Resumen Financiero',
-                    description: 'Visualiza tu balance general, ingresos totales, gastos y progreso de metas en estas cuatro tarjetas.',
+                    description: 'Visualiza tu balance general, ingresos totales, gastos, progreso de metas, y prestamos en estas cinco tarjetas.',
                     side: 'bottom',
                     align: 'start'
                 }
@@ -264,7 +264,7 @@ window.tourService = {
                 element: '#categories-add-button',
                 popover: {
                     title: '➕ Crear Categoría',
-                    description: 'Haz clic aquí para crear nuevas categorías personalizadas con nombres e iconos únicos.',
+                    description: 'Haz clic aquí para crear nuevas categorías personalizadas con nombres e iconos únicos. Tambien puedes asignarles presupuestos y recordatorios según desees.',
                     side: 'bottom',
                     align: 'end'
                 }
@@ -369,7 +369,7 @@ window.tourService = {
                 element: '#expenses-balance-cards',
                 popover: {
                     title: '💰 Resumen Financiero',
-                    description: 'Aquí ves tu balance actual: total de ingresos, total de gastos y el balance resultante.',
+                    description: 'Aquí ves tu balance actual: total de ingresos, total de gastos y el balance resultante. Tomar en cuenta que los prestamos son tipo "Ajuste"; agregando saldo a tu balance general, pero no a tus ingresos.',
                     side: 'bottom',
                     align: 'center'
                 }
@@ -730,6 +730,15 @@ window.tourService = {
                 popover: {
                     title: '↩️ Deshacer Último Pago',
                     description: 'Si registraste un pago por error, puedes deshacerlo con este botón. Solo aparece si hay al menos un pago registrado.',
+                    side: 'left',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#loans-balance-abjusment-button',
+                popover: {
+                    title: '⚖️ Ajustar balance real',
+                    description: 'Haz clic aquí para ajustar el balance del préstamo en la app con el balance del banco sí es necesario.',
                     side: 'left',
                     align: 'center'
                 }
