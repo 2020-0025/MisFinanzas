@@ -166,27 +166,49 @@ namespace MisFinanzas.Infrastructure.Services
             worksheet.Cell(10, 3).Style.Font.Bold = true;
             worksheet.Cell(10, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
-            worksheet.Cell(11, 2).Value = "Balance:";
-            worksheet.Cell(11, 2).Style.Font.Bold = true;
-            worksheet.Cell(11, 3).Value = reportData.Summary.Balance;
-            worksheet.Cell(11, 3).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(11, 3).Style.Font.FontColor = reportData.Summary.Balance >= 0
+            int currentRow = 11; // Empezamos en la 11
+
+            // --- NUEVO: Adquirido en préstamos ---
+            if (reportData.Summary.TotalAdjustments > 0)
+            {
+                worksheet.Cell(currentRow, 2).Value = "Adquirido en préstamos:";
+                worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+
+                worksheet.Cell(currentRow, 3).Value = reportData.Summary.TotalAdjustments;
+                worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = "$#,##0.00";
+                worksheet.Cell(currentRow, 3).Style.Font.FontColor = XLColor.SteelBlue;
+                worksheet.Cell(currentRow, 3).Style.Font.Bold = true;
+                worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+
+                currentRow++; // Avanzamos una fila si hubo préstamos
+            }
+
+            // --- BALANCE (Ahora usa variable currentRow) ---
+            worksheet.Cell(currentRow, 2).Value = "Balance:";
+            worksheet.Cell(currentRow, 2).Style.Font.Bold = true;
+            worksheet.Cell(currentRow, 3).Value = reportData.Summary.Balance;
+            worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(currentRow, 3).Style.Font.FontColor = reportData.Summary.Balance >= 0
                 ? XLColor.DarkBlue
                 : XLColor.DarkRed;
-            worksheet.Cell(11, 3).Style.Font.Bold = true;
-            worksheet.Cell(11, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            worksheet.Cell(currentRow, 3).Style.Font.Bold = true;
+            worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            currentRow++;
 
-            worksheet.Cell(12, 2).Value = "Promedio diario de gastos:";
-            worksheet.Cell(12, 3).Value = reportData.Summary.AverageDailyExpense;
-            worksheet.Cell(12, 3).Style.NumberFormat.Format = "$#,##0.00";
-            worksheet.Cell(12, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            // --- PROMEDIO DIARIO ---
+            worksheet.Cell(currentRow, 2).Value = "Promedio diario de gastos:";
+            worksheet.Cell(currentRow, 3).Value = reportData.Summary.AverageDailyExpense;
+            worksheet.Cell(currentRow, 3).Style.NumberFormat.Format = "$#,##0.00";
+            worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            currentRow++;
 
-            worksheet.Cell(13, 2).Value = "Total de transacciones:";
-            worksheet.Cell(13, 3).Value = reportData.Summary.TotalTransactions;
-            worksheet.Cell(13, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
+            // --- TOTAL TRANSACCIONES ---
+            worksheet.Cell(currentRow, 2).Value = "Total de transacciones:";
+            worksheet.Cell(currentRow, 3).Value = reportData.Summary.TotalTransactions;
+            worksheet.Cell(currentRow, 3).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Right;
 
-            // Bordes para el resumen
-            var summaryRange = worksheet.Range("B9:C13");
+            // Ajustar el borde final al nuevo rango
+            var summaryRange = worksheet.Range(9, 2, currentRow, 3); // De B9 hasta la última fila usada
             summaryRange.Style.Border.OutsideBorder = XLBorderStyleValues.Medium;
             summaryRange.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
         }
@@ -378,12 +400,23 @@ namespace MisFinanzas.Infrastructure.Services
                 worksheet.Cell(row, 1).Value = transaction.Date.ToString("dd/MM/yyyy");
                 worksheet.Cell(row, 1).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
-                worksheet.Cell(row, 2).Value = transaction.Type == TransactionType.Income ? "Ingreso" : "Gasto";
+                // Columna 2: TIPO
+                string typeText = transaction.Type switch
+                {
+                    TransactionType.Income => "Ingreso",
+                    TransactionType.Expense => "Gasto",
+                    _ => "Ajuste"
+                };
+                worksheet.Cell(row, 2).Value = typeText;
                 worksheet.Cell(row, 2).Style.Alignment.Horizontal = XLAlignmentHorizontalValues.Center;
 
                 worksheet.Cell(row, 3).Value = transaction.CategoryTitle;
 
-                worksheet.Cell(row, 4).Value = transaction.Description ?? "-";
+                // CAMBIO: Limpiar el emoji antes de asignar
+                var descriptionClean = transaction.Description?.Replace("💰", "").Trim() ?? "-";
+                worksheet.Cell(row, 4).Value = descriptionClean;
+                // Activar "Wrap Text" en Excel para que también se ajuste si es largo
+                worksheet.Cell(row, 4).Style.Alignment.WrapText = true;
 
                 worksheet.Cell(row, 5).Value = transaction.Amount;
                 worksheet.Cell(row, 5).Style.NumberFormat.Format = "$#,##0.00";
@@ -393,12 +426,14 @@ namespace MisFinanzas.Infrastructure.Services
                 if (transaction.Type == TransactionType.Income)
                 {
                     worksheet.Cell(row, 5).Style.Font.FontColor = XLColor.DarkGreen;
-                    worksheet.Cell(row, 5).Style.Font.Bold = true;
                 }
-                else
+                else if (transaction.Type == TransactionType.Expense)
                 {
                     worksheet.Cell(row, 5).Style.Font.FontColor = XLColor.DarkRed;
-                    worksheet.Cell(row, 5).Style.Font.Bold = true;
+                }
+                else // Ajuste
+                {
+                    worksheet.Cell(row, 5).Style.Font.FontColor = XLColor.SteelBlue;
                 }
 
                 // Filas alternas

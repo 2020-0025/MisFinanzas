@@ -8,6 +8,13 @@ namespace MisFinanzas.Infrastructure.Services
 {
     public class PdfReportGenerator : IPdfReportGenerator
     {
+        // Método auxiliar para limpiar emojis y textos automáticos
+        private string CleanText(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            // Elimina el emoji de dinero y espacios extra
+            return text.Replace("💰", "").Trim();
+        }
         public byte[] GeneratePdf(ReportDataDto reportData, string logoPath)
         {
             var document = new PdfDocument();
@@ -120,6 +127,15 @@ namespace MisFinanzas.Infrastructure.Services
             gfx.DrawString($"{reportData.Summary.TotalExpense:C}", fontBold, XBrushes.Red, new XPoint(400, yPosition));
             yPosition += 15;
 
+            // --- NUEVO BLOQUE ---
+            if (reportData.Summary.TotalAdjustments > 0)
+            {
+                gfx.DrawString("Adquirido en préstamos:", fontBold, XBrushes.Black, new XPoint(40, yPosition));
+                // Usamos Azul (Info) para diferenciarlo de ingresos (Verde)
+                gfx.DrawString($"{reportData.Summary.TotalAdjustments:C}", fontBold, XBrushes.SteelBlue, new XPoint(400, yPosition));
+                yPosition += 15;
+            }
+
             gfx.DrawString("Balance:", fontBold, XBrushes.Black, new XPoint(40, yPosition));
             var balanceColor = reportData.Summary.Balance >= 0 ? XBrushes.Blue : XBrushes.Red;
             gfx.DrawString($"{reportData.Summary.Balance:C}", fontBold, balanceColor, new XPoint(400, yPosition));
@@ -214,25 +230,97 @@ namespace MisFinanzas.Infrastructure.Services
                 // Encabezados de tabla
                 gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 18);
                 gfx.DrawString("Fecha", fontBold, XBrushes.Black, new XPoint(45, yPosition + 12));
-                gfx.DrawString("Tipo", fontBold, XBrushes.Black, new XPoint(120, yPosition + 12));
+                gfx.DrawString("Tipo", fontBold, XBrushes.Black, new XPoint(105, yPosition + 12));
                 gfx.DrawString("Categoría", fontBold, XBrushes.Black, new XPoint(180, yPosition + 12));
                 gfx.DrawString("Descripción", fontBold, XBrushes.Black, new XPoint(280, yPosition + 12));
-                gfx.DrawString("Monto", fontBold, XBrushes.Black, new XPoint(450, yPosition + 12));
+                gfx.DrawString("Monto", fontBold, XBrushes.Black, new XPoint(480, yPosition + 12));
                 yPosition += 22;
 
-                foreach (var transaction in reportData.Transactions.Take(30))
+                foreach (var transaction in reportData.Transactions.Take(50))
                 {
+
                     yPosition = CheckNewPage(document, ref page, ref gfx, yPosition, fontTitle, fontSubtitle, fontHeader, fontNormal, fontSmall, fontBold);
 
-                    var typeText = transaction.Type == TransactionType.Income ? "Ingreso" : "Gasto";
-                    var amountColor = transaction.Type == TransactionType.Income ? XBrushes.Green : XBrushes.Red;
+                    // 1. Limpieza de texto (Quitar Emoji)
+                    string descriptionClean = CleanText(transaction.Description ?? "-");
+                    string categoryClean = transaction.CategoryTitle;
 
-                    gfx.DrawString(transaction.Date.ToString("dd/MM/yy"), fontSmall, XBrushes.Black, new XPoint(45, yPosition + 8));
-                    gfx.DrawString(typeText, fontSmall, XBrushes.Black, new XPoint(120, yPosition + 8));
-                    gfx.DrawString(TruncateString(transaction.CategoryTitle, 12), fontSmall, XBrushes.Black, new XPoint(180, yPosition + 8));
-                    gfx.DrawString(TruncateString(transaction.Description ?? "-", 20), fontSmall, XBrushes.Black, new XPoint(280, yPosition + 8));
-                    gfx.DrawString($"{transaction.Amount:C}", fontSmall, amountColor, new XPoint(450, yPosition + 8));
-                    yPosition += 16;
+                    // 2. Definir anchos máximos para las columnas de texto largo
+                    double categoryMaxWidth = 100; // Ancho disponible para categoría
+                    double descMaxWidth = 200;     // Ancho disponible para descripción
+
+                    // 3. Calcular altura necesaria (Simulamos el wrapping)
+                    var categoryLines = SplitTextToFit(gfx, fontSmall, categoryClean, categoryMaxWidth);
+                    var descLines = SplitTextToFit(gfx, fontSmall, descriptionClean, descMaxWidth);
+
+                    // La altura de la fila será la del que tenga más líneas (mínimo 1 línea)
+                    int maxLines = Math.Max(categoryLines.Count, descLines.Count);
+                    double lineHeight = 10; // Altura por línea de texto
+                    double rowHeight = (maxLines * lineHeight) + 8; // +8 de padding
+
+                    // 4. Verificar salto de página con la altura dinámica
+                    if (yPosition + rowHeight > page.Height - 40)
+                    {
+                        page = document.AddPage();
+                        gfx = XGraphics.FromPdfPage(page);
+                        yPosition = 40;
+
+                        // Volver a dibujar la cabecera de la tabla ---
+
+                        // 1. Fondo Gris
+                        gfx.DrawRectangle(XBrushes.LightGray, 40, yPosition, page.Width - 80, 18);
+
+                        // 2. Textos de las columnas (Mismas coordenadas X que al principio)
+                        gfx.DrawString("Fecha", fontBold, XBrushes.Black, new XPoint(45, yPosition + 12));
+                        gfx.DrawString("Tipo", fontBold, XBrushes.Black, new XPoint(105, yPosition + 12));
+                        gfx.DrawString("Categoría", fontBold, XBrushes.Black, new XPoint(160, yPosition + 12));
+                        gfx.DrawString("Descripción", fontBold, XBrushes.Black, new XPoint(270, yPosition + 12));
+                        gfx.DrawString("Monto", fontBold, XBrushes.Black, new XPoint(480, yPosition + 12));
+
+                        // 3. Empujar la posición Y hacia abajo para que los datos no queden encima
+                        yPosition += 22;
+                    }
+
+                    // LÓGICA MEJORADA PARA 3 TIPOS
+                    string typeText;
+                    XBrush amountColor;
+
+                    switch (transaction.Type)
+                    {
+                        case TransactionType.Income:
+                            typeText = "Ingreso";
+                            amountColor = XBrushes.Green;
+                            break;
+                        case TransactionType.Expense:
+                            typeText = "Gasto";
+                            amountColor = XBrushes.Red;
+                            break;
+                        default: // Adjustment
+                            typeText = "Ajuste";
+                            amountColor = XBrushes.SteelBlue; // O XBrushes.Blue
+                            break;
+                    }
+
+                    // Columna Fecha
+                    gfx.DrawString(transaction.Date.ToString("dd/MM/yy"), fontSmall, XBrushes.Black, new XPoint(45, yPosition + 10));
+
+                    // Columna Tipo
+                    gfx.DrawString(typeText, fontSmall, XBrushes.Black, new XPoint(105, yPosition + 10));
+
+                    // Columna Categoría (Multilínea)
+                    DrawLines(gfx, fontSmall, XBrushes.Black, categoryLines, 160, yPosition + 10, lineHeight);
+
+                    // Columna Descripción (Multilínea)
+                    DrawLines(gfx, fontSmall, XBrushes.Black, descLines, 270, yPosition + 10, lineHeight);
+
+                    // Columna Monto
+                    gfx.DrawString($"{transaction.Amount:C}", fontSmall, amountColor, new XPoint(480, yPosition + 10));
+
+                    // (Opcional) Línea separadora gris tenue
+                    gfx.DrawLine(XPens.LightGray, 40, yPosition + rowHeight, page.Width - 40, yPosition + rowHeight);
+
+                    // Avanzar cursor
+                    yPosition += rowHeight;
                 }
 
                 if (reportData.Transactions.Count > 30)
@@ -268,6 +356,52 @@ namespace MisFinanzas.Infrastructure.Services
         {
             if (string.IsNullOrEmpty(text)) return text;
             return text.Length <= maxLength ? text : text.Substring(0, maxLength - 3) + "...";
+        }
+
+
+        // ==========================================
+        // MÉTODOS AYUDANTES (NUEVOS)
+        // ==========================================
+
+        // Divide un texto en varias líneas para que quepa en un ancho específico
+        private List<string> SplitTextToFit(XGraphics gfx, XFont font, string text, double maxWidth)
+        {
+            var lines = new List<string>();
+            if (string.IsNullOrEmpty(text)) return lines;
+
+            var words = text.Split(' ');
+            var currentLine = "";
+
+            foreach (var word in words)
+            {
+                var testLine = string.IsNullOrEmpty(currentLine) ? word : currentLine + " " + word;
+                var size = gfx.MeasureString(testLine, font);
+
+                if (size.Width > maxWidth)
+                {
+                    if (!string.IsNullOrEmpty(currentLine)) lines.Add(currentLine);
+                    currentLine = word;
+                }
+                else
+                {
+                    currentLine = testLine;
+                }
+            }
+            if (!string.IsNullOrEmpty(currentLine)) lines.Add(currentLine);
+
+            // Manejo de palabras extremadamente largas (raro, pero posible)
+            if (lines.Count == 0 && !string.IsNullOrEmpty(text)) lines.Add(text);
+
+            return lines;
+        }
+
+        // Dibuja las líneas calculadas una debajo de otra
+        private void DrawLines(XGraphics gfx, XFont font, XBrush brush, List<string> lines, double x, double startY, double lineHeight)
+        {
+            for (int i = 0; i < lines.Count; i++)
+            {
+                gfx.DrawString(lines[i], font, brush, new XPoint(x, startY + (i * lineHeight)));
+            }
         }
     }
 }

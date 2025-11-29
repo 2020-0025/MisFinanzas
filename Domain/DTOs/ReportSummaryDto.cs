@@ -5,6 +5,7 @@
     {
         public decimal TotalIncome { get; set; }
         public decimal TotalExpense { get; set; }
+        public decimal TotalAdjustments { get; set; }
         public decimal Balance { get; set; }
         public decimal AverageDailyExpense { get; set; }
         public int TotalTransactions { get; set; }

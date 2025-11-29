@@ -247,20 +247,24 @@ namespace MisFinanzas.Infrastructure.Services
         {
 
             var totalIncome = transactions
-
                 .Where(t => t.Type == TransactionType.Income)
-
                 .Sum(t => t.Amount);
 
             var totalExpense = transactions
-
                 .Where(t => t.Type == TransactionType.Expense)
+                .Sum(t => t.Amount);
 
+            // --- NUEVO: Calcular Ajustes (Préstamos) ---
+            var totalAdjustments = transactions
+                .Where(t => t.Type == TransactionType.Adjustment)
                 .Sum(t => t.Amount);
 
             var totalDays = (endDate - startDate).Days + 1;
 
             var averageDailyExpense = totalDays > 0 ? totalExpense / totalDays : 0;
+
+            // --- CORRECCIÓN BALANCE: Ingresos + Préstamos - Gastos ---
+            var balance = totalIncome + totalAdjustments - totalExpense;
 
             return new ReportSummaryDto
 
@@ -270,7 +274,9 @@ namespace MisFinanzas.Infrastructure.Services
 
                 TotalExpense = totalExpense,
 
-                Balance = totalIncome - totalExpense,
+                TotalAdjustments = totalAdjustments,
+
+                Balance = balance,
 
                 AverageDailyExpense = averageDailyExpense,
 
