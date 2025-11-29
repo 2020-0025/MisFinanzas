@@ -220,6 +220,23 @@
     }
 
 
+.bg-success-custom {
+    background-color: rgba(76, 175, 80, 0.50) !important;
+}
+
+.bg-warning-custom {
+    background-color: rgba(255, 193, 7, 0.50) !important;
+}
+
+.bg-info-custom {
+    background-color: rgba(33, 150, 243, 0.50) !important;
+}
+
+.bg-danger-custom {
+    background-color: rgba(244, 67, 54, 0.50) !important;
+}
+
+
 /* Paginación */
 .pagination-container {
     padding: 1rem;
@@ -232,9 +249,11 @@
         opacity: 0.3;
     }
 
-    .pagination-container .btn-primary {
-        background-color: rgba(13, 110, 253, 0.8);
+
+    .pagination-container .btn-primary-custom {
+        background-color: rgba(33, 150, 243, 0.50) !important;
         border-color: rgba(13, 110, 253, 0.8);
+        color: white;
     }
 
     .pagination-container .btn-outline-light:hover:not(:disabled) {

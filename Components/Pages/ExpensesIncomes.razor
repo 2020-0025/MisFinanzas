@@ -82,7 +82,7 @@
                 <!-- Período -->
                 <div class="col-md-3">
                     <label class="form-label text-white">Período</label>
-                    <select class="form-select glass-card text-white" @bind="reportPeriodType">
+                    <select class="form-select glass-card text-white border-primary" @bind="reportPeriodType">
                         <option value="@ReportPeriodType.LastWeek">Última semana</option>
                         <option value="@ReportPeriodType.LastMonth">Último mes</option>
                         <option value="@ReportPeriodType.Last3Months">Últimos 3 meses</option>
@@ -97,18 +97,18 @@
                 {
                     <div class="col-md-2">
                         <label class="form-label text-white">Fecha Inicio</label>
-                        <input type="date" class="form-control" @bind="customStartDate" />
+                        <input type="date" class="form-control border-primary" @bind="customStartDate" />
                     </div>
                     <div class="col-md-2">
                         <label class="form-label text-white">Fecha Fin</label>
-                        <input type="date" class="form-control" @bind="customEndDate" />
+                        <input type="date" class="form-control border-primary" @bind="customEndDate" />
                     </div>
                 }
 
                 <!-- Tipo de transacción -->
                 <div class="col-md-3">
                     <label class="form-label text-white">Tipo</label>
-                    <select class="form-select glass-card text-white" @bind="reportTransactionType">
+                    <select class="form-select glass-card text-white border-primary" @bind="reportTransactionType">
                         <option value="">Ambos</option>
                         <option value="@TransactionType.Income">Solo Ingresos</option>
                         <option value="@TransactionType.Expense">Solo Gastos</option>
@@ -118,7 +118,7 @@
                 <!-- Categoría -->
                 <div class="col-md-3">
                     <label class="form-label text-white">Categoría</label>
-                    <select class="form-select glass-card text-white" @bind="reportCategoryId">
+                    <select class="form-select glass-card text-white border-primary" @bind="reportCategoryId">
                         <option value="0">Todas las categorías</option>
                         @foreach (var category in allCategories)
                         {
@@ -210,9 +210,9 @@
                                     </td>
                                     <td>
                                         <span class="badge @(item.Type ==
-                                            TransactionType.Income ? "bg-success" :
-                                            (item.Type == TransactionType.Expense ? "bg-danger" :
-                                            "bg-info text-dark"))">
+                                            TransactionType.Income ? "bg-success-custom" :
+                                            (item.Type == TransactionType.Expense ? "bg-danger-custom" :
+                                             "bg-info-custom"))">
                                             @item.TypeDisplay
                                         </span>
                                     </td>
@@ -277,7 +277,7 @@
                             <!-- Botones de navegación -->
                             <div class="btn-group" role="group">
                                 <button type="button"
-                                        class="btn btn-sm btn-outline-light text-white"
+                                        class="btn btn-sm btn-outline-light text-white border-primary"
                                         id="expenses-previous-button"
                                         @onclick="PreviousPage"
                                         disabled="@(currentPage == 1)">
@@ -293,7 +293,7 @@
                                                                 (pageNumber >= currentPage - 1 && pageNumber <= currentPage + 1))
                                     {
                                         <button type="button"
-                                                class="btn btn-sm @(currentPage == pageNumber ? "btn-primary" : "btn-outline-light")"
+                                                class="btn btn-sm @(currentPage == pageNumber ? "btn-primary-custom" : "btn-outline-light")"
                                                 @onclick="() => GoToPage(pageNumber)">
                                             @pageNumber
                                         </button>
@@ -305,7 +305,7 @@
                                 }
 
                                 <button type="button"
-                                        class="btn btn-sm btn-outline-light text-white"
+                                        class="btn btn-sm btn-outline-light text-white border-primary"
                                         id="expenses-next-button"
                                         @onclick="NextPage"
                                         disabled="@(currentPage == totalPages)">

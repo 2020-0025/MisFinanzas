@@ -146,15 +146,15 @@
                                     <h4>@loan.Title</h4>
                                     @if (loan.IsActive)
                                     {
-                                        <span class="text-white badge bg-success">Activo</span>
+                                        <span class="text-white badge bg-success-custom">Activo</span>
                                     }
                                     else if (loan.IsCompleted)
                                     {
-                                        <span class="text-white badge bg-primary">Completado ✓</span>
+                                        <span class="text-white badge bg-info-custom">Completado ✓</span>
                                     }
                                     else
                                     {
-                                        <span class="text-white badge bg-warning">Cancelado</span>
+                                        <span class="text-white badge bg-warning-custom">Cancelado</span>
                                     }
                                 </div>
                                 <div class="loan-actions">
@@ -179,6 +179,7 @@
                                         @if (loan.IsActive && !loan.IsCompleted)
                                         {
                                             <button class="btn btn-sm btn-secondary"
+                                                    id="@(filteredLoans.First() == loan ? "loans-balance-abjusment-button" : "")"
                                                     style="background-color:rgba(156, 39, 176, 0.25);"
                                                     @onclick="() => OpenAdjustmentModal(loan)"
                                                     title="Ajustar saldo real (Conciliar con Banco)">
@@ -271,11 +272,11 @@
                         <div class="loan-footer text-white">
                             <div class="row">
                                 <div class="col-6">
-                                    <small>🗓️ Inicio:</small>
+                                    <small class="text-white">🗓️ Inicio:</small>
                                     <p>@loan.StartDate.ToString("dd/MM/yyyy")</p>
                                 </div>
                                 <div class="col-6">
-                                    <small>📆 Próximo Pago:</small>
+                                    <small class=" text-white">📆 Próximo Pago:</small>
                                     <p>@(loan.IsActive && !loan.IsCompleted ? loan.NextPaymentDate.ToString("dd/MM/yyyy") : "N/A")</p>
                                 </div>
                             </div>
