@@ -1,31 +1,41 @@
 ﻿/* Archivo: Shared/FloatingAIButton.razor.css */
 
-.fab-ai {
-    /* 1. Posicionamiento Flotante */
+/* Contenedor principal para agrupar botón y mensaje */
+.fab-ai-container {
     position: fixed;
     right: 6px;
     z-index: 1000;
-    /* 2. Estilo FAB (Circular y tamaño ajustado) */
+    display: flex;
+    align-items: center;
+    flex-direction: row; /* Antes era row-reverse */
+    justify-content: flex-end; /* Asegura que se alinee a la derecha */
+    gap: 10px; /* Espacio entre botón y mensaje */
+}
+
+/* --- ESTILOS DEL BOTÓN --- */
+.fab-ai {
+    /* Quitamos position:fixed porque ahora lo maneja el contenedor */
+    position: relative;
+    right: auto;
+    bottom: auto;
+    /* ... (Resto de tus estilos originales: width, height, background, etc.) ... */
     width: 45px;
     height: 45px;
     border-radius: 50%;
-    /* 3. Estilo de IA (Tema morado/azul futurista) */
     background: linear-gradient(135deg, rgba(103, 58, 183, 0.2), rgba(33, 150, 243, 0.2));
     border: 1px solid rgba(103, 58, 183, 0.4);
-    color: #E1BEE7; /* Color lavanda claro para el emoji */
+    color: #E1BEE7;
     transition: all 0.3s ease;
-    /* 4. Estilo del contenido (Centrado) */
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
     line-height: 1;
-    /* 5. Sombra y cursor */
     box-shadow: 0 4px 10px rgba(103, 58, 183, 0.3);
     cursor: pointer;
+    animation: pulse-ai 3s ease-in-out infinite;
 }
 
-    /* 6. Efecto Hover */
     .fab-ai:hover {
         background: linear-gradient(135deg, rgba(103, 58, 183, 0.35), rgba(33, 150, 243, 0.35));
         color: #FFFFFF;
@@ -34,7 +44,43 @@
         border-color: rgba(103, 58, 183, 0.6);
     }
 
-/* 7. Animación de pulso sutil (opcional - hace que el botón "respire") */
+/* --- NUEVO: BURBUJA DE SALUDO --- */
+.ai-greeting {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    /* Animación de entrada/salida */
+    opacity: 0;
+    transform: translateX(10px) scale(0.9);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); /* Efecto rebote suave */
+    pointer-events: none; /* Para que no interfiera con clics si es invisible */
+}
+
+    /* Clase para mostrar la burbuja */
+    .ai-greeting.show {
+        opacity: 1;
+        transform: translateX(0) scale(1);
+    }
+
+    /* Flechita de la burbuja (opcional, apuntando a la derecha hacia el botón) */
+    .ai-greeting::after {
+        content: '';
+        position: absolute;
+        right: -5px;
+        top: 50%;
+        transform: translateY(-50%);
+        border-width: 5px 0 5px 6px;
+        border-style: solid;
+        border-color: transparent transparent transparent rgba(255, 255, 255, 0.1); /* Color del fondo de la burbuja */
+    }
+
+/* --- ANIMACIÓN PULSE --- */
 @keyframes pulse-ai {
     0%, 100% {
         box-shadow: 0 4px 10px rgba(103, 58, 183, 0.3);
@@ -45,15 +91,16 @@
     }
 }
 
-.fab-ai {
-    animation: pulse-ai 3s ease-in-out infinite;
-}
-
 /* Responsive */
 @media(max-width:1114px) {
     .fab-ai {
         width: 35px;
         height: 35px;
         font-size: 1.2rem;
+    }
+
+    .ai-greeting {
+        font-size: 0.75rem;
+        padding: 4px 8px;
     }
 }

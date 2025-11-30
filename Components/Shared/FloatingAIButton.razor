@@ -1,13 +1,62 @@
 ﻿@* Archivo: Shared/FloatingAIButton.razor *@
 
-<button class="fab-ai" @onclick="OnClick" style="bottom: @(Bottom)px;" title="Asistente de IA">
-    🤖
-</button>
+<div class="fab-ai-container" style="bottom: @(Bottom)px;">
+    <div class="ai-greeting @(showGreeting ? "show" : "")">
+        ¡Hola!👋 Soy Finn. ¿Te ayudo con algo?
+    </div>
+
+    <button class="fab-ai"
+            @onclick="OnClick"
+            @onmouseenter="ShowGreeting"
+            @onmouseleave="HideGreeting"
+            title="Finn">
+        🤖
+    </button>
+</div>
 
 @code {
     [Parameter]
     public EventCallback OnClick { get; set; }
 
     [Parameter]
-    public int Bottom { get; set; } = 200; // Por defecto 95px (arriba de los otros dos botones)
+    public int Bottom { get; set; } = 200; 
+
+    private bool showGreeting = false;
+    private System.Threading.Timer? greetingTimer;
+
+    protected override void OnInitialized()
+    {
+        // Opcional: Mostrar el saludo automáticamente unos segundos después de cargar
+        // para llamar la atención del usuario una sola vez.
+        greetingTimer = new System.Threading.Timer(_ =>
+        {
+            InvokeAsync(() =>
+            {
+                showGreeting = true;
+                StateHasChanged();
+
+                // Ocultar automáticamente después de 5 segundos
+                System.Threading.Thread.Sleep(5000);
+                showGreeting = false;
+                StateHasChanged();
+            });
+        }, null, 3000, System.Threading.Timeout.Infinite); // Espera 3s y muestra
+    }
+
+    private void ShowGreeting()
+    {
+        showGreeting = true;
+    }
+
+    private void HideGreeting()
+    {
+        // Pequeño delay para que no parpadee si el mouse sale y entra rápido
+        // En este caso simple, lo ocultamos directo o dejamos que el usuario lo vea
+        showGreeting = false;
+    }
+
+    public void Dispose()
+    {
+        greetingTimer?.Dispose();
+    }
 }

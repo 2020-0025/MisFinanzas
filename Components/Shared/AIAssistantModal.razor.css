@@ -448,26 +448,6 @@
 
 }
 
-/*@media (max-height:720px){
-    .ai-modal-container {
-        width: 95%;
-        height: 100%;
-        max-height: 550px;
-        max-width: 420px;
-        margin-top: 10px;
-    }
-}
-
-@media (max-height:600px) {
-    .ai-modal-container {
-        width: 95%;
-        height: 100%;
-        max-height: 450px;
-        max-width: 600px;
-        margin-top: 10px;
-    }
-}*/
-
 /* ===================================
    CONFIRMACIÓN DE COMANDOS
    =================================== */
@@ -571,4 +551,59 @@
     .ai-cancel-btn {
         width: 100%;
     }
+}
+
+/* Animación de pulso para cuando está escuchando */
+.mic-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    padding: 0 10px;
+    color: #aaa;
+}
+
+    .mic-btn:hover {
+        color: white;
+    }
+
+.mic-active {
+    color: #ff4d4d !important; /* Rojo cuando graba */
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+        text-shadow: 0 0 0 rgba(255, 77, 77, 0.7);
+    }
+
+    50% {
+        transform: scale(1.2);
+        text-shadow: 0 0 10px rgba(255, 77, 77, 0.7);
+    }
+
+    100% {
+        transform: scale(1);
+        text-shadow: 0 0 0 rgba(255, 77, 77, 0);
+    }
+}
+
+.listening-indicator {
+    position: absolute;
+    bottom: 70px; 
+    left: 20px;
+    right: 20px;
+    background: rgba(0,0,0,0.8);
+    color: white;
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.1);
+    z-index: 100;
 }

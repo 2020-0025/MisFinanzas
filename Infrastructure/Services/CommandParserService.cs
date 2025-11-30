@@ -273,6 +273,7 @@ INSTRUCCIONES:
 }}
 
 REGLAS:
+- Si el usuario usa el nombre 'Finn' o saludos como 'Hola Finn', ignóralos al extraer los parámetros del comando.
 - La categoría debe coincidir con una de las disponibles (sin emoji)
 - SI LA CATEGORÍA NO EXISTE EN LA LISTA:
   1. Asigna el nombre tal cual lo dijo el usuario en el parámetro ""category"".

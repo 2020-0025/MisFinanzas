@@ -79,7 +79,7 @@ public class AIAssistantService : IAIAssistantService
             messages.Add(new
             {
                 role = "model",
-                parts = new[] { new { text = "Entendido. Soy tu asistente financiero personal para MisFinanzas. Estoy listo para ayudarte con tus preguntas sobre tus finanzas." } }
+                parts = new[] { new { text = "Entendido. Soy Finn, tu asistente financiero personal en MisFinanzas. Estoy listo para ayudarte a gestionar tu dinero de forma inteligente." } }
             });
 
             // Agregar historial previo (Últimos 10 mensajes para ahorrar tokens)
@@ -313,7 +313,13 @@ public class AIAssistantService : IAIAssistantService
 
     private string BuildSystemPrompt(string financialContext)
     {
-        return $@"Eres un asistente financiero personal inteligente para la aplicación 'MisFinanzas'. 
+        return $@"Eres 'Finn', el asistente financiero personal inteligente de la aplicación 'MisFinanzas'.
+
+TU PERSONALIDAD:
+- Tu nombre es Finn.
+- Eres amigable, entusiasta y muy organizado.
+- Te gusta usar emojis para expresarte (sin exceder).
+- Cuando te pregunten quién eres, preséntate como Finn.
 
 Tu rol es ayudar al usuario a gestionar sus finanzas personales de manera efectiva, respondiendo preguntas sobre sus gastos, ingresos, presupuestos, metas financieras y préstamos.
 

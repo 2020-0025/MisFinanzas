@@ -2,10 +2,12 @@
 @using MisFinanzas.Domain.DTOs
 @using MisFinanzas.Infrastructure.Interfaces
 @using System.Security.Claims
+@using Microsoft.JSInterop
 @inject IAIAssistantService AIService
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject ICommandParserService CommandParser
 @inject ICommandExecutorService CommandExecutor
+@inject IJSRuntime JSRuntime
 
 
 @if (IsVisible)
@@ -14,9 +16,9 @@
         <div class="ai-modal-container" @onclick:stopPropagation="true">
             <!-- Header -->
             <div class="ai-modal-header">
-                <div class="ai-modal-title">
+                <div class="ai-modal-title" style="display:flex;">
                     <span class="ai-icon">🤖</span>
-                    <h5 class="mb-0">Asistente Financiero IA</h5>
+                    <h5 class="mb-0">Finn</h5>
                 </div>
                 <button type="button" class="ai-modal-close" @onclick="Close" title="Cerrar">
                     ✕
@@ -37,8 +39,8 @@
                 {
                     <div class="ai-welcome">
                         <span style="font-size: 3rem;">👋</span>
-                        <h6>¡Hola! Soy tu asistente financiero</h6>
-                        <p class="text-white mb-3">Puedo ayudarte con:</p>
+                        <h6>¡Hola! Soy Finn 🤖</h6>
+                        <p class="text-white mb-3">Tu asistente financiero personal. Puedo ayudarte con:</p>
                         <ul class="ai-capabilities">
                             <li>💰 Consultar tus gastos e ingresos</li>
                             <li>📊 Analizar tus presupuestos</li>
@@ -46,7 +48,7 @@
                             <li>💳 Información sobre tus préstamos</li>
                             <li>💡 Darte consejos personalizados</li>
                             <li>⚡ <strong>Crear gastos e ingresos automáticamente</strong></li>
-                            <li>🤖 <strong>Ejecutar acciones con comandos de texto</strong></li>
+                            <li>🤖 <strong>Ejecutar acciones con comandos de texto y voz</strong></li>
                         </ul>
                         <p class="text-white mt-3"><strong>¿En qué puedo ayudarte hoy?</strong></p>
                     </div>
@@ -116,14 +118,30 @@
 
             <!-- Footer - Input -->
             <div class="ai-modal-footer">
+                @if (isListening)
+                {
+                    <div class="listening-indicator">
+                        <span class="spinner-grow spinner-grow-sm text-danger" role="status"></span>
+                        <span>Escuchando... @tempSpeechText</span>
+                    </div>
+                }
+
                 <div class="ai-input-container">
+                    <button type="button"
+                            class="mic-btn @(isListening ? "mic-active" : "")"
+                            @onclick="ToggleVoiceRecording"
+                            title="@(isListening ? "Detener grabación" : "Hablar")">
+                        🎤
+                    </button>
+
                     <input type="text"
                            class="ai-input"
-                           placeholder="Escribe tu pregunta..."
+                           placeholder="@(isListening ? "Habla ahora..." : "Escribe tu pregunta...")"
                            @bind="userInput"
                            @bind:event="oninput"
                            @onkeydown="HandleKeyDown"
                            disabled="@(!AIService.IsAvailable() || isLoading)" />
+
                     <button type="button"
                             class="ai-send-btn"
                             @onclick="SendMessage"
@@ -164,12 +182,126 @@
     private CommandDto? pendingCommand = null;
     private bool isExecutingCommand = false;
 
+    // Variables para voz
+    private bool isListening = false;
+    private bool isVoiceSupported = false;
+    private string tempSpeechText = ""; // Texto parcial mientras habla
+    private DotNetObjectReference<AIAssistantModal>? dotNetRef;
+
 
     protected override async Task OnInitializedAsync()
     {
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         currentUserId = authState.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
     }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Inicializar referencia JS y verificar soporte
+            dotNetRef = DotNetObjectReference.Create(this);
+            isVoiceSupported = await JSRuntime.InvokeAsync<bool>("aiVoice.initialize", dotNetRef);
+        }
+    }
+
+    private async Task ToggleVoiceRecording()
+    {
+        if (!isVoiceSupported)
+        {
+            // Fallback simple si no hay soporte
+            messages.Add(new AIMessageDto { Role = "assistant", Content = "⚠️ Tu navegador no soporta reconocimiento de voz.", Timestamp = DateTime.Now });
+            return;
+        }
+
+        if (isListening)
+        {
+            await JSRuntime.InvokeVoidAsync("aiVoice.stopRecording");
+            // El estado cambiará en OnSpeechEnd
+        }
+        else
+        {
+            tempSpeechText = "";
+            await JSRuntime.InvokeVoidAsync("aiVoice.startRecording");
+            // El estado cambiará en OnSpeechStart
+        }
+    }
+
+    // --- MÉTODOS LLAMADOS DESDE JS ---
+
+    [JSInvokable]
+    public void OnSpeechStart()
+    {
+        isListening = true;
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnSpeechEnd()
+    {
+        isListening = false;
+        tempSpeechText = "";
+        // Opcional: Auto-enviar si hay texto
+        // if (!string.IsNullOrWhiteSpace(userInput)) SendMessage();
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public void OnSpeechResult(string finalTranscript, string interimTranscript)
+    {
+        // Actualizamos el input principal con lo confirmado
+        if (!string.IsNullOrEmpty(finalTranscript))
+        {
+            userInput = (userInput + " " + finalTranscript).Trim();
+        }
+
+        // Mostramos lo temporal en el indicador flotante
+        tempSpeechText = interimTranscript;
+
+        StateHasChanged();
+    }
+
+    [JSInvokable]
+    public async Task OnSpeechError(string error)
+    {
+        isListening = false;
+        Console.WriteLine($"Error de voz: {error}");
+
+        string errorMessage;
+
+        // Personalizar mensaje según el error
+        if (error == "network")
+        {
+            errorMessage = "⚠️ Tu navegador no permite servicios de voz en la nube (común en Brave). Intenta con Chrome o Edge.";
+        }
+        else if (error == "not-allowed" || error == "permission-denied")
+        {
+            errorMessage = "⚠️ Necesitas dar permiso al micrófono para usar esta función.";
+        }
+        else if (error == "no-speech")
+        {
+            // Si no habló, simplemente reseteamos sin mensaje de error
+            StateHasChanged();
+            return;
+        }
+        else
+        {
+            errorMessage = $"⚠️ No pude escucharte bien ({error}). Intenta de nuevo.";
+        }
+
+        // Agregar mensaje al chat para que el usuario lo vea
+        messages.Add(new AIMessageDto
+        {
+            Role = "assistant",
+            Content = errorMessage,
+            Timestamp = DateTime.Now
+        });
+
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    
 
     private async Task SendMessage()
     {
@@ -303,6 +435,11 @@
 
         pendingCommand = null;
         StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        dotNetRef?.Dispose();
     }
 
 }
