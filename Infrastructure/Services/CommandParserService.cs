@@ -262,8 +262,8 @@ INSTRUCCIONES:
     ""date"": ""hoy"",
     ""description"": ""Almuerzo""
   }},
-  ""createCategoryIfMissing"": false,  // <--- NUEVO CAMPO (true si la categoría no existe en la lista)
-  ""suggestedIcon"": ""📁"",           // <--- NUEVO CAMPO (Emoji sugerido si se va a crear)
+  ""createCategoryIfMissing"": false,
+  ""suggestedIcon"": ""📁"",
   ""confirmationMessage"": ""¿Confirmas crear un gasto de RD$500 en Comida?""
 }}
 
@@ -274,17 +274,20 @@ INSTRUCCIONES:
 
 REGLAS:
 - Si el usuario usa el nombre 'Finn' o saludos como 'Hola Finn', ignóralos al extraer los parámetros del comando.
-- La categoría debe coincidir con una de las disponibles (sin emoji)
-- SI LA CATEGORÍA NO EXISTE EN LA LISTA:
-  1. Asigna el nombre tal cual lo dijo el usuario en el parámetro ""category"".
-  2. Establece ""createCategoryIfMissing"": true.
-  3. En ""suggestedIcon"", elige un emoji que represente esa nueva categoría (Ej: ""Sushi"" -> 🍣, ""Gimnasio"" -> 💪).
-  4. En ""confirmationMessage"", menciona explícitamente que se creará la categoría (Ej: ""La categoría 'Sushi' no existe. ¿Creo la categoría y registro el gasto?"").
-- Los montos deben ser números positivos
+- La categoría debe coincidir con una de las disponibles (sin emoji).
+
+- CRÍTICO - SI LA CATEGORÍA NO EXISTE EN LA LISTA:
+  1. NO intentes forzar una categoría existente si es muy diferente semánticamente.
+  2. DEBES establecer ""createCategoryIfMissing"": true.
+  3. DEBES inventar un ""suggestedIcon"" (emoji) adecuado para la nueva categoría (Ej: ""Sushi"" -> 🍣, ""Gimnasio"" -> 💪).
+  4. DEBES poner el nombre nuevo tal cual lo dijo el usuario en el parámetro ""category"".
+  5. En ""confirmationMessage"", avisa explícitamente que la crearás (Ej: ""La categoría 'Sushi' no existe. ¿Creo la categoría nueva y registro el gasto?"").
+
+- Los montos deben ser números positivos.
 - Si detectas una fecha relativa (ej: ""ayer"", ""el lunes pasado"", ""el 15""), conviértela SIEMPRE al formato YYYY-MM-DD basándote en que hoy es {DateTime.Now:yyyy-MM-dd}.
-- Si falta información crítica, marca isCommand: false
-- Solo devuelve JSON válido, sin texto adicional
-- El confirmationMessage debe ser claro y específico sobre la acción a realizar
+- Si falta información crítica, marca isCommand: false.
+- Solo devuelve JSON válido, sin texto adicional.
+- El confirmationMessage debe ser claro y específico sobre la acción a realizar.
 
 Analiza el mensaje y responde:";
     }
@@ -294,19 +297,20 @@ Analiza el mensaje y responde:";
     {
         try
         {
-            // Limpiar respuesta (quitar markdown si existe)
-            responseText = responseText.Trim();
-            if (responseText.StartsWith("```json"))
-                responseText = responseText.Substring(7);
-            if (responseText.StartsWith("```"))
-                responseText = responseText.Substring(3);
-            if (responseText.EndsWith("```"))
-                responseText = responseText.Substring(0, responseText.Length - 3);
-            responseText = responseText.Trim();
+            // --- BLINDAJE NUEVO ---
+            // Usamos el método robusto en lugar de la limpieza manual anterior
+            var jsonText = CleanJsonFromAI(responseText);
 
-            Console.WriteLine($"[CommandParser] Respuesta de Gemini: {responseText}");
+            Console.WriteLine($"[CommandParser] Respuesta Original: {responseText}");
+            Console.WriteLine($"[CommandParser] JSON Limpio: {jsonText}");
 
-            var jsonDoc = JsonDocument.Parse(responseText);
+            if (string.IsNullOrEmpty(jsonText))
+            {
+                Console.WriteLine("[CommandParser] No se pudo extraer JSON válido de la respuesta.");
+                return null;
+            }
+
+            var jsonDoc = JsonDocument.Parse(jsonText);
             var root = jsonDoc.RootElement;
 
             // Verificar si tiene la propiedad isCommand
@@ -380,6 +384,9 @@ Analiza el mensaje y responde:";
 
             Console.WriteLine($"[CommandParser] Comando detectado: {commandType}");
             Console.WriteLine($"[CommandParser] Parámetros: {string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"))}");
+            // --- LOGS DE DEPURACIÓN PARA RENDER ---
+            Console.WriteLine($"[CommandParser] CreateIfMissing: {createCategoryIfMissing}");
+            Console.WriteLine($"[CommandParser] IconoSugerido: {suggestedIcon}");
 
             return new CommandDto
             {
@@ -404,6 +411,28 @@ Analiza el mensaje y responde:";
             Console.WriteLine($"[CommandParser] Respuesta: {responseText}");
             return null;
         }
+    }
+
+    // Método auxiliar para limpiar la respuesta de la IA y extraer solo el JSON válido
+    private string CleanJsonFromAI(string rawResponse)
+    {
+        if (string.IsNullOrEmpty(rawResponse)) return "";
+
+        // 1. Quitar bloques de código Markdown comunes
+        var clean = rawResponse.Replace("```json", "").Replace("```", "").Trim();
+
+        // 2. Buscar el primer '{' y el último '}' para ignorar texto introductorio o final
+        // Esto es vital si la IA dice: "Aquí tienes el JSON: { ... }"
+        int firstBrace = clean.IndexOf('{');
+        int lastBrace = clean.LastIndexOf('}');
+
+        if (firstBrace >= 0 && lastBrace > firstBrace)
+        {
+            // Extraer solo lo que está entre las llaves (incluyéndolas)
+            clean = clean.Substring(firstBrace, lastBrace - firstBrace + 1);
+        }
+
+        return clean;
     }
 
     private string ConvertToPascalCase(string snakeCase)

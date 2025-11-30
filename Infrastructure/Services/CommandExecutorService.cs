@@ -1505,6 +1505,10 @@ public class CommandExecutorService : ICommandExecutorService
         string? suggestedIcon,
         TransactionType type)
     {
+        // --- LOGS DE DEPURACIÓN PARA RENDER ---
+        Console.WriteLine($"[Executor] Buscando categoría: '{categoryName}' (Tipo: {type})");
+        Console.WriteLine($"[Executor] Autorización para crear si falta: {createIfMissing}");
+
         // 1. Intentar buscar categorías existentes
         var categories = await _categoryService.GetByUserAndTypeAsync(userId, type);
         var existingCategory = FindCategoryFlexible(categories, categoryName);
