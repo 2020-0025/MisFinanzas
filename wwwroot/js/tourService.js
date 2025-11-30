@@ -133,6 +133,33 @@ window.tourService = {
                     side: 'top',
                     align: 'center'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -232,6 +259,33 @@ window.tourService = {
                     side: 'bottom',
                     align: 'end'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -320,6 +374,33 @@ window.tourService = {
                     title: '🗑️ Eliminar Categoría de Ingreso',
                     description: 'Elimina categorías de ingreso que ya no necesites. Esta acción puede afectar registros existentes.',
                     side: 'left',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
                     align: 'center'
                 }
             }
@@ -463,6 +544,33 @@ window.tourService = {
                     side: 'left',
                     align: 'center'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -538,6 +646,24 @@ window.tourService = {
                     title: '🗑️ Eliminar Recordatorio',
                     description: 'Haz clic aquí para eliminar este recordatorio de tu lista.',
                     side: 'left',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
                     align: 'center'
                 }
             }
@@ -655,6 +781,33 @@ window.tourService = {
                     side: 'left',
                     align: 'center'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -769,6 +922,33 @@ window.tourService = {
                     side: 'left',
                     align: 'center'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-finn',
+                popover: {
+                    title: '🤖 Boton de Finn',
+                    description: '¿Necesitas ayuda de Finn? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -789,7 +969,7 @@ window.tourService = {
             {
                 popover: {
                     title: '👋 ¡Bienvenido a Mis Finanzas!',
-                    description: 'Esta es tu aplicación de gestión financiera personal. Te ayudaremos a tomar el control de tu dinero con inteligencia y simplicidad.',
+                    description: 'Esta es tu aplicación de gestión financiera personal. Te ayudaremos a tomar el control de tu dinero con inteligencia, simplicidad, y la ayuda de 🤖 Finn; tu asistente financiero personal.',
                 }
             },
             {
@@ -899,6 +1079,15 @@ window.tourService = {
                     side: 'top',
                     align: 'center'
                 }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
             }
         ];
 
@@ -973,6 +1162,24 @@ window.tourService = {
                     title: '🗑️ Eliminar Cuenta',
                     description: '<strong>¡CUIDADO!</strong> Esta acción no se puede deshacer. Perderás todos tus datos: categorías, transacciones, metas y presupuestos.',
                     side: 'bottom',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-help',
+                popover: {
+                    title: '❓ Boton de ayuda',
+                    description: '¿Necesitas volver a ver el tutorial? Clic aqui.',
+                    side: 'top',
+                    align: 'center'
+                }
+            },
+            {
+                element: '#btn-home',
+                popover: {
+                    title: '🏠 Volver a Bienvenida',
+                    description: '¿Necesitas ir a la pantalla de bienvenida? Clic aqui.',
+                    side: 'top',
                     align: 'center'
                 }
             }
@@ -1053,5 +1260,12 @@ window.tourService = {
     resetAllTours: function () {
         localStorage.removeItem('seenTours');
         console.log('✅ Todos los tours han sido reseteados');
+    },
+    // NUEVO: Verificar si hay un tour corriendo actualmente
+    isTourActive: function () {
+        // Driver.js agrega la clase 'driver-active' al body cuando corre
+        // También verificamos si existe el elemento del popover por si acaso
+        return document.body.classList.contains('driver-active') ||
+            document.querySelector('.driver-popover') !== null;
     }
 };

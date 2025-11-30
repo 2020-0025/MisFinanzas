@@ -1,4 +1,5 @@
 ﻿@* Archivo: Shared/FloatingAIButton.razor *@
+@inject IJSRuntime JSRuntime
 
 <div class="fab-ai-container" style="bottom: @(Bottom)px;">
     <div class="ai-greeting @(showGreeting ? "show" : "")">
@@ -9,7 +10,8 @@
             @onclick="OnClick"
             @onmouseenter="ShowGreeting"
             @onmouseleave="HideGreeting"
-            title="Finn">
+            title="Finn"
+            id="@Id">
         🤖
     </button>
 </div>
@@ -21,26 +23,56 @@
     [Parameter]
     public int Bottom { get; set; } = 200; 
 
+    [Parameter]
+    public string? Id { get; set; }
+
     private bool showGreeting = false;
     private System.Threading.Timer? greetingTimer;
 
     protected override void OnInitialized()
     {
-        // Opcional: Mostrar el saludo automáticamente unos segundos después de cargar
-        // para llamar la atención del usuario una sola vez.
-        greetingTimer = new System.Threading.Timer(_ =>
+        // Iniciamos el primer chequeo a los 3 segundos
+        greetingTimer = new System.Threading.Timer(async _ =>
         {
-            InvokeAsync(() =>
+            try
             {
-                showGreeting = true;
-                StateHasChanged();
+                bool isTourActive = false;
 
-                // Ocultar automáticamente después de 5 segundos
-                System.Threading.Thread.Sleep(5000);
-                showGreeting = false;
-                StateHasChanged();
-            });
-        }, null, 3000, System.Threading.Timeout.Infinite); // Espera 3s y muestra
+                // 1. Preguntamos si hay tour
+                await InvokeAsync(async () =>
+                {
+                    isTourActive = await JSRuntime.InvokeAsync<bool>("tourService.isTourActive");
+                });
+
+                // 2. Si hay tour, NO saludamos todavía, PERO volvemos a preguntar en 2 segundos
+                if (isTourActive)
+                {
+                    // Reprogramar el timer para chequear de nuevo en 2000ms (2s)
+                    greetingTimer?.Change(2000, System.Threading.Timeout.Infinite);
+                    return;
+                }
+
+                // 3. Si NO hay tour, mostramos el saludo
+                await InvokeAsync(() =>
+                {
+                    showGreeting = true;
+                    StateHasChanged();
+                });
+
+                // 4. Ocultar automáticamente después de 5 segundos
+                await Task.Delay(5000);
+
+                await InvokeAsync(() =>
+                {
+                    showGreeting = false;
+                    StateHasChanged();
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en saludo de Finn: {ex.Message}");
+            }
+        }, null, 3000, System.Threading.Timeout.Infinite);
     }
 
     private void ShowGreeting()

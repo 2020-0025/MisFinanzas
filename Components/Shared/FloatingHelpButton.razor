@@ -1,7 +1,7 @@
 ﻿@using Microsoft.AspNetCore.Components
 @* Archivo: Shared/FloatingHelpButton.razor *@
 
-<button class="fab-help" @onclick="OnClick" style="bottom: @(Bottom)px;" title="@Titulo">
+<button class="fab-help" @onclick="OnClick" style="bottom: @(Bottom)px;" title="@Titulo" id="@Id">
     @Icono
 </button>
 
@@ -19,4 +19,7 @@
 
     [Parameter]
     public string? Titulo { get; set; }
+
+    [Parameter]
+    public string? Id { get; set; }
 }
