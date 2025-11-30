@@ -181,6 +181,9 @@ builder.Services.AddScoped<IBudgetService, BudgetService>();
 builder.Services.AddScoped<ILoanService, LoanService>();
 builder.Services.AddScoped<INotificationService, NotificationService>();
 builder.Services.AddScoped<IAIAssistantService, AIAssistantService>();
+builder.Services.AddScoped<ICommandParserService, CommandParserService>();
+builder.Services.AddScoped<ICommandExecutorService, CommandExecutorService>();
+
 
 
 // Servicios de reportes
@@ -193,6 +196,11 @@ builder.Services.AddSingleton<ITemporaryFileCache, TemporaryFileCache>();
 
 // HttpClient para servicios externos (Google Gemini API)
 builder.Services.AddHttpClient<IAIAssistantService, AIAssistantService>();
+builder.Services.AddHttpClient<ICommandParserService, CommandParserService>();
+
+
+
+
 
 
 // Agregar soporte para controladores API

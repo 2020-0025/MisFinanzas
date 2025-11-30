@@ -467,3 +467,108 @@
         margin-top: 10px;
     }
 }*/
+
+/* ===================================
+   CONFIRMACIÓN DE COMANDOS
+   =================================== */
+.ai-command-confirmation {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.15), rgba(255, 152, 0, 0.15));
+    border: 2px solid rgba(255, 193, 7, 0.5);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-top: 1rem;
+    animation: slideInUp 0.3s ease;
+}
+
+.ai-command-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    color: #FFF176;
+    font-size: 1rem;
+}
+
+.ai-command-message {
+    color: white;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    line-height: 1.5;
+}
+
+.ai-command-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.ai-confirm-btn,
+.ai-cancel-btn {
+    flex: 1;
+    padding: 0.65rem 1rem;
+    border-radius: 8px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.ai-confirm-btn {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.4), rgba(139, 195, 74, 0.4));
+    border: 1px solid rgba(76, 175, 80, 0.6);
+    color: white;
+}
+
+    .ai-confirm-btn:hover:not(:disabled) {
+        background: linear-gradient(135deg, rgba(76, 175, 80, 0.6), rgba(139, 195, 74, 0.6));
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(76, 175, 80, 0.4);
+    }
+
+.ai-cancel-btn {
+    background: rgba(244, 67, 54, 0.3);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #FFCDD2;
+}
+
+    .ai-cancel-btn:hover:not(:disabled) {
+        background: rgba(244, 67, 54, 0.5);
+        border-color: rgba(244, 67, 54, 0.7);
+    }
+
+    .ai-confirm-btn:disabled,
+    .ai-cancel-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive para confirmación */
+@media (max-width: 576px) {
+    .ai-command-confirmation {
+        padding: 1rem;
+    }
+
+    .ai-command-actions {
+        flex-direction: column;
+    }
+
+    .ai-confirm-btn,
+    .ai-cancel-btn {
+        width: 100%;
+    }
+}

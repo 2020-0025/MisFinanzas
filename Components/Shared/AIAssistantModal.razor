@@ -4,6 +4,9 @@
 @using System.Security.Claims
 @inject IAIAssistantService AIService
 @inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ICommandParserService CommandParser
+@inject ICommandExecutorService CommandExecutor
+
 
 @if (IsVisible)
 {
@@ -42,6 +45,8 @@
                             <li>🎯 Revisar tus metas financieras</li>
                             <li>💳 Información sobre tus préstamos</li>
                             <li>💡 Darte consejos personalizados</li>
+                            <li>⚡ <strong>Crear gastos e ingresos automáticamente</strong></li>
+                            <li>🤖 <strong>Ejecutar acciones con comandos de texto</strong></li>
                         </ul>
                         <p class="text-white mt-3"><strong>¿En qué puedo ayudarte hoy?</strong></p>
                     </div>
@@ -83,6 +88,30 @@
                         }
                     </div>
                 }
+
+                @if (pendingCommand != null)
+                {
+                    <div class="ai-command-confirmation">
+                        <div class="ai-command-header">
+                            <span style="font-size: 1.5rem;">⚡</span>
+                            <strong>Comando detectado</strong>
+                        </div>
+                        <p class="ai-command-message">@pendingCommand.ConfirmationMessage</p>
+                        <div class="ai-command-actions">
+                            <button type="button" class="ai-confirm-btn" @onclick="ConfirmCommand" disabled="@isExecutingCommand">
+                                @if (isExecutingCommand)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2"></span>
+                                }
+                                ✅ Confirmar
+                            </button>
+                            <button type="button" class="ai-cancel-btn" @onclick="CancelCommand" disabled="@isExecutingCommand">
+                                ❌ Cancelar
+                            </button>
+                        </div>
+                    </div>
+                }
+
             </div>
 
             <!-- Footer - Input -->
@@ -132,6 +161,9 @@
     private string userInput = string.Empty;
     private bool isLoading = false;
     private string? currentUserId;
+    private CommandDto? pendingCommand = null;
+    private bool isExecutingCommand = false;
+
 
     protected override async Task OnInitializedAsync()
     {
@@ -159,16 +191,28 @@
         StateHasChanged();
         await ScrollToBottom();
 
-        // Obtener respuesta de la IA
-        var conversationHistory = messages.Take(messages.Count - 1).ToList(); // Excluir el último mensaje que acabamos de agregar
+        // PASO 1: Detectar si es un comando
+        var command = await CommandParser.ParseCommandAsync(userMessage, currentUserId);
+
+        if (command != null)
+        {
+            // Es un comando - mostrar confirmación
+            pendingCommand = command;
+            isLoading = false;
+            StateHasChanged();
+            return;
+        }
+
+        // No es comando - procesar como conversación normal
+        var conversationHistory = messages.Take(messages.Count - 1).ToList();
         var response = await AIService.SendMessageAsync(userMessage, currentUserId, conversationHistory);
 
-        // Agregar respuesta de la IA
         messages.Add(response);
         isLoading = false;
         StateHasChanged();
         await ScrollToBottom();
     }
+
 
     private async Task HandleKeyDown(KeyboardEventArgs e)
     {
@@ -210,4 +254,45 @@
 
         return content;
     }
+
+    private async Task ConfirmCommand()
+    {
+        if (pendingCommand == null || string.IsNullOrEmpty(currentUserId))
+            return;
+
+        isExecutingCommand = true;
+        StateHasChanged();
+
+        // Ejecutar el comando
+        var result = await CommandExecutor.ExecuteCommandAsync(pendingCommand, currentUserId);
+
+        // Agregar respuesta de la IA con el resultado
+        messages.Add(new AIMessageDto
+        {
+            Role = "assistant",
+            Content = result.Message,
+            Timestamp = DateTime.Now
+        });
+
+        // Limpiar estado
+        pendingCommand = null;
+        isExecutingCommand = false;
+        StateHasChanged();
+        await ScrollToBottom();
+    }
+
+    private void CancelCommand()
+    {
+        // Agregar mensaje de cancelación
+        messages.Add(new AIMessageDto
+        {
+            Role = "assistant",
+            Content = "❌ Comando cancelado. ¿En qué más puedo ayudarte?",
+            Timestamp = DateTime.Now
+        });
+
+        pendingCommand = null;
+        StateHasChanged();
+    }
+
 }
