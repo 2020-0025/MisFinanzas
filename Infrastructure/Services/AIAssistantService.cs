@@ -82,10 +82,13 @@ public class AIAssistantService : IAIAssistantService
                 parts = new[] { new { text = "Entendido. Soy tu asistente financiero personal para MisFinanzas. Estoy listo para ayudarte con tus preguntas sobre tus finanzas." } }
             });
 
-            // Agregar historial previo si existe
+            // Agregar historial previo (Últimos 10 mensajes para ahorrar tokens)
             if (conversationHistory != null && conversationHistory.Count > 0)
             {
-                foreach (var msg in conversationHistory)
+                // Tomamos solo los últimos 10 mensajes
+                var recentHistory = conversationHistory.TakeLast(10);
+
+                foreach (var msg in recentHistory)
                 {
                     messages.Add(new
                     {

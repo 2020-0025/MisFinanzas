@@ -266,11 +266,21 @@
         // Ejecutar el comando
         var result = await CommandExecutor.ExecuteCommandAsync(pendingCommand, currentUserId);
 
-        // Agregar respuesta de la IA con el resultado
+        // Preparamos el mensaje de respuesta
+        var responseContent = result.Message;
+
+        // Si hubo error y hay detalles técnicos, los agregamos ocultos o visibles para contexto
+        if (!result.Success && !string.IsNullOrEmpty(result.ErrorDetails))
+        {
+            // Agregamos el detalle técnico para que la IA tenga contexto si el usuario pregunta "por qué?"
+            // Lo ponemos entre paréntesis o en una nota al pie.
+            responseContent += $"\n\n(Detalle del sistema: {result.ErrorDetails})";
+        }
+
         messages.Add(new AIMessageDto
         {
             Role = "assistant",
-            Content = result.Message,
+            Content = responseContent,
             Timestamp = DateTime.Now
         });
 

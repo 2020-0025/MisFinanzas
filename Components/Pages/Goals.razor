@@ -769,19 +769,6 @@
                 return;
             }
 
-            // Validar icono duplicado
-            var iconExists = await GoalService.ExistsGoalWithIconAsync(
-                formModel.Icon.Trim(),
-                currentUserId,
-                isEditing ? formModel.GoalId : null
-            );
-
-            if (iconExists)
-            {
-                iconValidationError = "Ya existe una meta con este icono";
-                return;
-            }
-
             var dto = new FinancialGoalDto
             {
                 GoalId = formModel.GoalId,

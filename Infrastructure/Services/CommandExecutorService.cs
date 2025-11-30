@@ -111,44 +111,43 @@ public class CommandExecutorService : ICommandExecutorService
             if (!command.Parameters.TryGetValue("amount", out var amountObj) ||
                 !command.Parameters.TryGetValue("category", out var categoryObj))
             {
-                return new CommandResultDto
-                {
-                    Success = false,
-                    Message = "Faltan parámetros requeridos (monto o categoría)"
-                };
+                return new CommandResultDto { Success = false, Message = "Faltan parámetros requeridos (monto o categoría)" };
             }
 
             var amount = Convert.ToDecimal(amountObj);
             var categoryName = categoryObj.ToString() ?? "";
-            var description = command.Parameters.TryGetValue("description", out var descObj)
-                ? descObj.ToString()
-                : "";
-            var dateStr = command.Parameters.TryGetValue("date", out var dateObj)
-                ? dateObj.ToString()
-                : "hoy";
+            var description = command.Parameters.TryGetValue("description", out var descObj) ? descObj.ToString() : "";
+            var dateStr = command.Parameters.TryGetValue("date", out var dateObj) ? dateObj.ToString() : "hoy";
 
-            var categories = await _categoryService.GetByUserAndTypeAsync(userId, TransactionType.Expense);
-            var category = categories.FirstOrDefault(c => c.Title.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
+            // --- LÓGICA NUEVA: OBTENER O CREAR ---
+            var categoryResult = await GetOrCreateCategoryAsync(
+                categoryName,
+                userId,
+                command.CreateCategoryIfMissing,
+                command.SuggestedIcon,
+                TransactionType.Expense
+            );
 
-            if (category == null)
+            if (categoryResult.Id == null)
             {
                 return new CommandResultDto
                 {
                     Success = false,
-                    Message = $"No se encontró la categoría '{categoryName}'",
-                    ErrorDetails = "Verifica que la categoría exista en tus categorías de gastos"
+                    Message = $"No se encontró la categoría '{categoryName}' y no se pudo crear automáticamente.",
+                    ErrorDetails = "Intenta crear la categoría manualmente primero."
                 };
             }
+            // -------------------------------------
 
             var date = ParseDate(dateStr);
 
             var expenseDto = new ExpenseIncomeDto
             {
                 Amount = amount,
-                CategoryId = category.CategoryId,
+                CategoryId = categoryResult.Id.Value, // Usar el ID resuelto
                 Type = TransactionType.Expense,
                 Date = date,
-                Description = description ?? $"Gasto en {categoryName}"
+                Description = description ?? $"Gasto en {categoryResult.Name}"
             };
 
             var result = await _expenseIncomeService.CreateAsync(expenseDto, userId);
@@ -156,10 +155,16 @@ public class CommandExecutorService : ICommandExecutorService
             if (result.Success)
             {
                 var balance = await _expenseIncomeService.GetBalanceByUserAsync(userId);
+
+                // Mensaje personalizado si se creó la categoría
+                var msg = categoryResult.WasCreated
+                    ? $"✅ He creado la categoría **{command.SuggestedIcon} {categoryResult.Name}** y registrado el gasto de RD${amount:N2}."
+                    : $"✅ Gasto creado: RD${amount:N2} en {categoryResult.Name}\n\n💰 Balance actual: RD${balance:N2}";
+
                 return new CommandResultDto
                 {
                     Success = true,
-                    Message = $"✅ Gasto creado: RD${amount:N2} en {category.Icon} {categoryName}\n\n💰 Balance actual: RD${balance:N2}",
+                    Message = msg,
                     Data = new { ExpenseId = result.Data?.Id, NewBalance = balance }
                 };
             }
@@ -187,22 +192,29 @@ public class CommandExecutorService : ICommandExecutorService
             var description = command.Parameters.TryGetValue("description", out var descObj) ? descObj.ToString() : "";
             var dateStr = command.Parameters.TryGetValue("date", out var dateObj) ? dateObj.ToString() : "hoy";
 
-            var categories = await _categoryService.GetByUserAndTypeAsync(userId, TransactionType.Income);
-            var category = categories.FirstOrDefault(c => c.Title.Equals(categoryName, StringComparison.OrdinalIgnoreCase));
+            // --- LÓGICA NUEVA: OBTENER O CREAR ---
+            var categoryResult = await GetOrCreateCategoryAsync(
+                categoryName,
+                userId,
+                command.CreateCategoryIfMissing,
+                command.SuggestedIcon,
+                TransactionType.Income
+            );
 
-            if (category == null)
+            if (categoryResult.Id == null)
             {
                 return new CommandResultDto { Success = false, Message = $"No se encontró la categoría '{categoryName}'" };
             }
+            // -------------------------------------
 
             var date = ParseDate(dateStr);
             var incomeDto = new ExpenseIncomeDto
             {
                 Amount = amount,
-                CategoryId = category.CategoryId,
+                CategoryId = categoryResult.Id.Value,
                 Type = TransactionType.Income,
                 Date = date,
-                Description = description ?? $"Ingreso por {categoryName}"
+                Description = description ?? $"Ingreso por {categoryResult.Name}"
             };
 
             var result = await _expenseIncomeService.CreateAsync(incomeDto, userId);
@@ -210,10 +222,15 @@ public class CommandExecutorService : ICommandExecutorService
             if (result.Success)
             {
                 var balance = await _expenseIncomeService.GetBalanceByUserAsync(userId);
+
+                var msg = categoryResult.WasCreated
+                    ? $"✅ He creado la categoría **{command.SuggestedIcon} {categoryResult.Name}** y registrado el ingreso de RD${amount:N2}."
+                    : $"✅ Ingreso creado: RD${amount:N2} en {categoryResult.Name}\n\n💰 Balance actual: RD${balance:N2}";
+
                 return new CommandResultDto
                 {
                     Success = true,
-                    Message = $"✅ Ingreso creado: RD${amount:N2} en {category.Icon} {categoryName}\n\n💰 Balance actual: RD${balance:N2}",
+                    Message = msg,
                     Data = new { IncomeId = result.Data?.Id, NewBalance = balance }
                 };
             }
@@ -1461,4 +1478,72 @@ public class CommandExecutorService : ICommandExecutorService
     }
 
     #endregion
+
+    // Método auxiliar para buscar categorías de forma flexible
+    private CategoryDto? FindCategoryFlexible(List<CategoryDto> categories, string searchName)
+    {
+        if (string.IsNullOrEmpty(searchName)) return null;
+
+        // 1. Intento exacto (case insensitive)
+        var exactMatch = categories.FirstOrDefault(c => c.Title.Equals(searchName, StringComparison.OrdinalIgnoreCase));
+        if (exactMatch != null) return exactMatch;
+
+        // 2. Intento "Contiene" (ej: "Supermercado" encaja en "Supermercado y despensa")
+        var containsMatch = categories.FirstOrDefault(c => c.Title.Contains(searchName, StringComparison.OrdinalIgnoreCase));
+        if (containsMatch != null) return containsMatch;
+
+        // 3. Intento inverso (ej: "Gasto de Comida" encaja en "Comida")
+        var reverseMatch = categories.FirstOrDefault(c => searchName.Contains(c.Title, StringComparison.OrdinalIgnoreCase));
+        return reverseMatch;
+    }
+
+    // Método auxiliar para obtener o crear una categoría
+    private async Task<(int? Id, string Name, bool WasCreated)> GetOrCreateCategoryAsync(
+        string categoryName,
+        string userId,
+        bool createIfMissing,
+        string? suggestedIcon,
+        TransactionType type)
+    {
+        // 1. Intentar buscar categorías existentes
+        var categories = await _categoryService.GetByUserAndTypeAsync(userId, type);
+        var existingCategory = FindCategoryFlexible(categories, categoryName);
+
+        if (existingCategory != null)
+        {
+            return (existingCategory.CategoryId, existingCategory.Title, false);
+        }
+
+        // 2. Si no existe y la orden es crearla
+        if (createIfMissing)
+        {
+            // Capitalizar título (ej: "comida" -> "Comida")
+            var titleCase = System.Globalization.CultureInfo.CurrentCulture.TextInfo.ToTitleCase(categoryName.ToLower());
+
+            var newCategory = new CategoryDto
+            {
+                Title = titleCase,
+                Icon = suggestedIcon ?? "📁", // Usar el icono sugerido por la IA
+                Type = type,
+                UserId = userId
+            };
+
+            try
+            {
+                Console.WriteLine($"[CommandExecutor] Auto-creando categoría: {newCategory.Icon} {newCategory.Title}");
+                var created = await _categoryService.CreateAsync(newCategory, userId);
+
+                if (created != null && created.CategoryId > 0)
+                {
+                    return (created.CategoryId, created.Title, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CommandExecutor] Error auto-creando categoría: {ex.Message}");
+            }
+        }
+
+        return (null, categoryName, false);
+    }
 }

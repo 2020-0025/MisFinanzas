@@ -262,6 +262,8 @@ INSTRUCCIONES:
     ""date"": ""hoy"",
     ""description"": ""Almuerzo""
   }},
+  ""createCategoryIfMissing"": false,  // <--- NUEVO CAMPO (true si la categoría no existe en la lista)
+  ""suggestedIcon"": ""📁"",           // <--- NUEVO CAMPO (Emoji sugerido si se va a crear)
   ""confirmationMessage"": ""¿Confirmas crear un gasto de RD$500 en Comida?""
 }}
 
@@ -272,8 +274,13 @@ INSTRUCCIONES:
 
 REGLAS:
 - La categoría debe coincidir con una de las disponibles (sin emoji)
+- SI LA CATEGORÍA NO EXISTE EN LA LISTA:
+  1. Asigna el nombre tal cual lo dijo el usuario en el parámetro ""category"".
+  2. Establece ""createCategoryIfMissing"": true.
+  3. En ""suggestedIcon"", elige un emoji que represente esa nueva categoría (Ej: ""Sushi"" -> 🍣, ""Gimnasio"" -> 💪).
+  4. En ""confirmationMessage"", menciona explícitamente que se creará la categoría (Ej: ""La categoría 'Sushi' no existe. ¿Creo la categoría y registro el gasto?"").
 - Los montos deben ser números positivos
-- Las fechas pueden ser: ""hoy"", ""ayer"", ""[fecha específica]""
+- Si detectas una fecha relativa (ej: ""ayer"", ""el lunes pasado"", ""el 15""), conviértela SIEMPRE al formato YYYY-MM-DD basándote en que hoy es {DateTime.Now:yyyy-MM-dd}.
 - Si falta información crítica, marca isCommand: false
 - Solo devuelve JSON válido, sin texto adicional
 - El confirmationMessage debe ser claro y específico sobre la acción a realizar
@@ -358,6 +365,18 @@ Analiza el mensaje y responde:";
                 ? msgElement.GetString() ?? ""
                 : "";
 
+            var createCategoryIfMissing = false;
+            if (root.TryGetProperty("createCategoryIfMissing", out var createElem))
+            {
+                createCategoryIfMissing = createElem.GetBoolean();
+            }
+
+            var suggestedIcon = "📁";
+            if (root.TryGetProperty("suggestedIcon", out var iconElem))
+            {
+                suggestedIcon = iconElem.GetString() ?? "📁";
+            }
+
             Console.WriteLine($"[CommandParser] Comando detectado: {commandType}");
             Console.WriteLine($"[CommandParser] Parámetros: {string.Join(", ", parameters.Select(p => $"{p.Key}={p.Value}"))}");
 
@@ -366,7 +385,10 @@ Analiza el mensaje y responde:";
                 Type = commandType,
                 Parameters = parameters,
                 RequiresConfirmation = true,
-                ConfirmationMessage = confirmationMessage
+                ConfirmationMessage = confirmationMessage,
+                // --- MAPEAR NUEVAS PROPIEDADES ---
+                CreateCategoryIfMissing = createCategoryIfMissing,
+                SuggestedIcon = suggestedIcon
             };
         }
         catch (JsonException ex)

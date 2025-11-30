@@ -567,20 +567,6 @@
                 return;
             }
 
-            // Validar icono duplicado
-            var iconExists = await CategoryService.ExistsCategoryWithIconAsync(
-                formModel.Icon.Trim(),
-                formModel.Type,
-                currentUserId,
-                isEditing ? formModel.CategoryId : null
-            );
-
-            if (iconExists)
-            {
-                iconValidationError = $"Ya existe una categoría de {(formModel.Type == TransactionType.Expense ? "gastos" : "ingresos")} con este icono";
-                return;
-            }
-
             var dto = new CategoryDto
             {
                 CategoryId = formModel.CategoryId,
