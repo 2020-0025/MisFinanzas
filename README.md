@@ -26,7 +26,7 @@
 
  
 
-  [🚀 Demo en Vivo](https://misfinanzasoriginal.onrender.com/) | [📖 Documentación](#🛠%EF%B8%8F-tecnologías-utilizadas) | [💡 Contribuir](#🤝-contribuciones)
+  [🚀 Demo en Vivo](https://misfinanzasoriginal.onrender.com/) | [📖 Documentación](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-misfinanzas) | [💡 Contribuir](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-contribuciones)
 
  
 
@@ -1124,7 +1124,7 @@ Desarrollado con ❤️ por el equipo de MisFinanzas
 
  
 
-  [🏠 Inicio](#📊-misfinanzas) | [📖 Características](#✨-características-principales) | [🚀 Instalación](#🚀-guía-de-instalación-rápida) | [🌐 Demo](https://misfinanzasoriginal.onrender.com/)
+  [🏠 Inicio](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-misfinanzas) | [📖 Características](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-caracter%C3%ADsticas-principales) | [🚀 Instalación](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-gu%C3%ADa-de-instalaci%C3%B3n-r%C3%A1pida) | [🌐 Demo](https://misfinanzasoriginal.onrender.com/)
 
  
 
