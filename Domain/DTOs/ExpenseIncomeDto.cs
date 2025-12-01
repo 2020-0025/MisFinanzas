@@ -38,7 +38,7 @@ namespace MisFinanzas.Domain.DTOs
                 {
                     TransactionType.Income => "Ingreso",
                     TransactionType.Expense => "Gasto",
-                    TransactionType.Adjustment => "Ajuste", // Nuevo tipo
+                    TransactionType.Adjustment => "Prestamo", // Nuevo tipo
                     _ => "Otro"
                 };
             }
