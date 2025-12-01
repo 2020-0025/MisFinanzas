@@ -3,7 +3,7 @@
 
 <div class="fab-ai-container" style="bottom: @(Bottom)px;">
     <div class="ai-greeting @(showGreeting ? "show" : "")">
-        ¿Te ayudo con algo?
+        ¿Te ayudo con algo? 👋
     </div>
 
     <button class="fab-ai"
@@ -21,7 +21,7 @@
     public EventCallback OnClick { get; set; }
 
     [Parameter]
-    public int Bottom { get; set; } = 200; 
+    public int Bottom { get; set; } = 200;
 
     [Parameter]
     public string? Id { get; set; }
@@ -29,50 +29,65 @@
     private bool showGreeting = false;
     private System.Threading.Timer? greetingTimer;
 
-    protected override void OnInitialized()
+
+    protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        // Iniciamos el primer chequeo a los 3 segundos
-        greetingTimer = new System.Threading.Timer(async _ =>
+        // Solo iniciar el timer la primera vez que se renderiza en el cliente
+        if (firstRender)
         {
-            try
+            // Iniciar el primer chequeo a los 3 segundos
+            greetingTimer = new System.Threading.Timer(async _ =>
             {
-                bool isTourActive = false;
-
-                // 1. Preguntamos si hay tour
-                await InvokeAsync(async () =>
+                try
                 {
-                    isTourActive = await JSRuntime.InvokeAsync<bool>("tourService.isTourActive");
-                });
+                    bool isTourActive = false;
 
-                // 2. Si hay tour, NO saludamos todavía, PERO volvemos a preguntar en 2 segundos
-                if (isTourActive)
-                {
-                    // Reprogramar el timer para chequear de nuevo en 2000ms (2s)
-                    greetingTimer?.Change(2000, System.Threading.Timeout.Infinite);
-                    return;
+                    // 1. Preguntar si hay tour
+                    await InvokeAsync(async () =>
+                    {
+                        try
+                        {
+                            isTourActive = await JSRuntime.InvokeAsync<bool>("tourService.isTourActive");
+                        }
+                        catch
+                        {
+                            // Si falla la llamada JS (navegación rápida), asumir falso para no bloquear
+                            isTourActive = false;
+                        }
+                    });
+
+                    // 2. Si hay tour, NO saludar todavía, PERO volver a preguntar en 2 segundos
+                    if (isTourActive)
+                    {
+                        // Reprogramar el timer para chequear de nuevo en 2000ms (2s)
+                        greetingTimer?.Change(2000, System.Threading.Timeout.Infinite);
+                        return;
+                    }
+
+                    // 3. Si NO hay tour, mostrar el saludo
+                    await InvokeAsync(() =>
+                    {
+                        showGreeting = true;
+                        StateHasChanged();
+                    });
+
+                    // 4. Ocultar automáticamente después de 5 segundos
+                    await Task.Delay(5000);
+
+                    await InvokeAsync(() =>
+                    {
+                        showGreeting = false;
+                        StateHasChanged();
+                    });
                 }
-
-                // 3. Si NO hay tour, mostramos el saludo
-                await InvokeAsync(() =>
+                catch (Exception ex)
                 {
-                    showGreeting = true;
-                    StateHasChanged();
-                });
+                    Console.WriteLine($"Error en saludo de Finn: {ex.Message}");
+                }
+            }, null, 3000, System.Threading.Timeout.Infinite);
+        }
 
-                // 4. Ocultar automáticamente después de 5 segundos
-                await Task.Delay(5000);
-
-                await InvokeAsync(() =>
-                {
-                    showGreeting = false;
-                    StateHasChanged();
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error en saludo de Finn: {ex.Message}");
-            }
-        }, null, 3000, System.Threading.Timeout.Infinite);
+        return Task.CompletedTask;
     }
 
     private void ShowGreeting()
@@ -82,8 +97,6 @@
 
     private void HideGreeting()
     {
-        // Pequeño delay para que no parpadee si el mouse sale y entra rápido
-        // En este caso simple, lo ocultamos directo o dejamos que el usuario lo vea
         showGreeting = false;
     }
 
