@@ -26,7 +26,7 @@
 
  
 
-  [🚀 Demo en Vivo](https://misfinanzasoriginal.onrender.com/) | [📖 Documentación](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-misfinanzas) | [💡 Contribuir](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-contribuciones)
+  [🚀 Demo en Vivo](https://misfinanzasoriginal.onrender.com/) | [📖 Documentación](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-estructura-del-proyecto) | [💡 Contribuir](https://github.com/2020-0025/MisFinanzas/tree/master?tab=readme-ov-file#-contribuciones)
 
  
 
